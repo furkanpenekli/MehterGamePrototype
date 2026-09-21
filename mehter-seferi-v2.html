@@ -312,7 +312,7 @@ const T = {
   perfectWin: 0.06, goodWin: 0.15,
   barMax: 36, goodGain: 1, perfectGain: 1.5,
   missDrop: 6, wrongDrop: 4, hitDrop: 12, silenceBeats: 4, silenceDrop: 3,
-  pickCompanies: 2, armyCap: 15, waveSize: 1.5, groupBeats: 8,
+  pickCompanies: 2, armyCap: 15, waveSize: 2, groupSize: 8, groupBeats: 8, enemyCap: 30,
   auraR: 170, leaderSpeed: 150, hearts: 3, breatherBeats: 12,
   levelStep: 0.1, wavesPerChapter: 5, chapters: 3,
 };
@@ -344,6 +344,14 @@ const ENEMY = {
   boss:     { name: 'Serdar',        hp: 900,  dmg: 30, speed: 55,  reach: 40,  coins: 12, r: 22, color: '#8a5a9e', area: 70, goal: true },
   karakol:  { name: 'İleri karakol', hp: 1200, dmg: 0,  speed: 0,   reach: 0,   coins: 8,  r: 34, color: '#7a6446', fixed: true, goal: true },
   kapi:     { name: 'Kale kapısı',   hp: 3000, dmg: 0,  speed: 0,   reach: 0,   coins: 14, r: 38, color: '#7a6446', fixed: true, goal: true },
+  hisar:    { name: 'Hisar',         hp: 1800, dmg: 0,  speed: 0,   reach: 0,   coins: 16, r: 46, color: '#6b6152', fixed: true },
+};
+// Raids: every chapter scatters outposts and a castle around the map, off the waves' path. They
+// sit quiet until the band comes near or hits them, then send their garrison out in groups.
+// Taking one frees prisoners (a company joins) and pays loot; a castle also gives a heart back.
+const RAID = {
+  karakol: { count: 2, dist: [650, 820], hp: 700, garrison: 12, sally: 4, every: 6, wake: 430, companies: 1, heart: false },
+  hisar:   { count: 1, dist: [1000, 1150], hp: 1800, garrison: 22, sally: 6, every: 6, wake: 500, companies: 2, heart: true },
 };
 const ENEMY_ORDER = ['piyade', 'kalkanli', 'okcu', 'atli'];
 
@@ -368,7 +376,7 @@ function waveDef(ch, wi) {
   ][wi];
   const d = Object.assign({}, base);
   if (ch >= 2) for (const t of ['okcu', 'atli', 'kalkanli']) d[t] = Math.max(d[t] || 0, ch - 1);
-  const m = T.waveSize * (1 + 0.5 * (ch - 1));
+  const m = T.waveSize * (1 + 0.6 * (ch - 1));
   for (const t of ENEMY_ORDER) if (d[t]) d[t] = Math.round(d[t] * m);
   return d;
 }
@@ -585,7 +593,7 @@ function newGame() {
     mode: 'title', phase: 'breather', paused: false, terfi: null, konak: null, tut: null,
     leader: { kind: 'leader', x: 0, y: 0, r: 14, face: -Math.PI / 2, hearts: T.hearts, invuln: 0, pulse: 0 },
     cam: { x: 0, y: 0 },
-    soldiers: [], enemies: [], coins: [], shots: [], parts: [], texts: [], banners: [], pending: [], groups: [],
+    soldiers: [], enemies: [], forts: [], coins: [], shots: [], parts: [], texts: [], banners: [], pending: [], groups: [],
     bar: 0, guardK: -1, guardPerfect: false, guardShow: 0,
     volley: null, nextVolleyK: 0, wallUntil: -1, rushUntil: -1,
     ultis: DEFAULT_ULTIS.slice(), ultFlash: [0, 0, 0, 0],
@@ -594,7 +602,7 @@ function newGame() {
     waveBeat: 0, dir: 0, breatherBeat: 0, breatherLen: 16, victoryBeat: 0,
     hpScale: 1, dmgScale: 1, silent: 0, streak: 0, curK: 0, h: 0, coinChain: 0, lastCoin: 0,
     stick: null, killTimes: [],
-    stats: { perfect: 0, good: 0, wrong: 0, miss: 0, kills: 0, maxArmy: 6, bestStreak: 0, ultis: 0 },
+    stats: { perfect: 0, good: 0, wrong: 0, miss: 0, kills: 0, maxArmy: 6, bestStreak: 0, ultis: 0, raids: 0 },
     up: {
       dmg: { azap: 1, yeniceri: 1, kemankes: 1, deli: 1 }, hp: { azap: 1, yeniceri: 1, kemankes: 1, deli: 1 },
       kDouble: false, kRange: 1, aura: 1, kosHeal: false, steady: false, perfect: 1.25,
@@ -710,6 +718,57 @@ function spawnAtStructure(st, list) {
   sfx('horn', 0.2, (t) => S.kos(t, 0.3, sfxBus));
 }
 
+// A new chapter clears the old forts and scatters new ones around the band, spread apart.
+function placeForts() {
+  for (const f of G.forts) f.dead = true;
+  G.enemies = G.enemies.filter((e) => !e.side);
+  G.forts = [];
+  const L = G.leader, a0 = rand(0, TAU), hs = 1 + 0.35 * (G.chapter - 1);
+  const kinds = [];
+  for (const t of ['hisar', 'karakol']) for (let i = 0; i < RAID[t].count; i++) kinds.push(t);
+  kinds.forEach((t, i) => {
+    const r = RAID[t], a = a0 + i * TAU / kinds.length + rand(-0.3, 0.3), R = rand(r.dist[0], r.dist[1]);
+    const f = spawnEnemy(t, L.x + Math.cos(a) * R, L.y + Math.sin(a) * R);
+    f.side = true; f.hp = f.maxHp = r.hp * hs; f.state = 'approach'; f.emergeT = 1;
+    f.garrison = Math.round(r.garrison * (1 + 0.4 * (G.chapter - 1))); f.awake = false; f.nextSally = 0;
+    f.face = Math.atan2(L.y - f.y, L.x - f.x);
+    G.forts.push(f);
+  });
+}
+// Called on every wave beat: a woken fort sends a group out while it still has a garrison.
+function raidBeat() {
+  const L = G.leader;
+  for (const f of G.forts) {
+    if (f.dead) continue;
+    const r = RAID[f.type], d = dist(f, L);
+    if (!f.awake && (d < r.wake || f.hp < f.maxHp)) {
+      f.awake = true; f.nextSally = G.waveBeat;
+      floatText(f.x, f.y - 70, `${ENEMY[f.type].name.toUpperCase()} UYANDI!`, '#ff9a80', 18, true);
+    }
+    if (f.awake && d > 900 && f.hp >= f.maxHp) f.awake = false;
+    if (!f.awake || f.garrison <= 0 || G.waveBeat < f.nextSally || G.enemies.length >= T.enemyCap) continue;
+    const n = Math.min(r.sally, f.garrison), pool = G.chapter === 1 ? ['piyade', 'piyade', 'okcu'] : ['piyade', 'kalkanli', 'okcu', 'atli'];
+    const list = [];
+    for (let i = 0; i < n; i++) list.push(i === 0 && f.type === 'hisar' ? 'kalkanli' : pick(pool));
+    f.garrison -= n; f.nextSally = G.waveBeat + r.every;
+    spawnAtStructure(f, list);
+  }
+}
+// A fort falls: loot, freed prisoners, and for a castle a heart.
+function raidFell(f) {
+  const r = RAID[f.type];
+  G.stats.raids++;
+  addShake(10); G.flash = 0.7; G.flashColor = '255,200,80';
+  const type = pick(SOLDIER_ORDER);
+  const before = G.soldiers.length;
+  summonCompany(type, r.companies);
+  const got = G.soldiers.length - before;
+  let sub = got ? `Esirler kurtuldu · +${got} ${SOLDIER[type].name}` : 'Esirler kurtuldu · ordu dolu';
+  if (r.heart && G.leader.hearts < T.hearts) { G.leader.hearts++; sub += ' · +1 kalp'; }
+  bigText(f.type === 'hisar' ? 'HİSAR DÜŞTÜ!' : 'KARAKOL BASILDI!', sub, '#ffcf4a', 1.8);
+  sfx('kale', 0.5, (t) => { S.zil(t, 1, sfxBus, true); S.kos(t, 1, sfxBus); S.shout(t, 1, sfxBus, 200); S.shout(t + 0.15, 1, sfxBus, 250); });
+}
+
 // ---------------------------------------------------------------- tutorial
 // A short drill before the first wave: three steps, no enemies and nothing to lose. Red calls
 // are scripted, so the only thing to learn is reading the aura and pressing on its flash.
@@ -734,7 +793,7 @@ function endTutorial(skipped) {
   G.tut = null;
   // Practice presses do not carry over into the run.
   G.bar = 0; G.streak = 0;
-  G.stats = { perfect: 0, good: 0, wrong: 0, miss: 0, kills: 0, maxArmy: G.soldiers.length, bestStreak: 0, ultis: 0 };
+  G.stats = { perfect: 0, good: 0, wrong: 0, miss: 0, kills: 0, maxArmy: G.soldiers.length, bestStreak: 0, ultis: 0, raids: 0 };
   if (!skipped) {
     bigText('HAZIRSIN!', 'Şimdi sefer başlıyor', '#ffcf4a', 1.8);
     burst(G.leader.x, G.leader.y, '#ffcf4a', 30, 320);
@@ -778,7 +837,15 @@ function startBreather() {
   G.wi = (G.wave - 1) % T.wavesPerChapter + 1;
   G.chapter = Math.floor((G.wave - 1) / T.wavesPerChapter) + 1;
   G.goal = CHAPTER_PLAN[G.wi - 1];
-  G.def = waveDef(G.chapter, G.wi); G.dir = rand(0, TAU);
+  G.def = waveDef(G.chapter, G.wi);
+  if (G.wi === 1) placeForts();
+  // The wave comes from the side with the most room, so the goal never sits on a fort.
+  let best = -1;
+  for (let i = 0; i < 12; i++) {
+    const a = rand(0, TAU), p = { x: G.leader.x + Math.cos(a) * 480, y: G.leader.y + Math.sin(a) * 480 };
+    const room = Math.min(9999, ...G.forts.filter((f) => !f.dead).map((f) => dist(f, p)));
+    if (room > best) { best = room; G.dir = a; }
+  }
   G.breatherLen = G.wave === 1 ? 16 : T.breatherBeats;
   G.target = null; G.volley = null; G.picked = false;
   const L = G.leader;
@@ -805,7 +872,7 @@ function startWave() {
     G.target.face = Math.atan2(L.y - G.target.y, L.x - G.target.x);
   }
   G.groups = [];
-  for (let i = 0; i < list.length; i += 6) G.groups.push({ at: 1 + (i / 6) * T.groupBeats, list: list.slice(i, i + 6), done: false });
+  for (let i = 0; i < list.length; i += T.groupSize) G.groups.push({ at: 1 + (i / T.groupSize) * T.groupBeats, list: list.slice(i, i + T.groupSize), done: false });
   const k0 = G.curK + (G.curK % 2);
   G.nextVolleyK = k0 + 2 * 3; G.volley = null;
   bigText(GOALS[G.goal].name.toUpperCase(), enemySummary(G.goal, G.def), '#f1e6cc', 1.6);
@@ -855,10 +922,11 @@ function onBeat(b) {
     G.waveBeat++;
     for (const g of G.groups) if (!g.done && G.waveBeat >= g.at) { g.done = true; spawnGroup(g.list); }
     const tg = G.target;
-    if (tg && !tg.dead && G.waveBeat % 12 === 0 && G.enemies.length < 18) {
-      const list = ['piyade', 'piyade', G.chapter >= 2 ? 'okcu' : 'piyade', G.goal === 'kale' && G.waveBeat % 24 === 0 ? 'kalkanli' : 'piyade'];
-      if (ENEMY[tg.type].fixed) spawnAtStructure(tg, list); else spawnGroup(list.slice(0, 3));
+    if (tg && !tg.dead && G.waveBeat % 10 === 0 && G.enemies.length < T.enemyCap) {
+      const list = ['piyade', 'piyade', 'piyade', G.chapter >= 2 ? 'okcu' : 'piyade', G.goal === 'kale' && G.waveBeat % 20 === 0 ? 'kalkanli' : 'piyade', G.chapter >= 2 ? 'kalkanli' : 'piyade'];
+      if (ENEMY[tg.type].fixed) spawnAtStructure(tg, list); else spawnGroup(list.slice(0, 4));
     }
+    raidBeat();
     if (call) scheduleVolley(b.k);
   } else if (G.phase === 'victory') {
     G.victoryBeat++;
@@ -890,7 +958,7 @@ function endRun(won) {
   const s = G.stats;
   const rows = [
     won ? ['Sefer', 'tamam'] : ['Ulaşılan', `${G.chapter}. bölüm · ${G.wi}. dalga`], ['Düşen düşman', s.kills], ['En büyük ordu', s.maxArmy],
-    ['Perfect', s.perfect], ['İyi', s.good], ['Yanlış çalgı', s.wrong], ['Kaçan', s.miss], ['En uzun seri', s.bestStreak], ['Atılan ulti', s.ultis],
+    ['Perfect', s.perfect], ['İyi', s.good], ['Yanlış çalgı', s.wrong], ['Kaçan', s.miss], ['En uzun seri', s.bestStreak], ['Atılan ulti', s.ultis], ['Basılan kale', s.raids],
   ];
   const box = $('stats'); box.textContent = '';
   for (const [l, v] of rows) {
@@ -1073,10 +1141,11 @@ function killEnemy(e, a) {
   for (let i = 0; i < d.coins; i++) G.coins.push({ x: e.x, y: e.y, vx: rand(-170, 170), vy: rand(-170, 170), t: 0 });
   sfx('death', 0.05, (t) => { S.impact(t, 1, sfxBus); S.tek(t, 0.4, sfxBus); });
   if (e === G.target) goalFell(e);
+  else if (e.side) raidFell(e);
 }
 // The wave's goal falls: the outpost, the gate or the serdar. The rest of the enemy breaks.
 function goalFell(e) {
-  for (const o of G.enemies) if (!o.dead && o !== e) killEnemy(o);
+  for (const o of G.enemies) if (!o.dead && o !== e && !o.side) killEnemy(o);
   const title = { karakol: 'KARAKOL DÜŞTÜ!', kapi: 'KALE DÜŞTÜ!', boss: 'SERDAR DÜŞTÜ!' }[e.type];
   addShake(14); G.flash = 1; G.flashColor = '255,200,80';
   sfx('kale', 0.5, (t) => {
@@ -1449,7 +1518,7 @@ function separate() {
   }
 }
 function goalDone() {
-  if (G.goal === 'dagit') return G.groups.every((g) => g.done) && G.enemies.length === 0;
+  if (G.goal === 'dagit') return G.groups.every((g) => g.done) && G.enemies.every((e) => e.side);
   return false;
 }
 function updateWorld(dt, rdt) {
@@ -1509,6 +1578,8 @@ function updateWorld(dt, rdt) {
 
   G.soldiers = G.soldiers.filter((s) => !s.dead);
   G.enemies = G.enemies.filter((e) => !e.dead);
+  G.forts = G.forts.filter((f) => !f.dead);
+  if (G.forts.some((f) => dist(f, L) < 650)) hintOnce('raid', 'Karakol ya da hisar! Bas: içinden asker çıkar, ama düşünce esirler ordumuza katılır ve ganimet düşer. Hisar bir kalp de verir.', 10);
   if (G.phase === 'wave' && goalDone()) victory();
   if (!G.terfi && G.mode === 'play' && (G.phase === 'wave' || G.phase === 'breather') && G.ganimet >= G.need) openTerfi();
 
@@ -2102,6 +2173,38 @@ function drawKarakol(c, e) {
   if (f < 0.5) { c.strokeStyle = '#1a120a'; c.beginPath(); c.moveTo(-10, -8); c.lineTo(4, 2); c.lineTo(-2, 10); c.stroke(); }
   c.restore();
   hpBar(c, e.x, e.y - 52, 80, f, '#ff7a5c');
+  if (e.side && e.garrison > 0) {
+    c.textAlign = 'center'; c.font = `700 11px ${FB}`; c.fillStyle = '#e6c9a0';
+    c.fillText(`garnizon ${e.garrison}`, e.x, e.y - 60);
+  }
+}
+// A side castle: a square keep with four corner towers and a banner.
+function drawHisar(c, e) {
+  const f = clamp(e.hp / e.maxHp, 0, 1), w = 38;
+  c.save();
+  c.translate(e.x, e.y);
+  c.fillStyle = 'rgba(0,0,0,0.35)'; c.beginPath(); c.ellipse(6, 12, 64, 40, 0, 0, TAU); c.fill();
+  c.fillStyle = e.hitFlash > 0 ? '#8a806e' : '#5d5446'; c.strokeStyle = '#2a251d'; c.lineWidth = 2;
+  rr(c, -w, -w * 0.8, w * 2, w * 1.6, 3); c.fill(); c.stroke();
+  c.fillStyle = '#6b6152';
+  for (let x = -w; x < w; x += 12) c.fillRect(x + 2, -w * 0.8 - 6, 7, 7);
+  for (const [tx, ty] of [[-w, -w * 0.8], [w, -w * 0.8], [-w, w * 0.8], [w, w * 0.8]]) {
+    c.fillStyle = '#51493d'; c.beginPath(); c.arc(tx, ty, 14, 0, TAU); c.fill(); c.stroke();
+    c.fillStyle = '#6b6152'; c.beginPath(); c.arc(tx, ty, 9, 0, TAU); c.fill();
+  }
+  c.fillStyle = e.hitFlash > 0 ? '#a07a4a' : '#6b4a2a'; c.strokeStyle = '#2a1a0c';
+  rr(c, -10, w * 0.8 - 22, 20, 22, 8); c.fill(); c.stroke();
+  c.fillStyle = e.awake ? '#c8322b' : '#7a5a50';
+  c.beginPath(); c.moveTo(0, -w * 0.8); c.lineTo(0, -w * 0.8 - 36); c.lineTo(20, -w * 0.8 - 29); c.lineTo(0, -w * 0.8 - 22); c.fill();
+  c.strokeStyle = '#1a120a'; c.lineWidth = 2;
+  if (f < 0.66) { c.beginPath(); c.moveTo(-20, -20); c.lineTo(-8, 0); c.lineTo(-16, 16); c.stroke(); }
+  if (f < 0.33) { c.beginPath(); c.moveTo(22, -10); c.lineTo(10, 8); c.lineTo(20, 24); c.stroke(); }
+  c.restore();
+  hpBar(c, e.x, e.y - 84, 90, f, '#ff7a5c');
+  if (e.garrison > 0) {
+    c.textAlign = 'center'; c.font = `700 11px ${FB}`; c.fillStyle = '#e6c9a0';
+    c.fillText(`garnizon ${e.garrison}`, e.x, e.y - 92);
+  }
 }
 // The castle's gate, with its wall and towers running across the band's approach.
 function drawGate(c, e) {
@@ -2245,6 +2348,7 @@ function drawWorld(c, now) {
   for (const e of G.enemies) {
     if (e.type === 'kapi') drawGate(c, e);
     else if (e.type === 'karakol') drawKarakol(c, e);
+    else if (e.type === 'hisar') drawHisar(c, e);
   }
   drawTelegraphs(c);
   drawCoins(c);
@@ -2259,7 +2363,21 @@ function drawWorld(c, now) {
 function drawIndicators(c) {
   const ox = W / 2, oy = H * 0.44, top = 20, bottom = H - 60, left = 14, right = W - 14;
   let n = 0;
+  for (const f of G.forts) {
+    if (f.dead) continue;
+    const sx = (f.x - G.cam.x) * zoom + ox, sy = (f.y - G.cam.y) * zoom + oy;
+    if (sx >= left && sx <= right && sy >= top && sy <= bottom) continue;
+    const ix = clamp(sx, left + 22, right - 22), iy = clamp(sy, top + 22, bottom - 22);
+    c.save(); c.translate(ix, iy);
+    c.fillStyle = f.awake ? 'rgba(255,140,90,0.95)' : 'rgba(230,201,160,0.9)'; c.strokeStyle = '#140f0a'; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(-9, 8); c.lineTo(-9, -4); c.lineTo(-5, -4); c.lineTo(-5, -9); c.lineTo(-1, -9); c.lineTo(-1, -4);
+    c.lineTo(1, -4); c.lineTo(1, -9); c.lineTo(5, -9); c.lineTo(5, -4); c.lineTo(9, -4); c.lineTo(9, 8); c.closePath(); c.stroke(); c.fill();
+    c.textAlign = 'center'; c.font = `700 10px ${FB}`; c.fillStyle = '#e6c9a0';
+    c.fillText(`${f.type === 'hisar' ? 'HİSAR' : 'KARAKOL'} ${Math.round(dist(f, G.leader) / 10)}m`, 0, 21);
+    c.restore();
+  }
   for (const e of G.enemies) {
+    if (e.side) continue;
     const sx = (e.x - G.cam.x) * zoom + ox, sy = (e.y - G.cam.y) * zoom + oy;
     if (sx >= left && sx <= right && sy >= top && sy <= bottom) continue;
     const a = Math.atan2(sy - oy, sx - ox), goal = ENEMY[e.type].goal;
@@ -2356,7 +2474,7 @@ function drawHUD(c, now) {
     const bw = Math.min(420, W * 0.5), bx = W / 2 - bw / 2, tg = G.target;
     rr(c, bx - 12, y, bw + 24, tg ? 44 : 30, 10); c.fillStyle = 'rgba(18,14,9,0.84)'; c.fill();
     c.textAlign = 'center'; c.font = `700 11px ${FB}`; c.fillStyle = '#f0b429';
-    const left = G.enemies.length + G.groups.filter((g) => !g.done).reduce((s, g) => s + g.list.length, 0);
+    const left = G.enemies.filter((e) => !e.side).length + G.groups.filter((g) => !g.done).reduce((s, g) => s + g.list.length, 0);
     c.fillText(`HEDEF: ${GOALS[G.goal].goal.toUpperCase()}${tg ? '' : ` · kalan ${left}`}`, W / 2, y + 18);
     if (tg && !tg.dead) {
       c.fillStyle = '#3a3223'; rr(c, bx, y + 26, bw, 10, 5); c.fill();

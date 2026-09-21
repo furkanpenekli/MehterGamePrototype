@@ -222,7 +222,21 @@ Built on 2026-09-21 from the version 7 plan. Only a test bot has played it.
     picked, and its soldiers arrive the moment the leader steps under it: Azap 6, Yeniçeri 4,
     Kemankeş 4, Deli 6 (two companies of 3, 2, 2, 3).
   - The army is capped at 15 and starts with 6 Azap.
-- **Waves:** each holds 1.5 times the enemies it used to, sent in groups of 6 every 8 beats.
+- **Waves:** each holds 2 times the enemies it used to (+60% per chapter), sent in groups of 8
+  every 8 beats. A wave's goal (outpost, gate, serdar) sends out 4-6 more every 10 beats. At
+  most 30 enemies are on the field at once.
+- **Raids (2026-09-21, the user asked for more enemies and castles and outposts to raid).**
+  Each chapter scatters 2 outposts and 1 castle (hisar) around the map, off the waves' path.
+  They are optional: a wave does not need them.
+  - A fort sleeps until the leader comes within 430-500 px or it is hit. Then it sends its
+    garrison out every 6 beats: an outpost 12, a castle 22, both growing each chapter.
+  - An outpost that falls pays loot and frees a company of a random soldier type. A castle pays
+    more loot, frees 2 companies and gives a heart back.
+  - Off-screen forts show as a tower marker with their distance. Tuning is in `RAID`.
+  - Bot test: a bot that went for every fort took 9 over the run, finished all 15 waves in about
+    10 minutes and lost at most 2 hearts at once. A bot that left them alone finished in about
+    12 minutes without losing a heart. Both pressed on time and chose the right instrument 85%
+    of the time, so the game may still be too easy for the user.
 - **Figures:** flat side-view figures drawn in the canvas, after a reference picture the user
   gave. Soldiers wear warm cloth, enemies grey steel.
 - **Bot-tested only,** before the banner and wave change above. A bot that pressed the right instrument on time 85% of the time finished
@@ -291,7 +305,7 @@ Build on these; do not re-propose what they rule out.
 ## Where the numbers live
 
 Every tuning value is at the top of the script in `mehter-seferi.html` (prototype 2 has its own
-`T`, `SOLDIER`, `ENEMY`, `ULTIS` and `waveDef` in `mehter-seferi-v2.html`):
+`T`, `SOLDIER`, `ENEMY`, `RAID`, `ULTIS` and `waveDef` in `mehter-seferi-v2.html`):
 
 | Table | Holds |
 |---|---|
