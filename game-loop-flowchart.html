@@ -1,0 +1,489 @@
+<!doctype html>
+<!-- Standalone copy of the artifact at https://claude.ai/artifact/FwPr9DGTgeqkL68o5x5XNU . The artifact host adds its own
+     skeleton, so republish only what sits between <head> and </body>, without this wrapper. -->
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mehter Sefer Akışı</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Rubik:wght@400;500;700&display=swap">
+<style>
+  :root {
+    --bg: #ebe9e3;
+    --surface: #fbfaf6;
+    --ink: #1e1b17;
+    --muted: #6b6358;
+    --line: #4a4237;
+    --accent: #a8740c;
+    --accent-soft: #f1e2bf;
+    --res: #e2dbcb;
+    --pill: #dcd4c3;
+    --rule: #d3ccbd;
+    --display: "Alfa Slab One", Rockwell, "Roboto Slab", Georgia, serif;
+    --body: "Rubik", system-ui, "Segoe UI", sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15120e;
+      --surface: #221d16;
+      --ink: #efe6d2;
+      --muted: #a89c86;
+      --line: #c7b894;
+      --accent: #f0b429;
+      --accent-soft: #3b2f16;
+      --res: #2e271d;
+      --pill: #342b20;
+      --rule: #3a3226;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15120e;
+    --surface: #221d16;
+    --ink: #efe6d2;
+    --muted: #a89c86;
+    --line: #c7b894;
+    --accent: #f0b429;
+    --accent-soft: #3b2f16;
+    --res: #2e271d;
+    --pill: #342b20;
+    --rule: #3a3226;
+    color-scheme: dark;
+  }
+  body {
+    margin: 0;
+    padding-inline: 16px;
+    padding-block: 32px 56px;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  main { max-width: 820px; margin: 0 auto; }
+  .eyebrow {
+    margin: 0 0 8px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  h1 {
+    margin: 0 0 12px;
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(30px, 5vw, 44px);
+    line-height: 1.05;
+    text-wrap: balance;
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    margin: 24px 0 0;
+    padding: 14px 16px;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+  }
+  .legend div { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  section { margin-top: 40px; }
+  h2 {
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 22px;
+    text-wrap: balance;
+  }
+  .num { color: var(--accent); }
+  figure { margin: 12px 0 0; }
+  .scroll { overflow-x: auto; }
+  figcaption { margin-top: 10px; max-width: 68ch; font-size: 14px; color: var(--muted); }
+
+  /* Flowcharts: element types differ by shape; the accent marks only where the player's skill is judged. */
+  .fc { display: block; width: 100%; min-width: 560px; height: auto; }
+  .fc.lg { width: 40px; min-width: 0; height: 26px; flex: none; }
+  .fc text { font-family: var(--body); font-size: 13px; fill: var(--ink); }
+  .fc .t { text-anchor: middle; dominant-baseline: middle; font-weight: 500; }
+  .fc .s { font-size: 11px; font-weight: 400; fill: var(--muted); }
+  .fc .l { font-size: 11px; fill: var(--muted); dominant-baseline: middle; }
+  .fc .m { text-anchor: middle; }
+  .fc .sh { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+  .fc .pill { fill: var(--pill); }
+  .fc .goal { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+  .fc .res { fill: var(--res); }
+  .fc .skill { stroke: var(--accent); stroke-width: 2.5; }
+  .fc .conn { fill: var(--pill); stroke: var(--line); stroke-width: 1.5; }
+  .fc .cn { font-family: var(--display); font-size: 15px; text-anchor: middle; dominant-baseline: central; }
+  .fc .e { fill: none; stroke: var(--line); stroke-width: 1.5; }
+  .fc .d { stroke-dasharray: 5 4; }
+  .fc .ah { fill: var(--line); }
+
+  /* Print: the title and legend share a page with chart 1, then one chart per page, each shrunk to fit. */
+  @page { size: A4; margin: 0; }
+  @media print {
+    body { padding: 12mm; }
+    section { break-inside: avoid; }
+    section + section { break-before: page; margin-top: 0; }
+    .fc:not(.lg) { min-width: 0; width: auto; max-width: 100%; max-height: 205mm; margin: 0 auto; }
+    section:first-of-type .fc { max-height: 190mm; }
+    .legend { margin-top: 12px; }
+    section:first-of-type { margin-top: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<main>
+  <h1>Mehter Sefer Akışı</h1>
+
+  <div class="legend" aria-label="Sembollerin anlamı">
+    <div>
+      <svg class="fc lg" viewBox="0 0 40 26" aria-hidden="true"><rect class="sh pill" x="2" y="5" width="36" height="16" rx="8"/></svg>
+      Başla / bitir
+    </div>
+    <div>
+      <svg class="fc lg" viewBox="0 0 40 26" aria-hidden="true"><polygon class="sh" points="8,5 38,5 32,21 2,21"/></svg>
+      Oyuncunun yaptığı
+    </div>
+    <div>
+      <svg class="fc lg" viewBox="0 0 40 26" aria-hidden="true"><rect class="sh" x="2" y="5" width="36" height="16" rx="3"/></svg>
+      Oyunun yaptığı
+    </div>
+    <div>
+      <svg class="fc lg" viewBox="0 0 40 26" aria-hidden="true"><polygon class="sh" points="20,2 38,13 20,24 2,13"/></svg>
+      Karar
+    </div>
+    <div>
+      <svg class="fc lg" viewBox="0 0 40 26" aria-hidden="true"><polygon class="sh skill" points="20,2 38,13 20,24 2,13"/></svg>
+      Becerinin ölçüldüğü karar
+    </div>
+    <div>
+      <svg class="fc lg" viewBox="0 0 40 26" aria-hidden="true"><path class="sh res" d="M6 8 V18 A14 3 0 0 0 34 18 V8"/><ellipse class="sh res" cx="20" cy="8" rx="14" ry="3"/></svg>
+      Kaynak
+    </div>
+    <div>
+      <svg class="fc lg" viewBox="0 0 40 26" aria-hidden="true"><circle class="conn" cx="20" cy="13" r="10"/><text class="cn" x="20" y="13">2</text></svg>
+      Başka şemaya geçiş
+    </div>
+    <div>
+      <svg class="fc lg" viewBox="0 0 40 26" aria-hidden="true"><line class="e d" x1="2" y1="13" x2="38" y2="13"/></svg>
+      Kaynağı değiştirir
+    </div>
+  </div>
+
+  <!-- ============================================================ 1. the run -->
+  <section>
+    <h2><span class="num">1</span> · Sefer</h2>
+    <figure>
+      <div class="scroll">
+        <svg class="fc" viewBox="0 0 650 1236" role="img" aria-label="Sefer akışı: sefere çık, bölüm başlar. Nefes arasında sıradaki dalga görünür ve sancağın altına yürünür. Dalga başlar; hedefi düşmanı dağıtmak, ileri karakolu basmak, kaleyi yıkmak ya da bossu yenmektir. Her vuruşta savaşılır. Kalp kalmadıysa sefer biter. Hedef tamam değilse savaş sürer. Tamamsa zafer; bölümün beşinci dalgası değilse sonraki dalgaya geçilir. Beşinci dalgaysa konakta dinlenip ordu ve ulti yuvaları düzenlenir. Son bölümse sefer tamamlanır, değilse sonraki bölüm başlar.">
+          <defs>
+            <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+
+          <rect class="sh pill" x="220" y="16" width="160" height="40" rx="20"/>
+          <text class="t" x="300" y="36">Sefere çık</text>
+          <path class="e" d="M300 56 V86" marker-end="url(#a1)"/>
+          <text class="l" x="312" y="71">ilk seferde: 3 adımlık eğitim</text>
+
+          <rect class="sh" x="150" y="86" width="300" height="52" rx="6"/>
+          <text class="t" x="300" y="104">Bölüm başlar</text>
+          <text class="t s" x="300" y="124">ileri karakollar · kaleler · bosslar</text>
+          <path class="e" d="M300 138 V168" marker-end="url(#a1)"/>
+
+          <rect class="sh" x="150" y="168" width="300" height="44" rx="6"/>
+          <text class="t" x="300" y="190">Nefes arası: sıradaki dalga görünür</text>
+          <path class="e" d="M300 212 V242" marker-end="url(#a1)"/>
+
+          <polygon class="sh" points="170,242 450,242 430,286 150,286"/>
+          <text class="t" x="300" y="264">Sancağın altına yürü</text>
+          <path class="e" d="M300 286 V316" marker-end="url(#a1)"/>
+          <text class="l" x="312" y="301">o dalgada gelecek asker</text>
+
+          <rect class="sh" x="130" y="316" width="340" height="72" rx="6"/>
+          <text class="t" x="300" y="336">Dalga başlar</text>
+          <text class="t s" x="300" y="356">hedef: düşmanı dağıt · ileri karakolu bas</text>
+          <text class="t s" x="300" y="373">kaleyi yık · bossu yen</text>
+          <path class="e" d="M300 388 V418" marker-end="url(#a1)"/>
+
+          <rect class="sh" x="150" y="418" width="300" height="52" rx="6"/>
+          <text class="t" x="300" y="436">Her vuruşta çal, ordu savaşır</text>
+          <text class="t s" x="300" y="456">ayrıntısı 2., 3. ve 4. şemada</text>
+          <path class="e" d="M300 470 V500" marker-end="url(#a1)"/>
+
+          <!-- hearts -->
+          <polygon class="sh" points="300,500 410,550 300,600 190,550"/>
+          <text class="t" x="300" y="550">Kalp kaldı mı?</text>
+          <path class="e" d="M410 550 H440" marker-end="url(#a1)"/>
+          <text class="l m" x="425" y="538">hayır</text>
+          <rect class="sh pill" x="440" y="530" width="130" height="40" rx="20"/>
+          <text class="t" x="505" y="550">Sefer biter</text>
+          <circle class="conn" cx="100" cy="550" r="18"/>
+          <text class="cn" x="100" y="550">3</text>
+          <text class="l m" x="100" y="584">3. şemadan</text>
+          <path class="e" d="M118 550 H190" marker-end="url(#a1)"/>
+          <text class="l m" x="154" y="538">kalp kaybı</text>
+          <path class="e" d="M300 600 V630" marker-end="url(#a1)"/>
+          <text class="l" x="310" y="615">evet</text>
+
+          <!-- goal -->
+          <polygon class="sh" points="300,630 410,680 300,730 190,680"/>
+          <text class="t" x="300" y="680">Hedef tamam mı?</text>
+          <path class="e" d="M410 680 H598 V444 H450" marker-end="url(#a1)"/>
+          <text class="l m" x="504" y="668">hayır: savaş sürer</text>
+          <path class="e" d="M300 730 V760" marker-end="url(#a1)"/>
+          <text class="l" x="310" y="745">evet</text>
+
+          <rect class="sh" x="150" y="760" width="300" height="44" rx="6"/>
+          <text class="t" x="300" y="782">Zafer: altın</text>
+          <path class="e" d="M300 804 V834" marker-end="url(#a1)"/>
+
+          <!-- fifth wave -->
+          <polygon class="sh" points="300,834 410,884 300,934 190,884"/>
+          <text class="t" x="300" y="876">Bölümün</text>
+          <text class="t" x="300" y="894">5. dalgası mıydı?</text>
+          <path class="e" d="M410 884 H628 V190 H450" marker-end="url(#a1)"/>
+          <text class="l m" x="528" y="872">hayır: sonraki dalga</text>
+          <path class="e" d="M300 934 V964" marker-end="url(#a1)"/>
+          <text class="l" x="310" y="949">evet</text>
+
+          <!-- konak -->
+          <polygon class="sh" points="170,964 450,964 430,1016 150,1016"/>
+          <text class="t" x="300" y="982">Konak: dinlen ve düzenle</text>
+          <text class="t s" x="300" y="1002">ordu · 4 ulti yuvası (4. şema)</text>
+          <path class="e" d="M300 1016 V1046" marker-end="url(#a1)"/>
+
+          <!-- last chapter -->
+          <polygon class="sh" points="300,1046 410,1096 300,1146 190,1096"/>
+          <text class="t" x="300" y="1096">Son bölüm müydü?</text>
+          <path class="e" d="M190 1096 H40 V112 H150" marker-end="url(#a1)"/>
+          <text class="l m" x="30" y="600" transform="rotate(-90 30 600)">hayır: sonraki bölüm</text>
+          <path class="e" d="M300 1146 V1176" marker-end="url(#a1)"/>
+          <text class="l" x="310" y="1161">evet</text>
+          <rect class="sh goal" x="220" y="1176" width="160" height="40" rx="20"/>
+          <text class="t" x="300" y="1196">Sefer tamam!</text>
+        </svg>
+      </div>
+      <figcaption>İlk seferde kısa bir eğitim var: altında VUR, kırmızıda DİREN, sonra ikisi karışık. Sefer bölümlerden, her bölüm beş dalgadan oluşur. Dalgalar arasındaki nefes arasında sıradaki dalga görünür ve sancak seçilir. Her dalganın bir hedefi vardır: düşmanı dağıtmak, ileri karakolu basmak, kaleyi yıkmak ya da bossu yenmek. Beşinci dalgadan sonra konakta dinlenilir, ordu ve dört ulti yuvası düzenlenir, ardından bölüm değişir. Kalpler biterse sefer biter. Tempo sefer boyunca sabittir.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ============================================================ 2. every beat -->
+  <section>
+    <h2><span class="num">2</span> · Her vuruş</h2>
+    <figure>
+      <div class="scroll">
+        <svg class="fc" viewBox="0 0 650 520" role="img" aria-label="Her vuruşun akışı: aura basma anına doğru ısınır; altınsa vuruş boştur, kırmızıysa düşman saldırıyordur. Oyuncu bir çalgıya basar. Doğru çalgı değilse ya da tam zamanında değilse Cezbe düşer. Doğru ve zamanındaysa Cezbe yükselir ve asker sayacı artar, emir verilir ve orduya geçer, sonra sıradaki vuruş gelir. Her Cezbe kademesi askerlerin canını, hasarını ve hızını artırır.">
+          <defs>
+            <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+
+          <circle class="conn" cx="260" cy="24" r="18"/>
+          <text class="cn" x="260" y="24">1</text>
+          <text class="l" x="286" y="24">1. şemadan: dalga sürerken</text>
+          <path class="e" d="M260 42 V70" marker-end="url(#a2)"/>
+
+          <rect class="sh" x="120" y="70" width="280" height="44" rx="6"/>
+          <text class="t" x="260" y="92">Aura rengi basma anına ısınır</text>
+          <path class="e" d="M260 114 V144" marker-end="url(#a2)"/>
+          <text class="l" x="272" y="129">altın: boş vuruş · kırmızı: düşman saldırıyor</text>
+
+          <polygon class="sh" points="145,144 395,144 375,188 125,188"/>
+          <text class="t" x="260" y="166">Bir çalgıya bas</text>
+          <path class="e" d="M260 188 V218" marker-end="url(#a2)"/>
+          <text class="l" x="272" y="203">↑ VUR ya da ↓ DİREN</text>
+
+          <!-- the skill check -->
+          <polygon class="sh skill" points="260,218 375,273 260,328 145,273"/>
+          <text class="t" x="260" y="258">Doğru çalgı,</text>
+          <text class="t" x="260" y="276">tam zamanında mı?</text>
+          <text class="t s" x="260" y="294">±150 ms</text>
+
+          <path class="e" d="M375 273 H440" marker-end="url(#a2)"/>
+          <text class="l m" x="407" y="261">hayır</text>
+          <rect class="sh" x="440" y="247" width="180" height="52" rx="6"/>
+          <text class="t" x="530" y="265">Kaçtı ya da yanlış çalgı</text>
+          <text class="t s" x="530" y="285">Cezbe düşer</text>
+          <path class="e" d="M530 247 V92 H400" marker-end="url(#a2)"/>
+          <text class="l" x="540" y="172">sonraki vuruş</text>
+          <path class="e d" d="M530 295 V344" marker-end="url(#a2)"/>
+          <text class="l" x="540" y="320">−</text>
+
+          <path class="e" d="M260 328 V358" marker-end="url(#a2)"/>
+          <text class="l" x="270" y="343">evet</text>
+          <rect class="sh" x="100" y="358" width="320" height="52" rx="6"/>
+          <text class="t" x="260" y="376">Cezbe yükselir, asker sayacı +1</text>
+          <text class="t s" x="260" y="396">20 doğru vuruşta sancaktan bir bölük gelir</text>
+          <path class="e d" d="M420 384 H450" marker-end="url(#a2)"/>
+          <text class="l m" x="435" y="373">+</text>
+
+          <!-- Cezbe -->
+          <path class="sh res" d="M450 352 V416 A80 8 0 0 0 610 416 V352"/>
+          <ellipse class="sh res" cx="530" cy="352" rx="80" ry="8"/>
+          <text class="t" x="530" y="376">Cezbe</text>
+          <text class="t s" x="530" y="394">her kademe:</text>
+          <text class="t s" x="530" y="409">can · hasar · hız</text>
+          <path class="e d" d="M530 424 V448" marker-end="url(#a2)"/>
+
+          <path class="e" d="M260 410 V440" marker-end="url(#a2)"/>
+          <rect class="sh" x="100" y="440" width="320" height="52" rx="6"/>
+          <text class="t" x="260" y="458">Emri ver</text>
+          <text class="t s" x="260" y="478">↑ VUR: askerler saldırır · ↓ DİREN: darbe bloklanır</text>
+          <path class="e" d="M420 466 H512" marker-end="url(#a2)"/>
+          <text class="l m" x="466" y="455">emir</text>
+          <circle class="conn" cx="530" cy="466" r="18"/>
+          <text class="cn" x="530" y="466">3</text>
+          <text class="l m" x="530" y="500">3. şemaya: ordu</text>
+
+          <path class="e" d="M100 466 H44 V92 H120" marker-end="url(#a2)"/>
+          <text class="l m" x="34" y="280" transform="rotate(-90 34 280)">sonraki vuruş</text>
+        </svg>
+      </div>
+      <figcaption>Aura hem zamanı hem çalgıyı gösterir: basma anına doğru ısınır, altına dönüyorsa vuruş boştur ve ↑ VUR çalınır, kırmızıya dönüyorsa düşman o vuruşta saldırır ve ↓ DİREN çalınır. Kaçırmak ya da yanlış çalgı Cezbe'yi düşürür; kırmızıda VUR çalınırsa askerler yine vurur ama darbe de iner. Doğru vuruş hem Cezbe'yi yükseltir hem de emri askerlere verir. Her Cezbe kademesi askerlerin canını, hasarını ve hızını biraz artırır. Tempo sabittir; ara vuruşta "HEY!" ve kombo yoktur.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ============================================================ 3. the fight -->
+  <section>
+    <h2><span class="num">3</span> · Savaş</h2>
+    <figure>
+      <div class="scroll">
+        <svg class="fc" viewBox="0 0 770 600" role="img" aria-label="Savaşın akışı. Saldırı: emirler ve Cezbe orduya geçer, askerler düşmana vurur; düşman ölürse altın düşer ve ganimet dolar; ganimet dolunca oyuncu üç karttan birini seçer ve ordu güçlenir. Savunma: düşmanlar birlikte saldırı hazırlar, bir vuruş önce aura kırmızıya ısınır. Saldırı vuruşunda DİREN basıldıysa darbe bloklanır, basılmadıysa asker yaralanır ya da lider bir kalp kaybeder ve Cezbe düşer; kalp kaybı 1. şemaya gider.">
+          <defs>
+            <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+
+          <!-- attack -->
+          <circle class="conn" cx="44" cy="48" r="18"/>
+          <text class="cn" x="44" y="48">2</text>
+          <text class="l m" x="44" y="82">2. şemadan</text>
+          <path class="e" d="M62 48 H110" marker-end="url(#a3)"/>
+          <text class="l m" x="86" y="37">emir</text>
+
+          <path class="sh res" d="M110 28 V68 A60 8 0 0 0 230 68 V28"/>
+          <ellipse class="sh res" cx="170" cy="28" rx="60" ry="8"/>
+          <text class="t" x="170" y="52">Ordu</text>
+          <path class="e" d="M170 76 V106" marker-end="url(#a3)"/>
+
+          <rect class="sh" x="50" y="106" width="240" height="52" rx="6"/>
+          <text class="t" x="170" y="124">Askerler düşmana vurur</text>
+          <text class="t s" x="170" y="144">aurada VUR ile · dışarıda yarım güçle</text>
+          <path class="e" d="M170 158 V188" marker-end="url(#a3)"/>
+
+          <polygon class="sh" points="170,188 270,238 170,288 70,238"/>
+          <text class="t" x="170" y="238">Düşman öldü mü?</text>
+          <path class="e" d="M70 238 H24 V132 H50" marker-end="url(#a3)"/>
+          <text class="l m" x="47" y="226">hayır</text>
+          <path class="e" d="M170 288 V318" marker-end="url(#a3)"/>
+          <text class="l" x="180" y="303">altın düşer</text>
+
+          <path class="sh res" d="M110 326 V366 A60 8 0 0 0 230 366 V326"/>
+          <ellipse class="sh res" cx="170" cy="326" rx="60" ry="8"/>
+          <text class="t" x="170" y="350">Ganimet</text>
+          <path class="e" d="M170 374 V404" marker-end="url(#a3)"/>
+
+          <polygon class="sh" points="170,404 270,454 170,504 70,454"/>
+          <text class="t" x="170" y="454">Ganimet doldu mu?</text>
+          <path class="e" d="M70 454 H24 V132 H50" marker-end="url(#a3)"/>
+          <text class="l m" x="47" y="442">hayır</text>
+          <path class="e" d="M170 504 V534" marker-end="url(#a3)"/>
+          <text class="l" x="180" y="519">evet</text>
+
+          <polygon class="sh" points="80,534 290,534 270,578 60,578"/>
+          <text class="t" x="175" y="556">Terfi: 3 karttan birini seç</text>
+          <path class="e" d="M280 556 H322 V48 H230" marker-end="url(#a3)"/>
+          <text class="l m" x="276" y="37">güçlenir</text>
+
+          <!-- defence -->
+          <rect class="sh" x="390" y="20" width="220" height="52" rx="6"/>
+          <text class="t" x="500" y="38">Düşmanlar toplu saldırı hazırlar</text>
+          <text class="t s" x="500" y="58">bir vuruş önce aura kırmızıya ısınır</text>
+          <path class="e" d="M500 72 V102" marker-end="url(#a3)"/>
+
+          <polygon class="sh skill" points="500,102 615,162 500,222 385,162"/>
+          <text class="t" x="500" y="153">Saldırı vuruşunda</text>
+          <text class="t" x="500" y="171">↓ DİREN bastın mı?</text>
+
+          <path class="e" d="M500 222 V252" marker-end="url(#a3)"/>
+          <text class="l" x="510" y="237">evet</text>
+          <rect class="sh" x="390" y="252" width="220" height="52" rx="6"/>
+          <text class="t" x="500" y="270">Darbe bloklanır</text>
+          <text class="t s" x="500" y="290">Perfect: düşman sersemler</text>
+          <path class="e" d="M390 278 H362 V46 H390" marker-end="url(#a3)"/>
+          <text class="l m" x="352" y="162" transform="rotate(-90 352 162)">tekrar saldırır</text>
+
+          <path class="e" d="M615 162 H646" marker-end="url(#a3)"/>
+          <text class="l m" x="630" y="150">hayır</text>
+          <rect class="sh" x="646" y="122" width="116" height="80" rx="6"/>
+          <text class="t" x="704" y="140">Darbe iner</text>
+          <text class="t s" x="704" y="160">asker yaralanır;</text>
+          <text class="t s" x="704" y="175">lider −1 kalp</text>
+          <text class="t s" x="704" y="190">Cezbe düşer</text>
+          <path class="e d" d="M704 202 V236" marker-end="url(#a3)"/>
+
+          <path class="sh res" d="M654 244 V284 A50 8 0 0 0 754 284 V244"/>
+          <ellipse class="sh res" cx="704" cy="244" rx="50" ry="8"/>
+          <text class="t" x="704" y="268">Kalp</text>
+          <path class="e" d="M704 292 V326" marker-end="url(#a3)"/>
+          <circle class="conn" cx="704" cy="344" r="18"/>
+          <text class="cn" x="704" y="344">1</text>
+          <text class="l m" x="704" y="378">1. şemaya</text>
+        </svg>
+      </div>
+      <figcaption>Solda saldırı: emir alan ordu düşmanı devirir, düşen altın ganimeti doldurur ve her dolumda bir terfi kartı seçilir. Sağda savunma: menzildeki düşmanlar hep birlikte, birkaç vuruş arayla saldırır. Saldırıdan bir vuruş önce aura kırmızıya ısınır; o vuruşta DİREN basılmazsa darbe iner, lider vurulursa kalp gider ve Cezbe düşer.</figcaption>
+    </figure>
+  </section>
+  <!-- ============================================================ 4. the ultimate -->
+  <section>
+    <h2><span class="num">4</span> · Ulti</h2>
+    <figure>
+      <div class="scroll">
+        <svg class="fc" viewBox="0 0 650 440" role="img" aria-label="Ultinin akışı: oyuncu dilediğinde dört yuvadan bir ulti seçip atar. Cezbe kademesi yetmiyorsa atılamaz. Yetiyorsa ulti patlar ve Cezbe kademesi harcanır; kademe düşünce askerlerin can, hasar ve hız artışı da düşer. Sonra savaş sürer.">
+          <defs>
+            <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+
+          <rect class="sh pill" x="180" y="16" width="200" height="40" rx="20"/>
+          <text class="t" x="280" y="36">Oyuncu dilediğinde</text>
+          <path class="e" d="M280 56 V86" marker-end="url(#a4)"/>
+
+          <polygon class="sh" points="150,86 430,86 410,130 130,130"/>
+          <text class="t" x="280" y="108">4 yuvadan bir ulti seç ve at</text>
+          <path class="e" d="M280 130 V160" marker-end="url(#a4)"/>
+
+          <polygon class="sh" points="280,160 390,215 280,270 170,215"/>
+          <text class="t" x="280" y="207">Cezbe kademesi</text>
+          <text class="t" x="280" y="225">yetiyor mu?</text>
+          <path class="e" d="M170 215 H136" marker-end="url(#a4)"/>
+          <text class="l m" x="153" y="203">hayır</text>
+          <rect class="sh pill" x="16" y="195" width="120" height="40" rx="20"/>
+          <text class="t" x="76" y="215">Atılamaz</text>
+
+          <path class="e" d="M280 270 V300" marker-end="url(#a4)"/>
+          <text class="l" x="290" y="285">evet</text>
+          <rect class="sh" x="130" y="300" width="300" height="52" rx="6"/>
+          <text class="t" x="280" y="318">Ulti patlar</text>
+          <text class="t s" x="280" y="338">Cezbe kademesi harcanır</text>
+          <path class="e d" d="M430 326 H466" marker-end="url(#a4)"/>
+          <text class="l m" x="448" y="315">−</text>
+
+          <path class="sh res" d="M470 306 V352 A70 8 0 0 0 610 352 V306"/>
+          <ellipse class="sh res" cx="540" cy="306" rx="70" ry="8"/>
+          <text class="t" x="540" y="326">Cezbe</text>
+          <text class="t s" x="540" y="344">kademe düşer</text>
+
+          <path class="e" d="M280 352 V382" marker-end="url(#a4)"/>
+          <rect class="sh pill" x="180" y="382" width="200" height="40" rx="20"/>
+          <text class="t" x="280" y="402">Savaş sürer</text>
+        </svg>
+      </div>
+      <figcaption>Ulti dilediğin an atılır ama Cezbe kademesi harcar. Kademe düşünce askerlerin can, hasar ve hız artışı da düşer, yani her ulti kalıcı güçten verilen bir tavizdir. Yuvadaki dört ulti konakta seçilir. Prototipte 1-4 tuşlarıyla atılır ve 1 ya da 2 kademe harcar; altı ultiden dördü seçilir. Bunlar henüz önerimdir.</figcaption>
+    </figure>
+  </section>
+</main>
+</body>
+</html>

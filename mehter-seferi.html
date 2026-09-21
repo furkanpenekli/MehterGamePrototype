@@ -1,0 +1,2157 @@
+<!doctype html>
+<!-- Standalone copy of the artifact at https://claude.ai/artifact/VeZaEh8ebEvvu9DqKAAV2b . The artifact host adds its own
+     skeleton, so republish only what sits between <head> and </body>, without this wrapper. -->
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mehter Seferi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Rubik:wght@400;500;700&display=swap">
+<style>
+  /* One committed look: a dusk steppe battlefield. Single theme on purpose. */
+  :root {
+    --ground: #1c1914;
+    --panel: #29231a;
+    --panel-edge: #5b4a2b;
+    --ink: #f1e6cc;
+    --ink-dim: #b8a988;
+    --gold: #f0b429;
+    --crimson: #c8322b;
+    --display: "Alfa Slab One", Rockwell, "Roboto Slab", Georgia, serif;
+    --body: "Rubik", system-ui, "Segoe UI", sans-serif;
+    color-scheme: dark;
+  }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    box-sizing: border-box;
+    padding-inline: 16px;
+    padding-block: 12px;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    overflow: hidden;
+  }
+  .stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #231f18;
+    box-shadow: 0 0 0 1px #3b3224, 0 10px 40px rgba(0, 0, 0, .45);
+  }
+  #game { display: block; width: 100%; height: 100%; outline: none; }
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    padding: 16px;
+    background: rgba(16, 13, 9, .76);
+    overflow-y: auto;
+  }
+  .overlay.light { background: rgba(16, 13, 9, .42); }
+  .panel {
+    width: 100%;
+    max-width: 660px;
+    margin: auto;
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 12px;
+    padding: 24px 26px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+  }
+  .panel.wide { max-width: 760px; background: rgba(41, 35, 26, .96); }
+  .eyebrow {
+    margin: 0 0 6px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  h1, h2 {
+    margin: 0 0 12px;
+    font-family: var(--display);
+    font-weight: 400;
+    color: var(--gold);
+    text-wrap: balance;
+  }
+  h1 { font-size: clamp(34px, 6vw, 54px); line-height: 1; }
+  h2 { font-size: 30px; line-height: 1.1; }
+  p { margin: 0 0 12px; line-height: 1.5; }
+  .dim { color: var(--ink-dim); font-size: 13px; }
+  .cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 18px;
+    margin: 18px 0;
+  }
+  .cols h3 {
+    margin: 0 0 10px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .keys { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .keys li {
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    gap: 10px;
+    align-items: baseline;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  .keys b { color: var(--gold); font-weight: 700; }
+  kbd {
+    font-family: var(--body);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--ink);
+    background: #3a3122;
+    border: 1px solid #6b5833;
+    border-bottom-width: 3px;
+    border-radius: 6px;
+    padding: 1px 6px;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 18px; }
+  .btn {
+    font-family: var(--display);
+    font-size: 19px;
+    color: #fff4df;
+    background: var(--crimson);
+    border: 0;
+    border-radius: 8px;
+    padding: 11px 24px;
+    cursor: pointer;
+    box-shadow: 0 3px 0 #7d1b16;
+  }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.ghost {
+    font-family: var(--body);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink);
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--panel-edge);
+  }
+  .btn:focus-visible, .card:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin: 14px 0; }
+  .stat { background: #211c14; border-radius: 8px; padding: 10px 12px; }
+  .stat .v { font-family: var(--display); font-size: 26px; font-variant-numeric: tabular-nums; }
+  .stat .l { font-size: 12px; color: var(--ink-dim); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 14px; }
+  .card {
+    display: grid;
+    gap: 6px;
+    align-content: start;
+    text-align: left;
+    font: inherit;
+    color: var(--ink);
+    background: #211c14;
+    border: 2px solid var(--rar, #cfc3a6);
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    transition: transform .12s ease;
+  }
+  .card:hover { transform: translateY(-2px); }
+  .card .k { justify-self: start; }
+  .card .rar { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--rar); }
+  .card .t { font-family: var(--display); font-size: 19px; line-height: 1.15; }
+  .card .d { font-size: 13.5px; line-height: 1.4; color: var(--ink-dim); }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 10px 0; }
+  input[type=range] { flex: 1; min-width: 150px; accent-color: var(--gold); }
+  .opts { display: grid; gap: 8px; margin: 14px 0 4px; }
+  .opt { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; }
+  .opt .btn { padding: 7px 14px; font-size: 14px; }
+  .mono { font-variant-numeric: tabular-nums; }
+  @media (prefers-reduced-motion: reduce) { .card, .card:hover { transition: none; transform: none; } }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <canvas id="game" tabindex="0" aria-label="Mehter Seferi oyun alanı"></canvas>
+
+  <div class="overlay" id="titleOv">
+    <div class="panel">
+      <p class="eyebrow">Oynanabilir prototip</p>
+      <h1>Mehter Seferi</h1>
+      <p>Mehterbaşısın. Kendin vurmazsın: vuruşta çaldığın her çalgı, auranın içindeki askerlere bir emirdir. <b>Hedef: beş dalgadan sağ çık, altıncıda kalenin kapısını kır.</b></p>
+      <div class="cols">
+        <div>
+          <h3>Sağ el çalar · tokmak inince bas</h3>
+          <ul class="keys">
+            <li><kbd>↑</kbd><span><b>Davul · VUR</b>: askerler hep birlikte saldırır</span></li>
+            <li><kbd>↓</kbd><span><b>Kös · DİREN</b>: kırmızı halka kapandığı vuruşta bas, darbe bloklanır</span></li>
+            <li><kbd>→</kbd><span><b>Çevgen · ATIL</b>: askerler en yakın düşmana fırlar, auradan çıkar</span></li>
+            <li><kbd>←</kbd><span><b>Zil · TOPLAN</b>: dağılan askerler koşarak döner; kombo bitirir</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Sol el seçer</h3>
+          <ul class="keys">
+            <li><kbd>WASD</kbd><span>Yürü, ordu seni izler</span></li>
+            <li><kbd>WASD</kbd><span>Nefes arasında bir <b>sancağın</b> altına yürü: o dalgada gelecek asker</span></li>
+            <li><kbd>A W D</kbd><span><b>Terfi</b> kartı seç</span></li>
+          </ul>
+        </div>
+      </div>
+      <p class="dim"><b>Ne zaman:</b> aura çemberi ısınıp altına döndüğünde, tokmak mehterbaşına indiğinde bas. Aradaki vuruşta ordu "HEY!" diye cevap verir. <b>Cezbe</b> her doğru vuruşta yükselir, kaçırınca düşer; seviyesi askerlerin zırhını, vuruş hızını ve hızını artırır. <b>Takviye:</b> bir çalgıyı iki kez çal, zille bitir: ↓↓← can, →→← hız, ↑↑← vuruş hızı. Kalpler biterse sefer biter.</p>
+      <div class="actions">
+        <button class="btn" id="startBtn" type="button">Sefere çık</button>
+        <span class="dim">Ses gerekir · oyun kolu da çalışır: Y A B X çalar, sol çubuk yürür · <kbd>Boşluk</kbd> nefesi atla · <kbd>Esc</kbd> duraklat ve ayarlar</span>
+      </div>
+      <p class="dim" id="bestLine" hidden></p>
+    </div>
+  </div>
+
+  <div class="overlay" id="pauseOv" hidden>
+    <div class="panel">
+      <h2>Duraklatıldı</h2>
+      <p class="dim">Vuruşların hep geç ya da hep erken sayılıyorsa gecikmeyi buradan düzelt.</p>
+      <div class="row">
+        <label for="offset">Gecikme düzeltmesi</label>
+        <input type="range" id="offset" min="-150" max="150" step="5">
+        <span class="mono" id="offsetVal">0 ms</span>
+      </div>
+      <p class="dim mono" id="calib">Henüz yeterli vuruş yok.</p>
+      <div class="opts">
+        <div class="opt"><span>Tempo <kbd>T</kbd></span><button class="btn ghost" id="tempoBtn" type="button"></button></div>
+        <div class="opt"><span>Zamanlama ipucu <kbd>H</kbd></span><button class="btn ghost" id="cueBtn" type="button"></button></div>
+        <div class="opt"><span>Tık sesi <kbd>M</kbd></span><button class="btn ghost" id="clickBtn" type="button"></button></div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="resumeBtn" type="button">Devam</button>
+        <button class="btn ghost" id="applyBtn" type="button" hidden>Öneriyi uygula</button>
+        <button class="btn ghost" id="restartBtn" type="button">Baştan başla</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay light" id="terfiOv" hidden>
+    <div class="panel wide">
+      <p class="eyebrow">Ganimet doldu</p>
+      <h2>Terfi: bir kart seç</h2>
+      <p class="dim">Savaş seni bekler. Sol elle seç: <kbd>A</kbd> <kbd>W</kbd> <kbd>D</kbd> (oyun kolunda X Y B)</p>
+      <div class="cards" id="cards"></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overOv" hidden>
+    <div class="panel">
+      <p class="eyebrow" id="overEyebrow">Lider düştü</p>
+      <h2 id="overTitle">Sefer bitti</h2>
+      <div class="stats" id="stats"></div>
+      <div class="actions">
+        <button class="btn" id="againBtn" type="button">Yeniden sefere çık</button>
+        <span class="dim"><kbd>Enter</kbd></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+// ---------------------------------------------------------------- helpers
+const TAU = Math.PI * 2;
+const $ = (id) => document.getElementById(id);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const rand = (a, b) => a + Math.random() * (b - a);
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const reduceMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+const FD = '"Alfa Slab One", Rockwell, Georgia, serif';
+const FB = 'Rubik, system-ui, "Segoe UI", sans-serif';
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } },
+};
+const CUES = ['both', 'mallet', 'ring'];
+const CUE_NAME = { both: 'halka + tokmak', mallet: 'sadece tokmak', ring: 'sadece halka' };
+const settings = {
+  offsetMs: Number(store.get('mehter.offsetMs', 0)) || 0,
+  click: store.get('mehter.click', true) !== false,
+  cue: CUES.includes(store.get('mehter.cue', 'both')) ? store.get('mehter.cue', 'both') : 'both',
+  relaxed: store.get('mehter.relaxed', true) !== false,
+};
+// Relaxed tempo is call and response: the player plays every other beat and the army answers
+// on the beat between. Every per-press number is scaled by the step, so a run's pace in
+// seconds is the same in both modes.
+const beatStep = () => (settings.relaxed ? 2 : 1);
+const isCallBeat = (k) => !settings.relaxed || k % 2 === 0;
+
+// ---------------------------------------------------------------- tuning
+const T = {
+  perfectWin: 0.06, goodWin: 0.15,
+  barMax: 36, goodGain: 1, perfectGain: 1.5,
+  missDrop: 6, hitDrop: 12, silenceBeats: 4, silenceDrop: 3,
+  soldierHits: 16, cezbeSoldierHits: 8, armyCap: 30, buffBeats: 8,
+  auraR: 170, leaderSpeed: 150, hearts: 3, breatherBeats: 12,
+};
+
+// Cezbe is the one meter: every beat played raises it, every beat missed lowers it, and its
+// level makes the whole army harder, quicker and faster. Level III is the top of the run.
+const CEZBE_AT = [10, 20, 30];
+const LV = {
+  name: ['', 'CEZBE I', 'CEZBE II', 'CEZBE III'],
+  dmg: [1, 1.5, 2, 2.5], armor: [0, 0.15, 0.3, 0.45], atk: [1, 1.3, 1.6, 2], move: [1, 1.15, 1.3, 1.45],
+};
+
+// A combo is one instrument played twice on consecutive calls and sealed with the zil. The
+// pair names the reinforcement: kös heals, çevgen hastens, davul quickens the blows.
+const BUFFS = {
+  down:  { id: 'can',   name: 'CAN',        long: 'Can takviyesi',        color: '143,212,106', keys: '↓ ↓ ←' },
+  right: { id: 'hiz',   name: 'HIZ',        long: 'Hız takviyesi',        color: '127,200,255', keys: '→ → ←' },
+  up:    { id: 'hucum', name: 'VURUŞ HIZI', long: 'Vuruş hızı takviyesi', color: '255,140,110', keys: '↑ ↑ ←' },
+};
+const BUFF_BY_ID = { can: BUFFS.down, hiz: BUFFS.right, hucum: BUFFS.up };
+
+const SOLDIER = {
+  azap:     { name: 'Azap',     hp: 22, dmg: 6,  speed: 118, reach: 8,   ranged: false, color: '#b89868', rim: '#5e4a2e' },
+  yeniceri: { name: 'Yeniçeri', hp: 34, dmg: 10, speed: 104, reach: 10,  ranged: false, color: '#f2ead8', rim: '#c8322b' },
+  kemankes: { name: 'Kemankeş', hp: 14, dmg: 6,  speed: 112, reach: 230, ranged: true,  color: '#6fb35a', rim: '#2f5a25' },
+  sipahi:   { name: 'Sipahi',   hp: 24, dmg: 7,  speed: 172, reach: 10,  ranged: false, color: '#e0762f', rim: '#6f2a0d' },
+};
+const COUNTER = { yeniceri: { piyade: 1.5, kalkanli: 2, kapi: 1.5 }, kemankes: { atli: 2.5 }, sipahi: { okcu: 2.5 } };
+const AGAINST = { yeniceri: 'Piyade, Kalkanlı ve kapıya karşı', kemankes: 'Atlıya karşı', sipahi: 'Okçuya karşı' };
+const ENEMY = {
+  piyade:   { name: 'Piyade',   hp: 18, dmg: 3, speed: 78,  reach: 10,  windup: 1, recover: 2, coins: 1, r: 10, color: '#7f8da6' },
+  kalkanli: { name: 'Kalkanlı', hp: 50, dmg: 7, speed: 52,  reach: 12,  windup: 2, recover: 2, coins: 3, r: 12, color: '#93a0b6' },
+  okcu:     { name: 'Okçu',     hp: 12, dmg: 3, speed: 64,  reach: 330, windup: 2, recover: 3, coins: 1, r: 9,  color: '#6f9c9a' },
+  atli:     { name: 'Atlı',     hp: 34, dmg: 6, speed: 185, reach: 95,  windup: 1, recover: 3, coins: 3, r: 13, color: '#9a86c0' },
+  kapi:     { name: 'Kale kapısı', hp: 7000, dmg: 0, speed: 0, reach: 0, windup: 1, recover: 1, coins: 0, r: 38, color: '#7a6446', fixed: true },
+};
+const ENEMY_ORDER = ['piyade', 'kalkanli', 'okcu', 'atli'];
+
+const WAVE_HINT = {
+  1: 'Tokmak inince ↑ bas: askerlerin vurur. Aradaki vuruşta "HEY!" deyip bir kez daha vururlar.',
+  2: 'Atlılar lidere dalar. Halka kapandığı vuruşta ↓ Kös ile DİREN.',
+  3: 'Okçular uzaktan atar. → Çevgen: askerler üstlerine atılır.',
+  4: 'Kalkanlı önden az yara alır. Saldırdıktan sonra açıktır: o an vur.',
+};
+
+function waveDef(n) {
+  const table = [null,
+    { piyade: 6 },
+    { piyade: 8, atli: 2 },
+    { piyade: 6, okcu: 5 },
+    { piyade: 8, kalkanli: 3, atli: 1 },
+    { piyade: 12, okcu: 4, atli: 2, kalkanli: 2 },
+    { kale: true, piyade: 6, okcu: 3, kalkanli: 2 },
+  ];
+  if (n < table.length) return Object.assign({}, table[n]);
+  const s = 1 + 0.22 * (n - 5);
+  const d = { piyade: Math.round(12 * s), okcu: Math.round(3 * s), atli: Math.round(2 * s), kalkanli: Math.round(2 * s) };
+  const focus = ['okcu', 'atli', 'kalkanli'][n % 3];
+  d[focus] = Math.round(d[focus] * 2);
+  return d;
+}
+const waveBpm = (n) => Math.min(104, 80 + Math.floor((n - 1) / 2) * 8);
+const enemySummary = (def) => (def.kale ? 'Kale kapısı · ' : '') + ENEMY_ORDER.filter((t) => def[t]).map((t) => `${def[t]} ${ENEMY[t].name}`).join(' · ');
+
+const RAR = { 1: { name: 'Sıradan', color: '#cfc3a6' }, 2: { name: 'Nadir', color: '#5aa2e0' }, 3: { name: 'Destansı', color: '#f0b429' } };
+const CARDS = [
+  { id: 'yDmg', t: 'Yeniçeri Kılıcı', d: 'Yeniçeri hasarı +%35.', r: 1, type: 'yeniceri', apply() { G.up.yDmg *= 1.35; } },
+  { id: 'yHp', t: 'Yeniçeri Zırhı', d: 'Yeniçeri canı +%40.', r: 1, type: 'yeniceri', apply() { G.up.yHp *= 1.4; growHp('yeniceri', 1.4); } },
+  { id: 'sTrample', t: 'Sipahi Çiğnemesi', d: 'Sipahi atılırken yolundaki her düşmana da vurur.', r: 3, once: true, type: 'sipahi', apply() { G.up.sTrample = true; } },
+  { id: 'sDash', t: 'Sipahi Mahmuzu', d: 'Sipahi atılış hasarı +%50.', r: 2, type: 'sipahi', apply() { G.up.sDash *= 1.5; } },
+  { id: 'kDouble', t: 'Çift Ok', d: 'Kemankeş VUR emrinde iki ok atar.', r: 3, once: true, type: 'kemankes', apply() { G.up.kDouble = true; } },
+  { id: 'kRange', t: 'Kemankeş Menzili', d: 'Kemankeş menzili +%30.', r: 1, type: 'kemankes', apply() { G.up.kRange *= 1.3; } },
+  { id: 'aHp', t: 'Azap Yürekliliği', d: 'Azap canı +%50.', r: 1, type: 'azap', apply() { G.up.aHp *= 1.5; growHp('azap', 1.5); } },
+  { id: 'aura', t: 'Gür Mehter', d: 'Aura menzili +%20: emrin daha uzağa ulaşır.', r: 2, apply() { G.up.aura *= 1.2; } },
+  { id: 'kosHeal', t: 'Kös Şifası', d: 'Bloklanan her darbe auradaki askerlere 4 can verir.', r: 2, once: true, apply() { G.up.kosHeal = true; } },
+  { id: 'longBuff', t: 'Uzun Takviye', d: 'Takviyeler 8 yerine 12 vuruş sürer.', r: 2, once: true, apply() { G.up.longBuff = true; } },
+  { id: 'steady', t: 'Sabırlı Mehter', d: 'Kaçırınca Cezbe yarı kadar düşer.', r: 3, once: true, apply() { G.up.steady = true; } },
+  { id: 'fastOcak', t: 'Hızlı Ocak', d: 'Asker 16 yerine 12 doğru vuruşta gelir.', r: 3, once: true, apply() { G.up.fastOcak = true; } },
+  { id: 'perfect', t: 'Keskin Davul', d: 'Perfect vuruşun hasar çarpanı ×1.25 yerine ×1.6.', r: 2, once: true, apply() { G.up.perfect = 1.6; } },
+  { id: 'heart', t: 'Şifa', d: 'Bir kalp geri gelir.', r: 2, cond: () => G.leader.hearts < T.hearts, apply() { G.leader.hearts++; } },
+];
+
+// ---------------------------------------------------------------- audio
+let actx = null, master, beatBus, sfxBus, noiseBuf;
+function initAudio() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  actx = new AC({ latencyHint: 'interactive' });
+  const comp = actx.createDynamicsCompressor();
+  comp.threshold.value = -14; comp.knee.value = 8; comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.15;
+  master = actx.createGain(); master.gain.value = 0.9;
+  master.connect(comp); comp.connect(actx.destination);
+  beatBus = actx.createGain(); beatBus.gain.value = 0.55; beatBus.connect(master);
+  sfxBus = actx.createGain(); sfxBus.gain.value = 0.8; sfxBus.connect(master);
+  noiseBuf = actx.createBuffer(1, actx.sampleRate, actx.sampleRate);
+  const d = noiseBuf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+}
+function env(g, t, a, peak, decay) {
+  peak = Math.max(peak, 0.0002);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(peak, t + a);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + a + decay);
+}
+function gainTo(bus) { const g = actx.createGain(); g.connect(bus); return g; }
+function osc(type, f, t, dur) { const o = actx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f, t); o.start(t); o.stop(t + dur + 0.05); return o; }
+function noise(t, dur) { const s = actx.createBufferSource(); s.buffer = noiseBuf; s.start(t, Math.random() * 0.5); s.stop(t + dur + 0.05); return s; }
+function filt(type, f, q) { const b = actx.createBiquadFilter(); b.type = type; b.frequency.value = f; if (q != null) b.Q.value = q; return b; }
+
+const S = {
+  dum(t, v, bus) {
+    const g = gainTo(bus); env(g, t, 0.004, v, 0.42);
+    const o = osc('sine', 120, t, 0.5); o.frequency.exponentialRampToValueAtTime(46, t + 0.14); o.connect(g);
+    const n = noise(t, 0.04), f = filt('lowpass', 1400), gn = gainTo(bus); env(gn, t, 0.002, v * 0.5, 0.03); n.connect(f); f.connect(gn);
+  },
+  tek(t, v, bus) {
+    const g = gainTo(bus); env(g, t, 0.002, v * 0.6, 0.1);
+    const o = osc('triangle', 260, t, 0.15); o.frequency.exponentialRampToValueAtTime(170, t + 0.08); o.connect(g);
+    const n = noise(t, 0.06), f = filt('bandpass', 2200, 0.9), gn = gainTo(bus); env(gn, t, 0.002, v * 0.45, 0.05); n.connect(f); f.connect(gn);
+  },
+  kos(t, v, bus) {
+    const g = gainTo(bus); env(g, t, 0.006, v, 1.1);
+    const o = osc('sine', 62, t, 1.2); o.frequency.exponentialRampToValueAtTime(34, t + 0.35); o.connect(g);
+    const n = noise(t, 0.3), f = filt('lowpass', 260), gn = gainTo(bus); env(gn, t, 0.004, v * 0.6, 0.28); n.connect(f); f.connect(gn);
+  },
+  zil(t, v, bus, long) {
+    const dur = long ? 1.3 : 0.22;
+    const n = noise(t, dur), f = filt('highpass', long ? 3500 : 6500), g = gainTo(bus); env(g, t, 0.002, v * 0.7, dur); n.connect(f); f.connect(g);
+    if (long) {
+      for (const fr of [523, 811, 1327, 1789]) {
+        const o = osc('square', fr, t, dur), hp = filt('highpass', 2500), go = gainTo(bus);
+        env(go, t, 0.002, v * 0.05, dur * 0.8); o.connect(hp); hp.connect(go);
+      }
+    }
+  },
+  cevgen(t, v, bus) {
+    [2637, 3520, 4699].forEach((fr, i) => {
+      const tt = t + i * 0.018, o = osc('sine', fr * (1 + Math.random() * 0.01), tt, 0.12), g = gainTo(bus);
+      env(g, tt, 0.002, v * 0.25, 0.1); o.connect(g);
+    });
+  },
+  click(t, v, bus, accent) {
+    const o = osc('triangle', accent ? 1150 : 820, t, 0.06), g = gainTo(bus);
+    env(g, t, 0.001, v * (accent ? 0.3 : 0.2), 0.045); o.connect(g);
+  },
+  shout(t, v, bus, base) {
+    const g = gainTo(bus); env(g, t, 0.012, v, 0.16);
+    const o = osc('sawtooth', base, t, 0.22); o.frequency.exponentialRampToValueAtTime(base * 0.8, t + 0.18);
+    const f1 = filt('bandpass', 750, 4), f2 = filt('bandpass', 1250, 5);
+    o.connect(f1); o.connect(f2); f1.connect(g); f2.connect(g);
+    const n = noise(t, 0.12), fn = filt('bandpass', 1600, 1.2), gn = gainTo(bus); env(gn, t, 0.004, v * 0.35, 0.08); n.connect(fn); fn.connect(gn);
+  },
+  kang(t, v, bus) {
+    for (const fr of [880, 1320, 1980]) {
+      const o = osc('square', fr, t, 0.35), hp = filt('highpass', 700), g = gainTo(bus);
+      env(g, t, 0.001, v * 0.1, 0.3); o.connect(hp); hp.connect(g);
+    }
+    S.tek(t, v, bus);
+  },
+  coin(t, v, bus, f) {
+    const o = osc('sine', f, t, 0.1), g = gainTo(bus);
+    o.frequency.exponentialRampToValueAtTime(f * 1.6, t + 0.05); env(g, t, 0.002, v * 0.16, 0.07); o.connect(g);
+  },
+  tick(t, v, bus) {
+    const o = osc('square', 95, t, 0.06), lp = filt('lowpass', 420), g = gainTo(bus);
+    env(g, t, 0.001, v * 0.3, 0.05); o.connect(lp); lp.connect(g);
+  },
+  thud(t, v, bus) {
+    S.kos(t, v, bus);
+    const n = noise(t, 0.25), f = filt('lowpass', 900), g = gainTo(bus); env(g, t, 0.002, v * 0.8, 0.22); n.connect(f); f.connect(g);
+  },
+  impact(t, v, bus) {
+    const n = noise(t, 0.07), f = filt('bandpass', 900 + Math.random() * 600, 1.1), g = gainTo(bus);
+    env(g, t, 0.001, v * 0.5, 0.06); n.connect(f); f.connect(g);
+  },
+  arp(t, v, bus, notes, step) {
+    notes.forEach((fr, i) => {
+      const tt = t + i * step, o = osc('triangle', fr, tt, 0.3), g = gainTo(bus);
+      env(g, tt, 0.004, v * 0.25, 0.25); o.connect(g);
+    });
+  },
+};
+const sfxClock = {};
+function sfx(name, minGap, fn) {
+  if (!actx) return;
+  const now = actx.currentTime;
+  if (sfxClock[name] && now - sfxClock[name] < minGap) return;
+  sfxClock[name] = now; fn(now);
+}
+
+// No music: the real track comes later. A quiet, constant click stands in for its beat
+// (M toggles it), louder on each bar's downbeat. In relaxed tempo the beat between two calls
+// is the army's: no click, and the army shouts back if the call before it was played.
+function scheduleBeat(k, t) {
+  if (!G || G.mode !== 'play') return;
+  if (!isCallBeat(k)) {
+    const prev = beatMap.get(k - 1);
+    if (prev && prev.claimed) S.shout(t, prev.cmd === 'up' ? 0.75 : 0.45, sfxBus, prev.cmd === 'up' ? 175 : 205);
+    return;
+  }
+  if (settings.click) S.click(t, 1, beatBus, k % 4 === 0);
+}
+
+// ---------------------------------------------------------------- the beat clock
+let bpm = 80, nextBeatT = 0, nextBeatK = 0;
+const beats = [];
+const beatMap = new Map();
+function pump() {
+  if (!actx || actx.state !== 'running' || !G || G.mode === 'title') return;
+  while (nextBeatT < actx.currentTime + 0.25) {
+    const bd = 60 / bpm;
+    const b = { k: nextBeatK, t: nextBeatT, bd, done: false, closed: false, claimed: false, grade: null, missed: false };
+    beats.push(b); beatMap.set(b.k, b);
+    scheduleBeat(b.k, b.t);
+    nextBeatT += bd; nextBeatK++;
+  }
+  const cutoff = actx.currentTime - 5;
+  while (beats.length && beats[0].t < cutoff) beatMap.delete(beats.shift().k);
+}
+setInterval(pump, 20);
+
+// The audio-clock time that is reaching the speakers at performance time `perf`.
+function outTime(perf) {
+  if (actx.getOutputTimestamp) {
+    const ts = actx.getOutputTimestamp();
+    if (ts && ts.contextTime > 0 && ts.performanceTime > 0) {
+      const t = ts.contextTime + (perf - ts.performanceTime) / 1000;
+      if (Math.abs(t - actx.currentTime) < 0.4) return t;
+    }
+  }
+  return actx.currentTime - (actx.outputLatency || actx.baseLatency || 0) - (performance.now() - perf) / 1000;
+}
+const heardAt = (perf) => outTime(perf) - settings.offsetMs / 1000;
+const heardNow = () => heardAt(performance.now());
+function nearestAnyBeat(h) {
+  let best = null, bd = Infinity;
+  for (const b of beats) { const d = Math.abs(h - b.t); if (d < bd) { bd = d; best = b; } }
+  return best;
+}
+function nearestBeat(h) {
+  let best = null, bd = Infinity;
+  for (const b of beats) {
+    if (!isCallBeat(b.k)) continue;
+    const d = Math.abs(h - b.t);
+    if (d < bd) { bd = d; best = b; }
+  }
+  return best;
+}
+
+// ---------------------------------------------------------------- state
+let G = null;
+function newGame() {
+  G = {
+    mode: 'title', phase: 'breather', paused: false, terfi: null,
+    leader: { kind: 'leader', x: 0, y: 0, r: 14, face: -Math.PI / 2, hearts: T.hearts, invuln: 0, pulse: 0 },
+    cam: { x: 0, y: 0 },
+    soldiers: [], enemies: [], coins: [], shots: [], parts: [], texts: [], banners: [], pending: [], groups: [],
+    bar: 0, buffs: {}, chain: [], comboPrompt: null, guardK: -1, guardPerfect: false, guardShow: 0,
+    prog: 0, banner: 'yeniceri', ganimet: 0, level: 0, need: 7,
+    wave: 0, def: null, waveBeat: 0, dir: 0, breatherBeat: 0, breatherLen: 16, victoryBeat: 0,
+    hpScale: 1, dmgScale: 1, silent: 0, streak: 0, curK: 0, h: 0, coinChain: 0, lastCoin: 0,
+    siege: null, stick: null, killTimes: [],
+    stats: { perfect: 0, good: 0, miss: 0, kills: 0, maxArmy: 6, bestStreak: 0 },
+    up: { yDmg: 1, yHp: 1, sTrample: false, sDash: 1, kDouble: false, kRange: 1, aHp: 1, aura: 1, kosHeal: false, longBuff: false, steady: false, fastOcak: false, perfect: 1.25 },
+    taken: new Set(), hintsShown: new Set(),
+    shake: 0, flash: 0, flashColor: '255,70,50', hitstop: 0, slowmo: 0, beatPulse: 0,
+    keyFlash: { up: 0, down: 0, left: 0, right: 0 },
+    hint: null, big: [], judge: null, ringFlash: null, cmdFx: null, order: null, q: 0, errs: [],
+  };
+  for (let i = 0; i < 6; i++) spawnSoldier('azap', true);
+}
+const auraR = () => T.auraR * G.up.aura;
+const inAura = (u) => dist(u, G.leader) <= auraR();
+const level = () => (G.bar >= CEZBE_AT[2] ? 3 : G.bar >= CEZBE_AT[1] ? 2 : G.bar >= CEZBE_AT[0] ? 1 : 0);
+const inCezbe = () => level() === 3;
+const mult = () => LV.dmg[level()];
+const soldierNeed = () => (inCezbe() ? T.cezbeSoldierHits : G.up.fastOcak ? 12 : T.soldierHits);
+const buffOn = (id) => (G.buffs[id] == null ? -1 : G.buffs[id]) >= G.curK;
+const moveMul = () => LV.move[level()] * (buffOn('hiz') ? 1.6 : 1);
+const atkMul = () => LV.atk[level()] * (buffOn('hucum') ? 2.5 : 1);
+const dmgUp = (type) => (type === 'yeniceri' ? G.up.yDmg : 1);
+const shieldOpen = (e) => e.state === 'recover' || e.stunUntil >= G.curK;
+function growHp(type, f) { for (const s of G.soldiers) if (s.type === type) { s.maxHp *= f; s.hp *= f; } }
+
+// ---------------------------------------------------------------- feedback
+function addShake(v) { if (!reduceMotion) G.shake = Math.max(G.shake, v); }
+function bigText(text, sub, color, dur) { dur = dur || 1.2; G.big = [{ text, sub, color, life: dur, max: dur }]; }
+function showHint(text, beatsLong) { G.hint = { text, life: beatsLong * 60 / bpm, max: beatsLong * 60 / bpm }; }
+function hintOnce(id, text, beatsLong) { if (G.hintsShown.has(id)) return; G.hintsShown.add(id); showHint(text, beatsLong || 6); }
+function judge(text, color, sub) { G.judge = { text, color, sub, life: 0.55 }; }
+const STREAK_MARKS = [10, 25, 50, 75, 100, 150, 200];
+const CHEERS = ['AFERİN!', 'MAŞALLAH!', 'HELAL OLSUN!', 'YAŞA!', 'EFSANE!'];
+function celebrate(n) {
+  const i = STREAK_MARKS.indexOf(n);
+  bigText(CHEERS[(i < 0 ? n / 50 : i) % CHEERS.length], `${n} seri`, '#ffcf4a', 1.2);
+  burst(G.leader.x, G.leader.y, '#ffcf4a', 22, 300);
+  sfx('cheer', 0.3, (t) => { S.zil(t, 0.7, sfxBus, true); S.shout(t, 0.7, sfxBus, 230); S.shout(t + 0.12, 0.7, sfxBus, 260); });
+}
+function floatText(x, y, text, color, size, bold) {
+  if (G.texts.length > 90) G.texts.shift();
+  G.texts.push({ x, y, text, color, size: size || 14, bold, life: 0.9, max: 0.9, vy: -42 });
+}
+function part(p) { if (G.parts.length > 420) G.parts.shift(); G.parts.push(p); }
+function burst(x, y, color, n, speed) {
+  for (let i = 0; i < n; i++) {
+    const a = rand(0, TAU), sp = rand(speed * 0.3, speed);
+    part({ type: 'dot', x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: rand(0.35, 0.7), max: 0.7, color, size: rand(2, 4.5) });
+  }
+}
+function ring(x, y, color, maxR) { part({ type: 'ring', x, y, r: 4, grow: maxR * 3, life: 0.35, max: 0.35, color }); }
+function sparks(x, y, a, color, n) {
+  for (let i = 0; i < n; i++) {
+    const aa = a + rand(-0.8, 0.8), sp = rand(160, 360);
+    part({ type: 'spark', x, y, vx: Math.cos(aa) * sp, vy: Math.sin(aa) * sp, life: rand(0.15, 0.3), max: 0.3, color, size: 2 });
+  }
+}
+function slash(x, y, a, color, size) { part({ type: 'slash', x, y, a, life: 0.18, max: 0.18, color, size: size || 16 }); }
+
+// ---------------------------------------------------------------- spawning
+function spawnSoldier(type, quiet) {
+  if (G.soldiers.length >= T.armyCap) {
+    if (!quiet) floatText(G.leader.x, G.leader.y - 46, 'ORDU DOLU', '#b8a988', 14, true);
+    return false;
+  }
+  const def = SOLDIER[type], L = G.leader, a = rand(0, TAU);
+  const hpMul = type === 'yeniceri' ? G.up.yHp : type === 'azap' ? G.up.aHp : 1;
+  const s = {
+    kind: 'soldier', type, x: L.x + Math.cos(a) * 32, y: L.y + Math.sin(a) * 32, r: type === 'sipahi' ? 11 : 9,
+    hp: def.hp * hpMul, maxHp: def.hp * hpMul, face: a, cool: rand(0.3, 1.2), lunge: 0, spawnT: quiet ? 1 : 0,
+    dash: null, returning: false, retarget: 0, target: null, freeT: 0, hitFlash: 0, dead: false,
+  };
+  G.soldiers.push(s);
+  G.stats.maxArmy = Math.max(G.stats.maxArmy, G.soldiers.length);
+  if (!quiet) {
+    burst(s.x, s.y, '#d9c79c', 16, 170);
+    ring(s.x, s.y, '#f1e6cc', 44);
+    floatText(s.x, s.y - 26, '+' + def.name, def.color, 17, true);
+    sfx('spawn', 0.05, (t) => { S.kos(t, 0.45, sfxBus); S.cevgen(t + 0.05, 0.9, sfxBus); });
+  }
+  return true;
+}
+function spawnEnemy(type, x, y) {
+  const d = ENEMY[type];
+  G.enemies.push({
+    kind: 'enemy', type, x, y, r: d.r, hp: d.hp * G.hpScale, maxHp: d.hp * G.hpScale, face: 0,
+    state: 'emerge', emergeT: 0, target: null, retarget: 0, windK: 0, strikeK: 0, aim: null, aimTarget: null,
+    recoverUntil: 0, stunUntil: -1, hitFlash: 0, kx: 0, ky: 0, gallop: 0, gx: 0, gy: 0, dead: false,
+  });
+}
+function spawnGroup(list) {
+  if (G.siege) { spawnAtGate(list); return; }
+  const L = G.leader, a = G.dir + rand(-0.55, 0.55), R = rand(500, 560);
+  const cx = L.x + Math.cos(a) * R, cy = L.y + Math.sin(a) * R;
+  for (const t of list) spawnEnemy(t, cx + rand(-80, 80), cy + rand(-80, 80));
+  sfx('horn', 0.2, (t) => S.kos(t, 0.3, sfxBus));
+}
+// During the siege the garrison sallies out of the gate, on the side facing the band.
+function spawnAtGate(list) {
+  const g = G.siege.gate, L = G.leader;
+  if (!g || g.dead) return;
+  const a = Math.atan2(L.y - g.y, L.x - g.x);
+  for (const t of list) spawnEnemy(t, g.x + Math.cos(a) * 60 + rand(-40, 40), g.y + Math.sin(a) * 60 + rand(-40, 40));
+  sfx('horn', 0.2, (t) => S.kos(t, 0.3, sfxBus));
+}
+
+// ---------------------------------------------------------------- flow
+function startBreather() {
+  G.phase = 'breather'; G.breatherBeat = 0; G.wave++;
+  G.def = waveDef(G.wave); G.dir = rand(0, TAU);
+  G.breatherLen = G.wave === 1 ? 16 : T.breatherBeats;
+  bpm = waveBpm(G.wave);
+  const L = G.leader;
+  G.banners = [
+    { type: 'yeniceri', x: L.x - 175, y: L.y + 30 },
+    { type: 'kemankes', x: L.x, y: L.y - 160 },
+    { type: 'sipahi', x: L.x + 175, y: L.y + 30 },
+  ];
+  if (G.wave === 1) showHint('Bir sancağın altına yürü: o dalgada gelecek asker. Beklerken prova et: tokmak inince ↑ bas.', 16);
+  else if (G.def.kale) showHint('Son durak: KALE! Kapıyı kırarsan sefer biter. Yeniçeri kapıya fazla vurur.', 12);
+  else if (G.wave === 2) showHint('Takviye öğren: bir çalgıyı iki kez çal, zille bitir. ↓↓← can · →→← hız · ↑↑← vuruş hızı.', 12);
+  else showHint('Nefes: sıradaki dalgaya göre sancak seç. Boşluk: hemen başlat.', 8);
+}
+function startWave() {
+  G.phase = 'wave'; G.waveBeat = 0; G.banners = [];
+  G.hpScale = 1 + Math.max(0, G.wave - 4) * 0.1;
+  G.dmgScale = 1 + Math.max(0, G.wave - 5) * 0.08;
+  const list = [];
+  for (const t of ENEMY_ORDER) for (let i = 0; i < (G.def[t] || 0); i++) list.push(t);
+  for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; }
+  G.groups = [];
+  for (let i = 0; i < list.length; i += 6) G.groups.push({ at: 1 + (i / 6) * 8, list: list.slice(i, i + 6), done: false });
+  G.siege = null;
+  if (G.def.kale) {
+    const L = G.leader, gx = L.x + Math.cos(G.dir) * 440, gy = L.y + Math.sin(G.dir) * 440;
+    spawnEnemy('kapi', gx, gy);
+    const gate = G.enemies[G.enemies.length - 1];
+    gate.face = Math.atan2(L.y - gy, L.x - gx);
+    G.siege = { gate };
+  }
+  bigText(G.siege ? 'KALE KUŞATMASI' : 'DALGA ' + G.wave, enemySummary(G.def), '#f1e6cc', 1.6);
+  const hint = G.siege ? 'Kaleye yürü! Aura kapıya değince askerlerin kapıyı döver. Kapı durdukça içeriden asker çıkar.'
+    : G.wave === 1 && !settings.relaxed ? 'Tokmak her inişinde ↑ bas: auradaki askerlerin hep birlikte vurur.' : WAVE_HINT[G.wave];
+  if (hint) showHint(hint, 12);
+  sfx('wave', 0.2, (t) => { S.kos(t, 0.8, sfxBus); S.zil(t, 0.5, sfxBus, true); });
+}
+function victory() {
+  G.phase = 'victory'; G.victoryBeat = 0;
+  let sub = `Dalga ${G.wave} temizlendi · ordu ${G.soldiers.length}`;
+  if (G.wave % 3 === 0 && G.leader.hearts < T.hearts) { G.leader.hearts++; sub = 'Konak: bir kalp geri geldi'; }
+  bigText('ZAFER!', sub, '#ffcf4a', 2);
+  const L = G.leader;
+  for (let i = 0; i < 6; i++) { const a = rand(0, TAU); G.coins.push({ x: L.x + Math.cos(a) * 140, y: L.y + Math.sin(a) * 140, vx: 0, vy: 0, t: 0.2 }); }
+  burst(L.x, L.y, '#ffcf4a', 36, 360);
+  sfx('victory', 0.3, (t) => {
+    S.zil(t, 0.9, sfxBus, true); S.kos(t, 0.8, sfxBus); S.shout(t, 0.8, sfxBus, 190); S.shout(t + 0.14, 0.8, sfxBus, 240);
+  });
+}
+function onBeat(b) {
+  if (G.mode !== 'play') return;
+  G.curK = b.k;
+  const call = isCallBeat(b.k);
+  G.beatPulse = call ? 1 : 0.45;
+  if (G.terfi) return;
+  if (!call) { const prev = beatMap.get(b.k - 1); if (prev && prev.claimed) armyEcho(prev.cmd === 'up', prev.grade === 'p'); }
+  for (const s of G.soldiers) {
+    if (s.spawnT < 1 || s.dash || !inAura(s)) continue;
+    part({ type: 'dot', x: s.x + rand(-4, 4), y: s.y + s.r, vx: rand(-25, 25), vy: rand(-10, 10), life: 0.25, max: 0.25, color: '#9a8560', size: 2.5 });
+  }
+  if (call && buffOn('can')) {
+    for (const s of G.soldiers) {
+      if (s.hp >= s.maxHp || !inAura(s)) continue;
+      s.hp = Math.min(s.maxHp, s.hp + s.maxHp * 0.05);
+      part({ type: 'dot', x: s.x + rand(-5, 5), y: s.y - 6, vx: 0, vy: -40, life: 0.4, max: 0.4, color: '#8fd46a', size: 2.5 });
+    }
+  }
+  if (G.phase === 'breather') {
+    G.breatherBeat++;
+    if (G.breatherBeat >= G.breatherLen) startWave();
+  } else if (G.phase === 'wave') {
+    G.waveBeat++;
+    for (const g of G.groups) if (!g.done && G.waveBeat >= g.at) { g.done = true; spawnGroup(g.list); }
+    if (G.siege && G.waveBeat % 8 === 0 && G.enemies.length < 16) spawnAtGate(['piyade', 'piyade', 'okcu', G.waveBeat % 16 === 0 ? 'kalkanli' : 'piyade']);
+    enemyThink(b.k);
+  } else if (G.phase === 'victory') {
+    G.victoryBeat++;
+    if (G.victoryBeat >= 4) startBreather();
+  } else if (G.phase === 'won') {
+    G.victoryBeat++;
+    if (G.victoryBeat === 6) endRun(true);
+  }
+}
+function onBeatClosed(b) {
+  if (G.mode !== 'play' || G.terfi || G.phase !== 'wave' || b.claimed || !isCallBeat(b.k)) return;
+  b.missed = true;
+  G.streak = 0; G.chain = []; G.comboPrompt = null;
+  G.silent++;
+  if (G.silent >= T.silenceBeats / beatStep()) {
+    G.silent = 0;
+    if (G.bar > 0) { dropBar(T.silenceDrop); floatText(G.leader.x, G.leader.y - 50, 'sessizlik', '#8a7d62', 13); }
+  }
+}
+function gameOver() { endRun(false); }
+function endRun(won) {
+  G.mode = 'over';
+  if (!won) sfx('over', 0.5, (t) => { S.kos(t, 1, sfxBus); S.kos(t + 0.5, 0.8, sfxBus); });
+  $('overEyebrow').textContent = won ? 'Sefer tamam' : 'Lider düştü';
+  $('overTitle').textContent = won ? 'Kale düştü!' : 'Sefer bitti';
+  const best = Math.max(Number(store.get('mehter.best', 0)) || 0, G.wave);
+  store.set('mehter.best', best);
+  if (won) store.set('mehter.wins', (Number(store.get('mehter.wins', 0)) || 0) + 1);
+  const s = G.stats;
+  const rows = [
+    won ? ['Kale', 'düştü'] : ['Ulaşılan dalga', G.wave], ['Düşen düşman', s.kills], ['En büyük ordu', s.maxArmy],
+    ['Perfect', s.perfect], ['İyi', s.good], ['Kaçan', s.miss], ['En uzun seri', s.bestStreak], ['En iyi dalga', best],
+  ];
+  const box = $('stats'); box.textContent = '';
+  for (const [l, v] of rows) {
+    const d = document.createElement('div'); d.className = 'stat';
+    d.innerHTML = `<div class="v">${v}</div><div class="l">${l}</div>`;
+    box.appendChild(d);
+  }
+  setTimeout(() => { if (G.mode === 'over') { $('overOv').hidden = false; $('againBtn').focus(); } }, won ? 300 : 1100);
+}
+
+// ---------------------------------------------------------------- the bar
+function addBar(v) {
+  const before = level();
+  G.bar = clamp(G.bar + v, 0, T.barMax);
+  const after = level();
+  if (after > before) announceLevel(after);
+}
+function dropBar(v) {
+  const before = level();
+  G.bar = Math.max(0, G.bar - (G.up.steady ? v / 2 : v));
+  const after = level();
+  if (after < before) floatText(G.leader.x, G.leader.y - 62, after ? LV.name[after] : 'Cezbe söndü', '#d88a74', 16, true);
+}
+function cezbeLine(l) {
+  return `zırh %${Math.round(LV.armor[l] * 100)} · vuruş hızı ×${LV.atk[l]} · hız +%${Math.round((LV.move[l] - 1) * 100)}`;
+}
+function announceLevel(l) {
+  const top = l === 3;
+  bigText(LV.name[l] + (top ? '!' : ''), cezbeLine(l), top ? '#ffcf4a' : '#f0b429', top ? 1.6 : 1.1);
+  if (!top) { sfx('notch', 0.2, (t) => S.zil(t, 0.4, sfxBus, true)); return; }
+  const L = G.leader;
+  addShake(10); G.flash = 0.7; G.flashColor = '255,200,80';
+  burst(L.x, L.y, '#ffcf4a', 40, 380); ring(L.x, L.y, '#ffcf4a', 120);
+  hintOnce('cezbeTop', 'CEZBE III: ordun zırhlı, seri ve hızlı, asker iki kat hızlı gelir. Kaçırırsan düşer.', 8);
+  sfx('cezbe', 0.3, (t) => { S.zil(t, 1, sfxBus, true); S.shout(t, 0.9, sfxBus, 200); S.shout(t + 0.13, 0.9, sfxBus, 250); });
+}
+
+// Each claimed press joins the chain if it came on the call right after the last one. The
+// three presses of a combo still give their commands; the zil at the end adds the bonus.
+function trackCombo(dir, k) {
+  const last = G.chain[G.chain.length - 1];
+  if (!last || last.k !== k - beatStep()) G.chain = [];
+  G.chain.push({ dir, k });
+  if (G.chain.length > 3) G.chain.shift();
+  G.comboPrompt = null;
+  const c = G.chain, n = c.length;
+  if (dir === 'left' && n === 3 && c[0].dir === c[1].dir && BUFFS[c[0].dir]) {
+    triggerBuff(c[0].dir, k);
+    G.chain = [];
+    return true;
+  }
+  if (n >= 2 && c[n - 1].dir === c[n - 2].dir && BUFFS[dir]) G.comboPrompt = { dir, k: k + beatStep() };
+  return false;
+}
+function triggerBuff(dir, k) {
+  const b = BUFFS[dir], L = G.leader;
+  const calls = G.up.longBuff ? 12 : T.buffBeats;
+  G.buffs[b.id] = k + calls * beatStep();
+  if (b.id === 'can') for (const s of G.soldiers) if (inAura(s)) s.hp = Math.min(s.maxHp, s.hp + s.maxHp * 0.4);
+  bigText(b.long + '!', `${b.keys} · ${calls} vuruş`, `rgb(${b.color})`, 1.3);
+  G.cmdFx = { text: b.name + '!', color: b.color, life: 0.6 };
+  G.order = { color: b.color, life: 0.4 };
+  burst(L.x, L.y, `rgb(${b.color})`, 30, 320); ring(L.x, L.y, `rgb(${b.color})`, 100);
+  sfx('buff', 0.2, (t) => { S.zil(t, 0.9, sfxBus, true); S.arp(t, 0.9, sfxBus, [587.33, 880, 1174.66], 0.05); S.shout(t, 0.7, sfxBus, 240); });
+}
+// The zil on its own: every soldier out of the band's reach comes back at a run.
+function cmdRally() {
+  const L = G.leader, R = auraR();
+  for (const s of G.soldiers) {
+    if (s.spawnT < 1) continue;
+    if (s.dash) s.dash = null;
+    if (dist(s, L) > R * 0.8) { s.returning = true; s.freeT = 0; s.rally = 1.5; }
+  }
+}
+
+// ---------------------------------------------------------------- the drum hand
+function drum(dir, stamp) {
+  if (!actx) return;
+  const t = actx.currentTime;
+  if (dir === 'up') S.dum(t, 1, sfxBus);
+  else if (dir === 'down') S.kos(t, 0.95, sfxBus);
+  else if (dir === 'right') S.cevgen(t, 1.1, sfxBus);
+  else S.zil(t, 0.6, sfxBus, false);
+  G.keyFlash[dir] = 1;
+  if (G.mode !== 'play' || G.paused || G.terfi) return;
+  G.leader.pulse = 1;
+  const h = heardAt(stamp), b = nearestBeat(h);
+  if (!b) return;
+  const err = h - b.t, ae = Math.abs(err);
+  if (ae <= 0.25) { G.errs.push(err); if (G.errs.length > 24) G.errs.shift(); }
+  if (ae > T.goodWin) {
+    const any = nearestAnyBeat(h), armyBeat = any && !isCallBeat(any.k) && Math.abs(h - any.t) <= T.goodWin;
+    G.stats.miss++; G.streak = 0; G.chain = []; G.comboPrompt = null;
+    judge('KAÇTI', '#d88a74', armyBeat ? 'bu vuruş ordunun' : err < 0 ? 'erken' : 'geç');
+    G.ringFlash = { color: '216,110,90', life: 0.3 };
+    S.tick(t, 1, sfxBus);
+    if (armyBeat) hintOnce('armyBeat', 'Aradaki vuruş ordunun: sen tokmak inerken bas, ordu arada "HEY!" der.', 8);
+    else if (G.phase === 'wave') dropBar(T.missDrop);
+    return;
+  }
+  if (b.claimed) { floatText(G.leader.x + 22, G.leader.y - 30, '·', '#8a7d62', 16); return; }
+  b.claimed = true; b.cmd = dir;
+  const perfect = ae <= T.perfectWin;
+  b.grade = perfect ? 'p' : 'g';
+  if (perfect) G.stats.perfect++; else G.stats.good++;
+  G.streak++; G.stats.bestStreak = Math.max(G.stats.bestStreak, G.streak);
+  G.silent = 0;
+  const streakTxt = G.streak >= 5 ? `${G.streak} seri` : '';
+  judge(perfect ? 'PERFECT' : 'İYİ', perfect ? '#ffcf4a' : '#f1e6cc',
+    perfect ? streakTxt : (err < 0 ? 'erken' : 'geç') + (streakTxt ? ' · ' + streakTxt : ''));
+  G.ringFlash = { color: perfect ? '255,207,74' : '241,230,204', life: 0.3 };
+  addBar((perfect ? T.perfectGain : T.goodGain) * beatStep());
+  if (STREAK_MARKS.includes(G.streak) || (G.streak > 200 && G.streak % 50 === 0)) celebrate(G.streak);
+  const CMD = {
+    up: ['VUR!', '255,120,100'], down: ['DİREN!', '127,182,255'], right: ['ATIL!', '143,212,106'], left: ['TOPLAN!', '240,180,41'],
+  }[dir];
+  if (!trackCombo(dir, b.k)) { G.cmdFx = { text: CMD[0], color: CMD[1], life: 0.5 }; G.order = { color: CMD[1], life: 0.3 }; }
+  if (dir === 'up') cmdStrike(perfect);
+  else if (dir === 'down') cmdGuard(b.k, perfect);
+  else if (dir === 'right') cmdDash(perfect);
+  else cmdRally();
+  G.prog += beatStep();
+  const need = soldierNeed();
+  if (G.prog >= need) G.prog = spawnSoldier(G.banner) ? 0 : need;
+}
+function nearestEnemy(p, maxD, exclude, leash) {
+  let best = null, bd = maxD;
+  for (const e of G.enemies) {
+    if (e.dead || e.state === 'emerge' || e === exclude) continue;
+    const d = dist(p, e) - e.r;
+    if (d > bd) continue;
+    if (leash && dist(e, G.leader) > leash) continue;
+    bd = d; best = e;
+  }
+  return best;
+}
+function cmdStrike(perfect) {
+  const L = G.leader, R = auraR();
+  let n = 0, hits = 0, outside = 0;
+  for (const s of G.soldiers) {
+    if (s.spawnT < 1 || s.dash) continue;
+    if (dist(s, L) > R) { outside++; continue; }
+    n++;
+    const def = SOLDIER[s.type];
+    const range = def.ranged ? def.reach * G.up.kRange : def.reach + s.r + 36;
+    const e = nearestEnemy(s, range);
+    if (e) { attack(s, e, true, perfect); hits++; } else s.lunge = 0.6;
+  }
+  if (n) sfx('hah', 0.08, (t) => S.shout(t, Math.min(0.9, 0.3 + n * 0.05), sfxBus, 150 + Math.random() * 20));
+  if (outside >= 2 && G.enemies.length) hintOnce('outside', 'Auradan çıkan askerler emri duymaz. Yanına dönmelerini bekle.', 6);
+  if (hits && perfect) { G.hitstop = 0.055; addShake(5); } else if (hits) addShake(2.5);
+}
+// The army's answer on the beat between two calls: "HEY!", and after a VUR a second blow.
+function armyEcho(isStrike, perfect) {
+  const L = G.leader, R = auraR();
+  let hits = 0;
+  if (isStrike) {
+    for (const s of G.soldiers) {
+      if (s.spawnT < 1 || s.dash || dist(s, L) > R) continue;
+      const def = SOLDIER[s.type];
+      const e = nearestEnemy(s, def.ranged ? def.reach * G.up.kRange : def.reach + s.r + 36);
+      if (e) { attack(s, e, true, perfect, buffOn('hucum') ? 1 : 0.6); hits++; } else s.lunge = 0.5;
+    }
+  }
+  G.cmdFx = { text: 'HEY!', color: '241,230,204', life: 0.45 };
+  G.order = { color: '241,230,204', life: 0.3 };
+  if (hits) addShake(1.5);
+}
+function cmdGuard(k, perfect) {
+  G.guardK = k; G.guardPerfect = perfect; G.guardShow = 0.4;
+}
+function cmdDash(perfect) {
+  const L = G.leader, R = auraR();
+  let n = 0;
+  for (const s of G.soldiers) {
+    if (s.spawnT < 1 || s.dash || dist(s, L) > R) continue;
+    const e = nearestEnemy(s, 520);
+    if (!e) continue;
+    s.dash = { e, speed: (s.type === 'sipahi' ? 600 : 440) * (buffOn('hiz') ? 1.3 : 1), hit: new Set(), perfect, t: 0 };
+    s.returning = false; n++;
+  }
+  if (n) { sfx('dash', 0.1, (t) => S.shout(t, 0.45, sfxBus, 215)); addShake(2); }
+}
+function attack(s, e, command, perfect, scale = 1) {
+  const def = SOLDIER[s.type];
+  let dmg = def.dmg * dmgUp(s.type) * scale;
+  if (command) dmg *= mult() * (perfect ? G.up.perfect : 1);
+  else dmg *= 0.4;
+  s.face = Math.atan2(e.y - s.y, e.x - s.x);
+  if (def.ranged) {
+    fireArrow(s, e, dmg, command ? 120 : 30, perfect, 0);
+    if (command && G.up.kDouble) fireArrow(s, nearestEnemy(s, def.reach * G.up.kRange, e) || e, dmg, 120, perfect, 0.07);
+  } else {
+    s.lunge = 1;
+    hitEnemy(e, dmg, s, command ? (perfect ? 130 : 90) : 30);
+    if (command) slash((s.x + e.x) / 2, (s.y + e.y) / 2, s.face, perfect ? '#ffcf4a' : '#f1e6cc', perfect ? 20 : 15);
+  }
+}
+function fireArrow(s, e, dmg, kb, perfect, delay) {
+  G.shots.push({ x: s.x, y: s.y, e, dmg, src: s, kb, perfect, delay, a: Math.atan2(e.y - s.y, e.x - s.x) });
+}
+function hitEnemy(e, dmg, src, kb) {
+  if (e.dead) return;
+  const c = (COUNTER[src.type] || {})[e.type] || 1;
+  let d = dmg * c, shielded = false;
+  if (e.type === 'kalkanli' && !shieldOpen(e)) { d *= src.type === 'yeniceri' ? 0.6 : 0.25; shielded = true; }
+  e.hp -= d; e.hitFlash = 1;
+  const a = Math.atan2(e.y - src.y, e.x - src.x);
+  const kbm = ENEMY[e.type].fixed ? 0 : e.type === 'kalkanli' ? 0.4 : e.type === 'atli' ? 0.6 : 1;
+  e.kx += Math.cos(a) * kb * kbm; e.ky += Math.sin(a) * kb * kbm;
+  floatText(e.x + rand(-6, 6), e.y - e.r - 8, Math.max(1, Math.round(d)) + (c > 1 ? '!' : ''),
+    shielded ? '#8d95a3' : c > 1 ? '#ffcf4a' : '#f1e6cc', clamp(12 + d * 0.35, 12, 32), c > 1);
+  sparks(e.x, e.y, a, shielded ? '#9aa6b8' : '#ffe2a0', shielded ? 4 : 6);
+  if (shielded) {
+    sfx('shield', 0.06, (t) => S.tek(t, 0.5, sfxBus));
+    hintOnce('shield', 'Kalkan! Kalkanlı darbesini indirdikten sonra açıktır. ↓ ile karşıla, sonra ↑ vur.', 8);
+  } else sfx('impact', 0.035, (t) => S.impact(t, 0.9, sfxBus));
+  if (c > 1) hintOnce('counter', 'Altın sayı: doğru asker doğru düşmanda fazla hasar verir.', 6);
+  if (e.hp <= 0) killEnemy(e, a);
+}
+function killEnemy(e, a) {
+  e.dead = true;
+  if (e.type === 'kapi') { kaleFell(e); return; }
+  G.stats.kills++;
+  burst(e.x, e.y, ENEMY[e.type].color, 16, 230);
+  ring(e.x, e.y, '#ffffff', 30);
+  // The body is thrown along the blow that killed it.
+  const fa = a == null ? rand(0, TAU) : a;
+  part({ type: 'corpse', x: e.x, y: e.y, vx: Math.cos(fa) * 300, vy: Math.sin(fa) * 300, life: 0.5, max: 0.5, color: ENEMY[e.type].color, size: e.r, rot: 0, spin: rand(-14, 14) });
+  const now = performance.now();
+  G.killTimes = G.killTimes.filter((k) => now - k < 500);
+  G.killTimes.push(now);
+  const multi = { 3: 'ÜÇLÜ!', 5: 'BEŞLİ!', 8: 'DESTAN!' }[G.killTimes.length];
+  if (multi) floatText(e.x, e.y - 36, multi, '#ffcf4a', 24, true);
+  const n = ENEMY[e.type].coins * (inCezbe() ? 2 : 1);
+  for (let i = 0; i < n; i++) G.coins.push({ x: e.x, y: e.y, vx: rand(-170, 170), vy: rand(-170, 170), t: 0 });
+  sfx('death', 0.05, (t) => { S.impact(t, 1, sfxBus); S.tek(t, 0.4, sfxBus); });
+}
+// The gate falls: the garrison breaks, and the run is won.
+function kaleFell(gate) {
+  G.phase = 'won'; G.victoryBeat = 0;
+  for (const o of G.enemies) if (!o.dead && o !== gate) killEnemy(o);
+  bigText('KALE DÜŞTÜ!', 'Sefer tamam', '#ffcf4a', 3);
+  addShake(14); G.flash = 1; G.flashColor = '255,200,80';
+  burst(gate.x, gate.y, '#c9b28a', 60, 420); ring(gate.x, gate.y, '#ffcf4a', 160);
+  for (let i = 0; i < 20; i++) G.coins.push({ x: gate.x + rand(-60, 60), y: gate.y + rand(-60, 60), vx: rand(-200, 200), vy: rand(-200, 200), t: 0 });
+  sfx('kale', 0.5, (t) => {
+    S.zil(t, 1, sfxBus, true); S.kos(t, 1, sfxBus);
+    S.shout(t, 1, sfxBus, 190); S.shout(t + 0.15, 1, sfxBus, 240); S.shout(t + 0.3, 1, sfxBus, 280);
+  });
+}
+
+// ---------------------------------------------------------------- enemies
+function pickTarget(e) {
+  const L = G.leader;
+  if (e.type === 'atli') return L;
+  let best = L, bd = dist(e, L);
+  for (const s of G.soldiers) {
+    if (s.dead || s.spawnT < 1) continue;
+    const d = dist(e, s);
+    if (d < bd) { bd = d; best = s; }
+  }
+  return best;
+}
+function enemyThink(k) {
+  let leaderAtk = G.enemies.filter((e) => e.state === 'wind' && e.aimTarget === G.leader).length;
+  for (const e of G.enemies) {
+    if (e.dead || e.state === 'emerge' || e.stunUntil >= k || ENEMY[e.type].fixed) continue;
+    if (e.state === 'recover') { if (k >= e.recoverUntil) e.state = 'approach'; else continue; }
+    if (e.state !== 'approach' || e.gallop > 0) continue;
+    const tg = e.target;
+    if (!tg || tg.dead) continue;
+    const d = ENEMY[e.type], dd = dist(e, tg);
+    const inReach = e.type === 'okcu' || e.type === 'atli' ? dd <= d.reach : dd - tg.r - e.r <= d.reach;
+    if (!inReach) continue;
+    // A blow aimed at the leader always gives two beats to read it, and early waves allow one at a time.
+    const maxLeaderAtk = G.wave <= 3 ? 1 : 2;
+    if (tg === G.leader) { if (leaderAtk >= maxLeaderAtk) continue; leaderAtk++; }
+    let strikeK = k + (tg === G.leader ? Math.max(2, d.windup) : d.windup);
+    if (!isCallBeat(strikeK)) strikeK++;   // blows land on a beat the player can answer
+    e.windBeats = strikeK - k;
+    e.state = 'wind'; e.windK = k; e.strikeK = strikeK;
+    e.aim = { x: tg.x, y: tg.y }; e.aimTarget = tg;
+    G.pending.push({ e, k: e.strikeK, done: false });
+    if (tg === G.leader) hintOnce('guard', 'Kırmızı halka sana kapanıyor! Kapandığı vuruşta ↓ Kös ile DİREN.', 6);
+  }
+}
+function resolvePending(h) {
+  for (const p of G.pending) {
+    if (p.done) continue;
+    if (p.e.dead || p.e.state !== 'wind') { p.done = true; continue; }
+    const b = beatMap.get(p.k);
+    if (!b) continue;
+    const guarded = G.guardK === p.k;
+    if ((guarded && h >= b.t - 0.02) || h >= b.t + T.goodWin) resolveStrike(p, guarded);
+  }
+  G.pending = G.pending.filter((p) => !p.done);
+}
+function resolveStrike(p, guarded) {
+  p.done = true;
+  const e = p.e, d = ENEMY[e.type], L = G.leader;
+  const allies = [L].concat(G.soldiers.filter((s) => !s.dead));
+  let victims;
+  if (e.type === 'okcu' || e.type === 'atli') victims = allies.filter((a) => dist(a, e.aim) <= 34 + a.r * 0.5);
+  else { const t = e.aimTarget; victims = t && !t.dead && dist(t, e.aim) <= 22 + t.r ? [t] : []; }
+  let blocked = false, hitLeader = false;
+  for (const v of victims) {
+    const covered = guarded && (v === L || dist(v, L) <= auraR());
+    if (covered) {
+      blocked = true;
+      ring(v.x, v.y, '#7fb6ff', 26);
+      sparks(v.x, v.y, Math.atan2(e.y - v.y, e.x - v.x), '#bfe0ff', 8);
+      if (v === L) hitLeader = true;
+    } else if (v === L) hurtLeader();
+    else hurtSoldier(v, d.dmg * G.dmgScale);
+  }
+  if (e.type === 'okcu') { ring(e.aim.x, e.aim.y, '#ff7a5c', 34); sparks(e.aim.x, e.aim.y, -Math.PI / 2, '#ffb199', 5); }
+  else slash(e.aim.x, e.aim.y, Math.atan2(e.aim.y - e.y, e.aim.x - e.x), '#ff6a55', 18);
+  if (blocked) {
+    floatText(e.aim.x, e.aim.y - 30, 'BLOK', '#9ecbff', 18, true);
+    sfx('kang', 0.05, (t) => S.kang(t, 0.9, sfxBus));
+    if (G.up.kosHeal) for (const s of G.soldiers) if (inAura(s)) s.hp = Math.min(s.maxHp, s.hp + 4);
+    if (G.guardPerfect) {
+      e.stunUntil = p.k + 2; e.state = 'recover'; e.recoverUntil = p.k + 2;
+      floatText(e.x, e.y - 26, 'SERSEM', '#9ecbff', 15, true);
+      addShake(6);
+      if (hitLeader) { G.slowmo = 0.45; G.flash = 0.55; G.flashColor = '120,180,255'; }
+    } else { e.state = 'recover'; e.recoverUntil = p.k + d.recover; }
+  } else {
+    e.state = 'recover'; e.recoverUntil = p.k + d.recover;
+    if (victims.length) sfx('enemyHit', 0.05, (t) => S.impact(t, 1, sfxBus));
+  }
+  if (e.type === 'atli' && e.stunUntil < p.k) {
+    const a = Math.atan2(e.aim.y - e.y, e.aim.x - e.x);
+    e.gx = Math.cos(a) * 520; e.gy = Math.sin(a) * 520; e.gallop = 0.45;
+  }
+}
+function hurtLeader() {
+  const L = G.leader;
+  if (L.invuln > 0 || G.mode !== 'play') return;
+  L.hearts--; L.invuln = 2;
+  dropBar(T.hitDrop); G.streak = 0;
+  addShake(12); G.flash = 1; G.flashColor = '255,60,40';
+  floatText(L.x, L.y - 34, '−1 KALP', '#ff6a55', 22, true);
+  sfx('hurt', 0.1, (t) => S.thud(t, 1, sfxBus));
+  if (L.hearts === 1) hintOnce('lastHeart', 'Son kalp! Kırmızı halkalara karşı ↓ ya da kenara çekil.', 6);
+  if (L.hearts <= 0) gameOver();
+}
+function hurtSoldier(s, dmg) {
+  dmg *= 1 - LV.armor[level()];
+  s.hp -= dmg; s.hitFlash = 1;
+  floatText(s.x, s.y - 18, '-' + Math.max(1, Math.round(dmg)), '#ff8a75', 12);
+  if (s.hp <= 0 && !s.dead) {
+    s.dead = true;
+    burst(s.x, s.y, SOLDIER[s.type].color, 12, 180);
+    sfx('fall', 0.06, (t) => S.tek(t, 0.5, sfxBus));
+  }
+}
+
+// ---------------------------------------------------------------- terfi
+function openTerfi() {
+  const pool = CARDS.filter((c) => !(c.once && G.taken.has(c.id)) && (!c.cond || c.cond()));
+  const owned = new Set(G.soldiers.map((s) => s.type).concat([G.banner]));
+  const weight = (c) => ({ 1: 5, 2: 3, 3: 1.4 }[c.r]) * (c.type && owned.has(c.type) ? 1.8 : 1);
+  const cards = [];
+  while (cards.length < 3 && pool.length) {
+    const total = pool.reduce((s, c) => s + weight(c), 0);
+    let r = Math.random() * total, i = 0;
+    for (; i < pool.length - 1; i++) { r -= weight(pool[i]); if (r <= 0) break; }
+    cards.push(pool.splice(i, 1)[0]);
+  }
+  G.terfi = { cards, openAt: performance.now() };
+  for (const e of G.enemies) if (e.state === 'wind') e.state = 'approach';
+  G.pending = [];
+  held.clear();
+  const box = $('cards'); box.textContent = '';
+  const keys = ['A', 'W', 'D'];
+  cards.forEach((cd, i) => {
+    const b = document.createElement('button');
+    b.className = 'card'; b.type = 'button';
+    b.style.setProperty('--rar', RAR[cd.r].color);
+    b.innerHTML = `<kbd class="k">${keys[i]}</kbd><span class="rar">${RAR[cd.r].name}</span><span class="t">${cd.t}</span><span class="d">${cd.d}</span>`;
+    b.addEventListener('click', () => pickCard(i, true));
+    box.appendChild(b);
+  });
+  $('terfiOv').hidden = false;
+  sfx('terfi', 0.3, (t) => S.arp(t, 1, sfxBus, [587.33, 739.99, 880, 1174.66], 0.07));
+}
+function pickCard(i, fromClick) {
+  if (!G.terfi) return;
+  if (!fromClick && performance.now() - G.terfi.openAt < 450) return;
+  const cd = G.terfi.cards[i];
+  if (!cd) return;
+  cd.apply();
+  if (cd.once) G.taken.add(cd.id);
+  G.ganimet -= G.need; G.level++; G.need = 7 + G.level * 5;
+  G.terfi = null;
+  $('terfiOv').hidden = true;
+  held.clear();
+  cv.focus();
+  bigText('TERFİ', cd.t, RAR[cd.r].color, 1.3);
+  sfx('pick', 0.2, (t) => { S.zil(t, 0.6, sfxBus, true); S.shout(t, 0.6, sfxBus, 220); });
+}
+
+// ---------------------------------------------------------------- world update
+const held = new Set();
+function moveToward(o, tx, ty, speed, dt) {
+  const dx = tx - o.x, dy = ty - o.y, d = Math.hypot(dx, dy);
+  if (d < 0.001) return;
+  const step = Math.min(d, speed * dt);
+  o.x += dx / d * step; o.y += dy / d * step;
+}
+function updateSoldier(s, i, dt) {
+  const def = SOLDIER[s.type], L = G.leader;
+  if (s.spawnT < 1) s.spawnT = Math.min(1, s.spawnT + dt * 3);
+  s.lunge = Math.max(0, s.lunge - dt * 5);
+  s.hitFlash = Math.max(0, s.hitFlash - dt * 6);
+  s.cool -= dt; s.freeT -= dt; s.rally = Math.max(0, (s.rally || 0) - dt);
+  if (s.dash) { updateDash(s, dt); return; }
+  const dl = dist(s, L);
+  // Soldiers fight only inside the band's reach, so a VUR reaches every one of them; ATIL
+  // frees them for a moment to fight out there.
+  if (dl > Math.max(320, auraR() * 1.8) && s.freeT <= 0) s.returning = true; else if (s.returning && dl < 150) s.returning = false;
+  s.retarget -= dt;
+  if (s.retarget <= 0) {
+    s.retarget = 0.25;
+    const free = s.freeT > 0;
+    const range = def.ranged ? def.reach * G.up.kRange : free ? 220 : 130;
+    s.target = s.returning ? null : nearestEnemy(s, range, null, free ? 620 : auraR() * 1.1 + 20);
+  }
+  let tg = s.target;
+  if (tg && tg.dead) tg = s.target = null;
+  if (tg) {
+    const d = dist(s, tg) - tg.r - s.r;
+    s.face = Math.atan2(tg.y - s.y, tg.x - s.x);
+    const reach = def.ranged ? def.reach * G.up.kRange : def.reach;
+    if (d > reach) moveToward(s, tg.x, tg.y, def.speed * moveMul(), dt);
+    else if (s.cool <= 0) { attack(s, tg, false, false); s.cool = rand(1.3, 1.7) / atkMul(); }
+  } else {
+    const ang = i * 2.39996 + 0.5, rad = 46 + 13 * Math.sqrt(i);
+    const tx = L.x + Math.cos(ang) * rad, ty = L.y + Math.sin(ang) * rad;
+    const d = Math.hypot(tx - s.x, ty - s.y);
+    if (d > 5) {
+      moveToward(s, tx, ty, Math.min(def.speed * moveMul() * (s.returning ? (s.rally > 0 ? 2.2 : 1.35) : 1), d * 4), dt);
+      if (d > 20) s.face = Math.atan2(ty - s.y, tx - s.x);
+    }
+  }
+}
+function updateDash(s, dt) {
+  const d = s.dash, def = SOLDIER[s.type];
+  d.t += dt;
+  if (d.e.dead) { const n = nearestEnemy(s, 140); if (n) d.e = n; else { s.dash = null; s.freeT = 2.5; return; } }
+  const e = d.e, a = Math.atan2(e.y - s.y, e.x - s.x);
+  s.face = a;
+  s.x += Math.cos(a) * d.speed * dt; s.y += Math.sin(a) * d.speed * dt;
+  if (Math.random() < 0.6) part({ type: 'dot', x: s.x, y: s.y, vx: rand(-20, 20), vy: rand(-20, 20), life: 0.3, max: 0.3, color: '#8f7a55', size: 3 });
+  const base = def.dmg * dmgUp(s.type) * mult() * (d.perfect ? G.up.perfect : 1);
+  if (s.type === 'sipahi' && G.up.sTrample) {
+    for (const o of G.enemies) {
+      if (o === e || o.dead || o.state === 'emerge' || d.hit.has(o)) continue;
+      if (dist(s, o) <= s.r + o.r + 4) { d.hit.add(o); hitEnemy(o, base * 1.2, s, 180); }
+    }
+  }
+  if (dist(s, e) <= s.r + e.r + 4) {
+    hitEnemy(e, base * (s.type === 'sipahi' ? 2 * G.up.sDash : 1.5), s, 180);
+    ring(e.x, e.y, '#ffe2a0', 34);
+    s.dash = null; s.lunge = 1; s.freeT = 2.5; addShake(2);
+  } else if (d.t > 1.6) { s.dash = null; s.freeT = 1.5; }
+}
+function updateEnemy(e, dt) {
+  const d = ENEMY[e.type];
+  e.hitFlash = Math.max(0, e.hitFlash - dt * 6);
+  if (d.fixed) { if (e.state === 'emerge') { e.emergeT += dt * 1.5; if (e.emergeT >= 1) e.state = 'approach'; } return; }
+  e.x += e.kx * dt; e.y += e.ky * dt;
+  const f = Math.exp(-dt * 8); e.kx *= f; e.ky *= f;
+  if (e.state === 'emerge') { e.emergeT += dt * 1.5; if (e.emergeT >= 1) e.state = 'approach'; return; }
+  if (e.stunUntil >= G.curK) return;
+  if (e.gallop > 0) { e.gallop -= dt; e.x += e.gx * dt; e.y += e.gy * dt; e.face = Math.atan2(e.gy, e.gx); return; }
+  e.retarget -= dt;
+  if (e.retarget <= 0 || !e.target || e.target.dead) { e.target = pickTarget(e); e.retarget = 0.4; }
+  if (e.state === 'wind') { e.face = Math.atan2(e.aim.y - e.y, e.aim.x - e.x); return; }
+  const tg = e.target;
+  if (!tg) return;
+  const dd = dist(e, tg), a = Math.atan2(tg.y - e.y, tg.x - e.x);
+  e.face = a;
+  let want = 0;
+  if (e.type === 'okcu') { if (dd > 300) want = 1; else if (dd < 220) want = -1; }
+  else if (e.type === 'atli') { if (dd > d.reach - 10) want = 1; }
+  else if (dd - tg.r - e.r > d.reach - 4) want = 1;
+  const sp = d.speed * (e.state === 'recover' ? 0.5 : 1) * want;
+  e.x += Math.cos(a) * sp * dt; e.y += Math.sin(a) * sp * dt;
+}
+function separate() {
+  const all = [G.leader].concat(G.soldiers, G.enemies.filter((e) => e.state !== 'emerge' && e.gallop <= 0));
+  for (let i = 0; i < all.length; i++) {
+    for (let j = i + 1; j < all.length; j++) {
+      const a = all[i], b = all[j];
+      const dx = b.x - a.x, dy = b.y - a.y, rr = a.r + b.r + 1.5, d2 = dx * dx + dy * dy;
+      if (d2 >= rr * rr || d2 === 0) continue;
+      // A gate never moves; the leader gives way far less than a soldier does.
+      const ma = a.kind === 'enemy' && ENEMY[a.type].fixed ? 0 : i === 0 ? 0.15 : 0.5;
+      const mb = b.kind === 'enemy' && ENEMY[b.type].fixed ? 0 : 0.5;
+      if (ma + mb === 0) continue;
+      const d = Math.sqrt(d2), push = rr - d, nx = dx / d, ny = dy / d;
+      const wa = ma / (ma + mb), wb = mb / (ma + mb);
+      a.x -= nx * push * wa; a.y -= ny * push * wa;
+      b.x += nx * push * wb; b.y += ny * push * wb;
+    }
+  }
+}
+function updateWorld(dt, rdt) {
+  const L = G.leader;
+  let mx = 0, my = 0;
+  if (held.has('KeyW')) my -= 1;
+  if (held.has('KeyS')) my += 1;
+  if (held.has('KeyA')) mx -= 1;
+  if (held.has('KeyD')) mx += 1;
+  if (G.stick) { mx += G.stick.x; my += G.stick.y; }
+  const m = Math.hypot(mx, my);
+  if (m) {
+    const sp = T.leaderSpeed * (buffOn('hiz') ? 1.25 : 1) * Math.min(1, m) * dt;
+    L.x += mx / m * sp; L.y += my / m * sp; L.face = Math.atan2(my, mx);
+  }
+  L.invuln = Math.max(0, L.invuln - rdt);
+
+  if (G.phase === 'breather') {
+    for (const b of G.banners) {
+      if (dist(L, b) < 40 && G.banner !== b.type) {
+        G.banner = b.type;
+        ring(b.x, b.y, '#f0b429', 50);
+        floatText(b.x, b.y - 64, SOLDIER[b.type].name + ' sancağı', '#ffcf4a', 16, true);
+        sfx('banner', 0.1, (t) => { S.kos(t, 0.5, sfxBus); S.cevgen(t, 0.8, sfxBus); });
+      }
+    }
+  }
+  G.soldiers.forEach((s, i) => updateSoldier(s, i, dt));
+  for (const e of G.enemies) updateEnemy(e, dt);
+  separate();
+
+  for (const s of G.shots) {
+    if (s.delay > 0) { s.delay -= dt; continue; }
+    const e = s.e;
+    if (e.dead) { s.gone = true; continue; }
+    const a = Math.atan2(e.y - s.y, e.x - s.x);
+    s.a = a; s.x += Math.cos(a) * 780 * dt; s.y += Math.sin(a) * 780 * dt;
+    if (dist(s, e) < e.r + 4) { s.gone = true; hitEnemy(e, s.dmg, s.src, s.kb); }
+  }
+  G.shots = G.shots.filter((s) => !s.gone);
+
+  for (const c of G.coins) {
+    c.t += dt;
+    if (c.t < 0.35) { c.x += c.vx * dt; c.y += c.vy * dt; const f = Math.exp(-dt * 5); c.vx *= f; c.vy *= f; }
+    else {
+      const a = Math.atan2(L.y - c.y, L.x - c.x), sp = Math.min(1100, 220 + (c.t - 0.35) * 1600);
+      c.x += Math.cos(a) * sp * dt; c.y += Math.sin(a) * sp * dt;
+      if (dist(c, L) < 16) {
+        c.got = true; G.ganimet++;
+        const now = performance.now();
+        G.coinChain = now - G.lastCoin < 260 ? Math.min(G.coinChain + 1, 14) : 0;
+        G.lastCoin = now;
+        sfx('coin', 0.03, (t) => S.coin(t, 1, sfxBus, 1200 * Math.pow(2, G.coinChain / 12)));
+      }
+    }
+  }
+  G.coins = G.coins.filter((c) => !c.got);
+
+  G.soldiers = G.soldiers.filter((s) => !s.dead);
+  G.enemies = G.enemies.filter((e) => !e.dead);
+  if (G.phase === 'wave' && !G.siege && G.groups.every((g) => g.done) && G.enemies.length === 0) victory();
+  if (!G.terfi && G.mode === 'play' && G.phase !== 'won' && G.ganimet >= G.need) openTerfi();
+
+  const k = 1 - Math.exp(-rdt * 6);
+  G.cam.x += (L.x - G.cam.x) * k; G.cam.y += (L.y - G.cam.y) * k;
+}
+function updateFx(rdt) {
+  for (const p of G.parts) {
+    p.life -= rdt;
+    if (p.type === 'ring') p.r += p.grow * rdt;
+    else if (p.vx != null) { p.x += p.vx * rdt; p.y += p.vy * rdt; const f = Math.exp(-rdt * 4); p.vx *= f; p.vy *= f; }
+    if (p.spin) p.rot += p.spin * rdt;
+  }
+  G.parts = G.parts.filter((p) => p.life > 0);
+  for (const t of G.texts) { t.life -= rdt; t.y += t.vy * rdt; t.vy *= Math.exp(-rdt * 2); }
+  G.texts = G.texts.filter((t) => t.life > 0);
+  for (const b of G.big) b.life -= rdt;
+  G.big = G.big.filter((b) => b.life > 0);
+  if (G.judge) { G.judge.life -= rdt; if (G.judge.life <= 0) G.judge = null; }
+  if (G.ringFlash) { G.ringFlash.life -= rdt; if (G.ringFlash.life <= 0) G.ringFlash = null; }
+  if (G.cmdFx) { G.cmdFx.life -= rdt; if (G.cmdFx.life <= 0) G.cmdFx = null; }
+  if (G.order) { G.order.life -= rdt; if (G.order.life <= 0) G.order = null; }
+  if (G.hint) { G.hint.life -= rdt; if (G.hint.life <= 0) G.hint = null; }
+  G.shake = Math.max(0, G.shake - rdt * 30);
+  G.flash = Math.max(0, G.flash - rdt * 2.5);
+  G.beatPulse = Math.max(0, G.beatPulse - rdt * 4);
+  G.leader.pulse = Math.max(0, G.leader.pulse - rdt * 5);
+  G.guardShow = Math.max(0, G.guardShow - rdt);
+  for (const k in G.keyFlash) G.keyFlash[k] = Math.max(0, G.keyFlash[k] - rdt * 5);
+}
+
+// ---------------------------------------------------------------- rendering
+const cv = $('game'), cx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1, zoom = 1;
+function resize() {
+  const r = cv.getBoundingClientRect();
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  W = r.width; H = r.height;
+  cv.width = Math.max(1, Math.round(W * DPR)); cv.height = Math.max(1, Math.round(H * DPR));
+  zoom = clamp(Math.min(W / 1150, H / 760), 0.55, 1.25);
+}
+new ResizeObserver(resize).observe(cv);
+resize();
+
+function rr(c, x, y, w, h, r) {
+  r = Math.max(0, Math.min(r, w / 2, h / 2));
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r);
+  c.closePath();
+}
+function hash(a, b) {
+  let h = Math.imul(a, 374761393) ^ Math.imul(b, 668265263);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return (h ^ (h >>> 16)) >>> 0;
+}
+function easeOutBack(t) { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
+
+function drawGround(c) {
+  const tile = 96, hw = W / 2 / zoom + 60, top = H * 0.44 / zoom + 60, bot = H * 0.56 / zoom + 60;
+  const x0 = Math.floor((G.cam.x - hw) / tile), x1 = Math.floor((G.cam.x + hw) / tile);
+  const y0 = Math.floor((G.cam.y - top) / tile), y1 = Math.floor((G.cam.y + bot) / tile);
+  c.lineCap = 'round'; c.lineWidth = 2;
+  for (let tx = x0; tx <= x1; tx++) {
+    for (let ty = y0; ty <= y1; ty++) {
+      let s = hash(tx, ty) || 1;
+      const rnd = () => (s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296;
+      const n = 2 + Math.floor(rnd() * 3);
+      for (let i = 0; i < n; i++) {
+        const x = tx * tile + rnd() * tile, y = ty * tile + rnd() * tile, k = rnd();
+        if (k < 0.14) {
+          c.fillStyle = '#332d22';
+          c.beginPath(); c.ellipse(x, y, 4 + rnd() * 7, 3 + rnd() * 3, rnd() * 3, 0, TAU); c.fill();
+        } else {
+          c.strokeStyle = k < 0.6 ? '#2f3622' : '#3a3824';
+          c.beginPath();
+          c.moveTo(x - 4, y); c.lineTo(x - 2, y - 6);
+          c.moveTo(x, y); c.lineTo(x + 1, y - 8);
+          c.moveTo(x + 4, y); c.lineTo(x + 3, y - 5);
+          c.stroke();
+        }
+      }
+    }
+  }
+}
+// How far the next call has come: 0 right after one, 1 as the next lands.
+function callPhase() {
+  if (G.mode !== 'play') return 0;
+  const next = upcomingBeats().find((b) => b.t > G.h);
+  return next ? clamp(1 - (next.t - G.h) / (next.bd * beatStep()), 0, 1) : 0;
+}
+// The aura ring warms as the next call comes: dull bronze right after a beat, bright gold at
+// the moment to press, then a flash. It is big enough to read from the edge of the eye.
+function drawAura(c, now) {
+  const L = G.leader, R = auraR(), p = G.beatPulse, cz = inCezbe();
+  const w = callPhase() ** 2;
+  const mix = (a, b) => Math.round(a + (b - a) * w);
+  c.fillStyle = cz ? `rgba(255,200,70,${0.06 + 0.08 * w})` : `rgba(240,180,41,${0.02 + 0.07 * w})`;
+  c.beginPath(); c.arc(L.x, L.y, R, 0, TAU); c.fill();
+  c.strokeStyle = `rgba(${mix(110, 255)},${mix(86, 214)},${mix(52, 110)},${0.35 + 0.6 * w})`;
+  c.lineWidth = 2 + 3.5 * w;
+  c.setLineDash([10, 8]); c.lineDashOffset = -now * 0.02;
+  c.beginPath(); c.arc(L.x, L.y, R, 0, TAU); c.stroke();
+  c.setLineDash([]);
+  if (p > 0) {
+    c.strokeStyle = `rgba(255,244,214,${p * 0.8})`; c.lineWidth = 2 + p * 4;
+    c.beginPath(); c.arc(L.x, L.y, R + (1 - p) * 10, 0, TAU); c.stroke();
+  }
+}
+function drawBanners(c, now) {
+  for (const b of G.banners) {
+    const def = SOLDIER[b.type], sel = G.banner === b.type;
+    if (sel) {
+      c.fillStyle = 'rgba(240,180,41,0.16)'; c.beginPath(); c.arc(b.x, b.y, 42, 0, TAU); c.fill();
+      c.strokeStyle = '#f0b429'; c.lineWidth = 2.5; c.beginPath(); c.arc(b.x, b.y, 42, 0, TAU); c.stroke();
+    } else {
+      c.strokeStyle = 'rgba(241,230,204,0.3)'; c.lineWidth = 2; c.setLineDash([6, 6]);
+      c.beginPath(); c.arc(b.x, b.y, 38, 0, TAU); c.stroke(); c.setLineDash([]);
+    }
+    c.strokeStyle = '#8a6a3a'; c.lineWidth = 3;
+    c.beginPath(); c.moveTo(b.x, b.y + 12); c.lineTo(b.x, b.y - 48); c.stroke();
+    const w = Math.sin(now / 180 + b.x) * 4;
+    c.fillStyle = def.color; c.strokeStyle = def.rim; c.lineWidth = 1.5;
+    c.beginPath(); c.moveTo(b.x, b.y - 48); c.quadraticCurveTo(b.x + 18, b.y - 46 + w, b.x + 34, b.y - 40 + w);
+    c.quadraticCurveTo(b.x + 18, b.y - 34 + w, b.x, b.y - 30); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = '#f0b429'; c.beginPath(); c.arc(b.x, b.y - 50, 3.5, 0, TAU); c.fill();
+    c.textAlign = 'center';
+    c.font = `20px ${FD}`; c.fillStyle = sel ? '#ffcf4a' : '#f1e6cc';
+    c.fillText(def.name, b.x, b.y + 38);
+    c.font = `500 12px ${FB}`; c.fillStyle = '#b8a988';
+    c.fillText(AGAINST[b.type], b.x, b.y + 55);
+    if (sel) { c.font = `700 11px ${FB}`; c.fillStyle = '#f0b429'; c.fillText('SEÇİLİ', b.x, b.y + 71); }
+  }
+}
+function drawTelegraphs(c) {
+  const bd = 60 / bpm;
+  for (const e of G.enemies) {
+    if (e.state !== 'wind' || !e.aim) continue;
+    const d = ENEMY[e.type], b0 = beatMap.get(e.windK);
+    const prog = b0 ? clamp((G.h - b0.t) / (e.windBeats * bd), 0, 1) : 0;
+    const R = e.type === 'okcu' || e.type === 'atli' ? 34 : 24;
+    const atLeader = e.aimTarget === G.leader;
+    if (e.type === 'okcu' || e.type === 'atli') {
+      c.strokeStyle = `rgba(255,90,70,${0.25 + 0.4 * prog})`; c.lineWidth = 2; c.setLineDash([6, 7]);
+      c.beginPath(); c.moveTo(e.x, e.y); c.lineTo(e.aim.x, e.aim.y); c.stroke(); c.setLineDash([]);
+    }
+    c.fillStyle = `rgba(255,70,50,${0.12 + 0.3 * prog})`;
+    c.beginPath(); c.arc(e.aim.x, e.aim.y, R * prog, 0, TAU); c.fill();
+    c.strokeStyle = `rgba(255,90,70,${0.6 + 0.4 * prog})`; c.lineWidth = atLeader ? 3.5 : 2;
+    c.beginPath(); c.arc(e.aim.x, e.aim.y, R, 0, TAU); c.stroke();
+    c.strokeStyle = `rgba(255,120,90,${0.2 + 0.7 * prog})`; c.lineWidth = atLeader ? 3 : 1.5;
+    c.beginPath(); c.arc(e.aim.x, e.aim.y, R + (1 - prog) * (atLeader ? 60 : 30), 0, TAU); c.stroke();
+    if (e.type === 'okcu') {
+      c.strokeStyle = 'rgba(255,120,90,0.8)'; c.lineWidth = 1.5; c.beginPath();
+      c.moveTo(e.aim.x - 8, e.aim.y); c.lineTo(e.aim.x + 8, e.aim.y); c.moveTo(e.aim.x, e.aim.y - 8); c.lineTo(e.aim.x, e.aim.y + 8); c.stroke();
+    }
+  }
+}
+function drawSoldier(c, s) {
+  const def = SOLDIER[s.type], inA = inAura(s);
+  const sc = s.spawnT < 1 ? Math.max(0.05, easeOutBack(s.spawnT)) : 1;
+  const lx = Math.cos(s.face) * s.lunge * 9, ly = Math.sin(s.face) * s.lunge * 9;
+  c.save();
+  const bob = inA && !s.dash ? -3 * Math.sin(Math.PI * G.q) : 0;
+  c.translate(s.x + lx, s.y + ly + bob); c.scale(sc, sc);
+  c.globalAlpha = inA || s.dash ? 1 : 0.55;
+  c.fillStyle = 'rgba(0,0,0,0.3)'; c.beginPath(); c.ellipse(2, 4, s.r + 2, s.r * 0.7, 0, 0, TAU); c.fill();
+  c.rotate(s.face);
+  c.lineWidth = 2;
+  if (s.type === 'sipahi') {
+    c.fillStyle = '#7a4a26'; c.strokeStyle = '#3e240f';
+    c.beginPath(); c.ellipse(0, 0, 14, 8, 0, 0, TAU); c.fill(); c.stroke();
+    c.beginPath(); c.ellipse(14, 0, 5, 3.5, 0, 0, TAU); c.fill();
+    c.fillStyle = def.color; c.strokeStyle = def.rim;
+    c.beginPath(); c.arc(-1, 0, 6, 0, TAU); c.fill(); c.stroke();
+  } else if (s.type === 'yeniceri') {
+    c.fillStyle = '#fbf6ea'; c.strokeStyle = '#b9ad90'; c.lineWidth = 1.2;
+    c.beginPath(); c.ellipse(-9, 0, 7, 4, 0, 0, TAU); c.fill(); c.stroke();
+    c.strokeStyle = '#d7dde6'; c.lineWidth = 2; c.beginPath(); c.moveTo(3, 6); c.lineTo(15, 3); c.stroke();
+    c.fillStyle = def.color; c.strokeStyle = def.rim; c.lineWidth = 2.5;
+    c.beginPath(); c.arc(0, 0, 9, 0, TAU); c.fill(); c.stroke();
+  } else if (s.type === 'kemankes') {
+    c.fillStyle = def.color; c.strokeStyle = def.rim;
+    c.beginPath(); c.arc(0, 0, 8, 0, TAU); c.fill(); c.stroke();
+    c.strokeStyle = '#a4773f'; c.lineWidth = 2; c.beginPath(); c.arc(4, 0, 10, -1.1, 1.1); c.stroke();
+  } else {
+    c.strokeStyle = '#cbb88f'; c.lineWidth = 2; c.beginPath(); c.moveTo(2, 3); c.lineTo(16, 3); c.stroke();
+    c.fillStyle = def.color; c.strokeStyle = def.rim;
+    c.beginPath(); c.arc(0, 0, 8.5, 0, TAU); c.fill(); c.stroke();
+  }
+  if (s.hitFlash > 0) { c.fillStyle = `rgba(255,120,100,${s.hitFlash * 0.7})`; c.beginPath(); c.arc(0, 0, s.r, 0, TAU); c.fill(); }
+  c.restore();
+  if (G.guardShow > 0 && inA) {
+    c.strokeStyle = `rgba(127,182,255,${G.guardShow / 0.4})`; c.lineWidth = 2.5;
+    c.beginPath(); c.arc(s.x, s.y, s.r + 5, 0, TAU); c.stroke();
+  }
+  let br = s.r + 3;
+  for (const id of ['can', 'hiz', 'hucum']) {
+    if (!buffOn(id)) continue;
+    c.strokeStyle = `rgba(${BUFF_BY_ID[id].color},0.85)`; c.lineWidth = 1.5;
+    c.beginPath(); c.arc(s.x, s.y, br, 0, TAU); c.stroke();
+    br += 2.5;
+  }
+  if (s.hp < s.maxHp) hpBar(c, s.x, s.y - s.r - 9, 18, s.hp / s.maxHp, '#8fd46a');
+}
+function drawEnemy(c, e) {
+  const d = ENEMY[e.type];
+  const wind = e.state === 'wind', stunned = e.stunUntil >= G.curK;
+  c.save();
+  c.globalAlpha = e.state === 'emerge' ? clamp(e.emergeT, 0, 1) : 1;
+  c.translate(e.x, e.y);
+  c.fillStyle = 'rgba(0,0,0,0.32)'; c.beginPath(); c.ellipse(2, 4, e.r + 3, e.r * 0.7, 0, 0, TAU); c.fill();
+  c.rotate(e.face);
+  const body = wind && Math.floor(G.h * 10) % 2 === 0 ? '#c65a4a' : d.color;
+  c.lineWidth = 2; c.strokeStyle = '#14161c';
+  if (e.type === 'atli') {
+    c.fillStyle = '#3d3550'; c.beginPath(); c.ellipse(0, 0, 16, 9, 0, 0, TAU); c.fill(); c.stroke();
+    c.beginPath(); c.ellipse(15, 0, 5.5, 4, 0, 0, TAU); c.fill();
+    c.strokeStyle = '#cfd6e0'; c.beginPath(); c.moveTo(4, 5); c.lineTo(26, 5); c.stroke();
+    c.fillStyle = body; c.strokeStyle = '#14161c'; c.beginPath(); c.arc(-1, 0, 7, 0, TAU); c.fill(); c.stroke();
+  } else if (e.type === 'kalkanli') {
+    c.fillStyle = body; c.beginPath(); c.arc(0, 0, 12, 0, TAU); c.fill(); c.stroke();
+    if (shieldOpen(e)) { c.strokeStyle = '#5a6270'; c.lineWidth = 4; c.beginPath(); c.arc(0, 0, 15, 1.7, 2.6); c.stroke(); }
+    else { c.strokeStyle = '#c9d2de'; c.lineWidth = 6; c.beginPath(); c.arc(0, 0, 15, -1, 1); c.stroke(); }
+  } else if (e.type === 'okcu') {
+    c.fillStyle = body; c.beginPath(); c.arc(0, 0, 9, 0, TAU); c.fill(); c.stroke();
+    c.strokeStyle = '#9fc7b5'; c.lineWidth = 2; c.beginPath(); c.arc(4, 0, 10, -1.1, 1.1); c.stroke();
+  } else {
+    c.strokeStyle = '#cfd6e0'; c.beginPath(); c.moveTo(4, 3); c.lineTo(21, 3); c.stroke();
+    c.strokeStyle = '#14161c'; c.fillStyle = body; c.beginPath(); c.arc(0, 0, 10, 0, TAU); c.fill(); c.stroke();
+  }
+  if (e.hitFlash > 0) { c.fillStyle = `rgba(255,255,255,${e.hitFlash * 0.7})`; c.beginPath(); c.arc(0, 0, e.r, 0, TAU); c.fill(); }
+  c.restore();
+  if (stunned) {
+    const t = performance.now() / 160;
+    c.fillStyle = '#ffe07a';
+    for (let i = 0; i < 3; i++) { const a = t + i * TAU / 3; c.beginPath(); c.arc(e.x + Math.cos(a) * 12, e.y - e.r - 8 + Math.sin(a) * 4, 2.5, 0, TAU); c.fill(); }
+  }
+  if (e.hp < e.maxHp) hpBar(c, e.x, e.y - e.r - 10, 22, e.hp / e.maxHp, '#ff7a5c');
+}
+function hpBar(c, x, y, w, f, color) {
+  c.fillStyle = 'rgba(10,8,6,0.7)'; c.fillRect(x - w / 2 - 1, y - 1, w + 2, 5);
+  c.fillStyle = color; c.fillRect(x - w / 2, y, w * clamp(f, 0, 1), 3);
+}
+// The timing lives on the leader: each beat is a ring that shrinks onto the hit ring and
+// lands on it exactly when the beat is heard. The next two beats are visible at once.
+const HIT_R = 30, RING_SPAN = 46;
+function upcomingBeats() {
+  const out = beats.slice(), last = beats[beats.length - 1], bd = 60 / bpm;
+  if (last) for (let n = 1; n <= 4; n++) out.push({ k: last.k + n, t: last.t + n * bd, bd, claimed: false });
+  return out.filter((b) => isCallBeat(b.k));
+}
+function drawBeatRings(c, L) {
+  if (G.mode !== 'play') return;
+  const lv = level(), tone = lv === 3 ? '255,207,74' : lv === 2 ? '240,180,41' : '241,230,204';
+  const pulse = G.beatPulse;
+  c.lineWidth = 3 + pulse * 2.5;
+  c.strokeStyle = `rgba(${tone},${0.35 + 0.5 * pulse})`;
+  c.beginPath(); c.arc(L.x, L.y, HIT_R, 0, TAU); c.stroke();
+  for (const b of settings.cue === 'mallet' ? [] : upcomingBeats()) {
+    if (b.claimed) continue;
+    const p = (b.t - G.h) / (b.bd * beatStep());
+    if (p < -0.2 || p > 2) continue;
+    const a = p < 0 ? (1 + p / 0.2) * 0.5 : p <= 1 ? 0.3 + 0.65 * (1 - p) : 0.3 * (2 - p);
+    c.lineWidth = b.k % 4 === 0 ? 4.5 : 3;
+    c.strokeStyle = `rgba(${tone},${a})`;
+    c.beginPath(); c.arc(L.x, L.y, Math.max(6, HIT_R + p * RING_SPAN), 0, TAU); c.stroke();
+  }
+  if (G.ringFlash) {
+    const f = G.ringFlash, a = clamp(f.life / 0.3, 0, 1);
+    c.lineWidth = 1 + 6 * a;
+    c.strokeStyle = `rgba(${f.color},${a})`;
+    c.beginPath(); c.arc(L.x, L.y, HIT_R + (1 - a) * 16, 0, TAU); c.stroke();
+  }
+}
+// Where in the current beat we are: 0 right after a beat, 1 as the next one lands.
+function beatPhase() {
+  let last = null;
+  for (const b of beats) if (b.t <= G.h) last = b;
+  return last ? clamp((G.h - last.t) / last.bd, 0, 1) : 0;
+}
+// The drum mallet bounces over the leader and lands on it exactly on the beat. It falls like
+// a thrown ball, so the eye can read the landing coming - a cue that appeared only on the
+// beat would always be late, because reaction time is longer than the hit window.
+function drawMallet(c, L) {
+  if (G.mode !== 'play' || settings.cue === 'ring') return;
+  const next = upcomingBeats().find((b) => b.t > G.h);
+  if (!next) return;
+  const q = clamp(1 - (next.t - G.h) / (next.bd * beatStep()), 0, 1);
+  const down = next.k % 4 === 0;
+  const h = (down ? 58 : 46) * (settings.relaxed ? 1.15 : 1) * 4 * q * (1 - q);
+  const lv = level(), tone = lv === 3 ? '#ffcf4a' : lv === 2 ? '#f0b429' : '#f1e6cc';
+  const hx = L.x, hy = L.y - 4 - h, r = down ? 7.5 : 6;
+  c.strokeStyle = '#8a6a3a'; c.lineWidth = 3; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(hx + r * 0.6, hy - r * 0.6); c.lineTo(hx + 14, hy - 18); c.stroke();
+  c.fillStyle = tone; c.strokeStyle = '#140f0a'; c.lineWidth = 2;
+  c.beginPath(); c.arc(hx, hy, r, 0, TAU); c.fill(); c.stroke();
+}
+function drawLeader(c) {
+  const L = G.leader, cz = inCezbe();
+  drawBeatRings(c, L);
+  if (G.order) {
+    const o = G.order, a = clamp(o.life / 0.3, 0, 1);
+    c.strokeStyle = `rgba(${o.color},${a * 0.7})`; c.lineWidth = 3;
+    c.beginPath(); c.arc(L.x, L.y, HIT_R + (auraR() - HIT_R) * (1 - a), 0, TAU); c.stroke();
+  }
+  c.strokeStyle = '#8a6a3a'; c.lineWidth = 2;
+  c.beginPath(); c.moveTo(L.x - 12, L.y - 2); c.lineTo(L.x - 12, L.y - 44); c.stroke();
+  c.fillStyle = SOLDIER[G.banner].color; c.strokeStyle = SOLDIER[G.banner].rim; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(L.x - 12, L.y - 44); c.lineTo(L.x + 8, L.y - 38); c.lineTo(L.x - 12, L.y - 31); c.closePath(); c.fill(); c.stroke();
+  c.save();
+  c.translate(L.x, L.y);
+  if (L.invuln > 0 && Math.floor(L.invuln * 14) % 2 === 0) c.globalAlpha = 0.45;
+  c.fillStyle = 'rgba(0,0,0,0.35)'; c.beginPath(); c.ellipse(2, 5, 17, 11, 0, 0, TAU); c.fill();
+  const sc = 1 + L.pulse * 0.14; c.scale(sc, sc);
+  c.rotate(L.face);
+  c.fillStyle = '#f0b429'; c.beginPath(); c.ellipse(-12, 0, 10, 4.5, 0, 0, TAU); c.fill();
+  c.fillStyle = '#b98a4a'; c.strokeStyle = '#5a3d1a'; c.lineWidth = 1.5;
+  c.beginPath(); c.arc(5, 13, 6, 0, TAU); c.fill(); c.stroke();
+  c.fillStyle = cz ? '#e0453a' : '#c8322b'; c.strokeStyle = '#f0b429'; c.lineWidth = 3;
+  c.beginPath(); c.arc(0, 0, 14, 0, TAU); c.fill(); c.stroke();
+  c.fillStyle = '#f8efd9'; c.beginPath(); c.arc(0, 0, 6, 0, TAU); c.fill();
+  c.restore();
+  if (G.guardShow > 0) {
+    c.strokeStyle = `rgba(127,182,255,${G.guardShow / 0.4})`; c.lineWidth = 3.5;
+    c.beginPath(); c.arc(L.x, L.y, 22, 0, TAU); c.stroke();
+  }
+  drawMallet(c, L);
+  if (G.cmdFx) {
+    const f = G.cmdFx, a = clamp(f.life / 0.25, 0, 1), small = f.text.length > 8;
+    c.globalAlpha = a; c.textAlign = 'center';
+    c.font = small ? `700 12px ${FB}` : `17px ${FD}`; c.lineWidth = 4; c.strokeStyle = '#140f0a';
+    c.strokeText(f.text, L.x, L.y + 56); c.fillStyle = `rgb(${f.color})`; c.fillText(f.text, L.x, L.y + 56);
+    c.globalAlpha = 1;
+  }
+  const cp = G.comboPrompt;
+  if (cp && cp.k >= G.curK && G.mode === 'play') {
+    const b = BUFFS[cp.dir], txt = `← ZİL: ${b.name}`;
+    c.globalAlpha = 0.6 + 0.4 * Math.sin(performance.now() / 90); c.textAlign = 'center';
+    c.font = `700 13px ${FB}`; c.lineWidth = 4; c.strokeStyle = '#140f0a';
+    c.strokeText(txt, L.x, L.y + 76); c.fillStyle = `rgb(${b.color})`; c.fillText(txt, L.x, L.y + 76);
+    c.globalAlpha = 1;
+  }
+  if (G.judge) {
+    const j = G.judge, a = clamp(j.life / 0.55, 0, 1), rise = (1 - a) * 12;
+    c.globalAlpha = a; c.textAlign = 'center';
+    c.font = `18px ${FD}`; c.lineWidth = 4; c.strokeStyle = '#140f0a';
+    c.strokeText(j.text, L.x, L.y - 58 - rise); c.fillStyle = j.color; c.fillText(j.text, L.x, L.y - 58 - rise);
+    if (j.sub) { c.font = `500 11px ${FB}`; c.fillStyle = '#b8a988'; c.fillText(j.sub, L.x, L.y - 44 - rise); }
+    c.globalAlpha = 1;
+  }
+}
+function drawCoins(c) {
+  for (const k of G.coins) {
+    c.fillStyle = '#f0b429'; c.strokeStyle = '#8a5d10'; c.lineWidth = 1.2;
+    c.beginPath(); c.arc(k.x, k.y, 4, 0, TAU); c.fill(); c.stroke();
+    c.fillStyle = '#fff1bf'; c.beginPath(); c.arc(k.x - 1.3, k.y - 1.3, 1.3, 0, TAU); c.fill();
+  }
+}
+function drawShots(c) {
+  c.lineCap = 'round';
+  for (const s of G.shots) {
+    if (s.delay > 0) continue;
+    const dx = Math.cos(s.a), dy = Math.sin(s.a);
+    c.strokeStyle = s.perfect ? '#ffcf4a' : '#e9dcb8'; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(s.x - dx * 12, s.y - dy * 12); c.lineTo(s.x, s.y); c.stroke();
+  }
+}
+function drawParts(c) {
+  for (const p of G.parts) {
+    const a = clamp(p.life / p.max, 0, 1);
+    c.globalAlpha = a;
+    if (p.type === 'dot') { c.fillStyle = p.color; c.beginPath(); c.arc(p.x, p.y, p.size * (0.4 + 0.6 * a), 0, TAU); c.fill(); }
+    else if (p.type === 'spark') { c.strokeStyle = p.color; c.lineWidth = p.size; c.beginPath(); c.moveTo(p.x, p.y); c.lineTo(p.x - p.vx * 0.04, p.y - p.vy * 0.04); c.stroke(); }
+    else if (p.type === 'ring') { c.strokeStyle = p.color; c.lineWidth = 3 * a; c.beginPath(); c.arc(p.x, p.y, p.r, 0, TAU); c.stroke(); }
+    else if (p.type === 'slash') { c.strokeStyle = p.color; c.lineWidth = 4 * a; c.beginPath(); c.arc(p.x, p.y, p.size, p.a - 1.1, p.a + 1.1); c.stroke(); }
+    else if (p.type === 'corpse') {
+      c.save(); c.translate(p.x, p.y); c.rotate(p.rot); c.scale(0.6 + 0.4 * a, 0.6 + 0.4 * a);
+      c.fillStyle = p.color; c.strokeStyle = '#14161c'; c.lineWidth = 2;
+      c.beginPath(); c.arc(0, 0, p.size, 0, TAU); c.fill(); c.stroke();
+      c.strokeStyle = '#cfd6e0'; c.beginPath(); c.moveTo(p.size * 0.4, 3); c.lineTo(p.size * 1.8, 3); c.stroke();
+      c.restore();
+    }
+  }
+  c.globalAlpha = 1;
+}
+function drawTexts(c) {
+  c.textAlign = 'center';
+  for (const t of G.texts) {
+    const a = clamp(t.life / t.max * 1.6, 0, 1);
+    c.globalAlpha = a;
+    c.font = t.bold ? `${t.size}px ${FD}` : `700 ${t.size}px ${FB}`;
+    c.lineWidth = 3.5; c.strokeStyle = '#140f0a';
+    c.strokeText(t.text, t.x, t.y); c.fillStyle = t.color; c.fillText(t.text, t.x, t.y);
+  }
+  c.globalAlpha = 1;
+}
+// The siege's gate, with its wall and towers running across the band's approach.
+function drawGate(c, e) {
+  const f = clamp(e.hp / e.maxHp, 0, 1);
+  c.save();
+  c.globalAlpha = e.state === 'emerge' ? clamp(e.emergeT, 0, 1) : 1;
+  c.translate(e.x, e.y); c.rotate(e.face);
+  c.fillStyle = 'rgba(0,0,0,0.35)'; c.fillRect(-12, -226, 36, 452);
+  c.fillStyle = '#5d5446'; c.strokeStyle = '#2a251d'; c.lineWidth = 2;
+  c.fillRect(-16, -220, 30, 440); c.strokeRect(-16, -220, 30, 440);
+  c.fillStyle = '#6b6152';
+  for (let y = -212; y < 212; y += 22) c.fillRect(-24, y, 10, 12);
+  for (const ty of [-220, 220]) {
+    c.fillStyle = '#51493d'; c.beginPath(); c.arc(0, ty, 30, 0, TAU); c.fill(); c.stroke();
+    c.fillStyle = '#6b6152'; c.beginPath(); c.arc(0, ty, 20, 0, TAU); c.fill();
+  }
+  c.fillStyle = e.hitFlash > 0 ? '#a07a4a' : '#6b4a2a'; c.strokeStyle = '#2a1a0c'; c.lineWidth = 3;
+  rr(c, -12, -40, 30, 80, 6); c.fill(); c.stroke();
+  c.strokeStyle = '#3a3a3a';
+  for (const y of [-24, 0, 24]) { c.beginPath(); c.moveTo(-12, y); c.lineTo(18, y); c.stroke(); }
+  c.strokeStyle = '#1a120a'; c.lineWidth = 2;
+  if (f < 0.66) { c.beginPath(); c.moveTo(0, -30); c.lineTo(8, -10); c.lineTo(2, 6); c.stroke(); }
+  if (f < 0.33) { c.beginPath(); c.moveTo(10, 30); c.lineTo(0, 12); c.lineTo(9, -4); c.stroke(); }
+  c.restore();
+  hpBar(c, e.x, e.y - 56, 90, f, '#ff7a5c');
+}
+function drawWorld(c, now) {
+  G.q = beatPhase();
+  drawGround(c);
+  drawAura(c, now);
+  if (G.phase === 'breather' && G.mode === 'play') drawBanners(c, now);
+  for (const e of G.enemies) if (ENEMY[e.type].fixed) drawGate(c, e);
+  drawTelegraphs(c);
+  drawCoins(c);
+  const units = G.soldiers.concat(G.enemies.filter((e) => !ENEMY[e.type].fixed));
+  units.sort((a, b) => a.y - b.y);
+  for (const u of units) { if (u.kind === 'soldier') drawSoldier(c, u); else drawEnemy(c, u); }
+  drawLeader(c);
+  drawShots(c);
+  drawParts(c);
+  drawTexts(c);
+}
+function drawIndicators(c) {
+  const ox = W / 2, oy = H * 0.44, top = 20, bottom = H - 60, left = 14, right = W - 14;
+  let n = 0;
+  for (const e of G.enemies) {
+    const sx = (e.x - G.cam.x) * zoom + ox, sy = (e.y - G.cam.y) * zoom + oy;
+    if (sx >= left && sx <= right && sy >= top && sy <= bottom) continue;
+    const a = Math.atan2(sy - oy, sx - ox);
+    const ix = clamp(sx, left + 8, right - 8), iy = clamp(sy, top + 8, bottom - 8);
+    c.save(); c.translate(ix, iy); c.rotate(a);
+    c.fillStyle = 'rgba(255,90,70,0.85)'; c.beginPath(); c.moveTo(8, 0); c.lineTo(-6, -6); c.lineTo(-6, 6); c.closePath(); c.fill();
+    c.restore();
+    if (++n > 18) break;
+  }
+  if (G.phase === 'breather' && G.mode === 'play') {
+    const a = G.dir, R = Math.max(W, H);
+    const ix = clamp(ox + Math.cos(a) * R, left + 40, right - 40), iy = clamp(oy + Math.sin(a) * R, top + 130, bottom - 20);
+    const pulse = 0.6 + 0.4 * Math.sin(performance.now() / 200);
+    c.save(); c.translate(ix, iy);
+    c.save(); c.rotate(a);
+    c.fillStyle = `rgba(255,110,80,${pulse})`; c.beginPath(); c.moveTo(14, 0); c.lineTo(-8, -10); c.lineTo(-4, 0); c.lineTo(-8, 10); c.closePath(); c.fill();
+    c.restore();
+    c.textAlign = 'center'; c.font = `700 11px ${FB}`; c.fillStyle = '#ff9a80';
+    c.fillText('DÜŞMAN BU YÖNDEN', 0, 26);
+    c.restore();
+  }
+}
+function heart(c, x, y, s, full) {
+  c.beginPath();
+  c.moveTo(x, y + s * 0.9);
+  c.bezierCurveTo(x - s * 1.25, y + s * 0.05, x - s * 0.9, y - s * 0.95, x, y - s * 0.3);
+  c.bezierCurveTo(x + s * 0.9, y - s * 0.95, x + s * 1.25, y + s * 0.05, x, y + s * 0.9);
+  c.closePath();
+  if (full) { c.fillStyle = '#e0453a'; c.fill(); c.strokeStyle = '#7d1b16'; c.lineWidth = 1.5; c.stroke(); }
+  else { c.strokeStyle = '#6b5a45'; c.lineWidth = 2; c.stroke(); }
+}
+function wrapLines(c, text, maxW) {
+  const words = text.split(' '), lines = [];
+  let line = '';
+  for (const w of words) {
+    const test = line ? line + ' ' + w : w;
+    if (c.measureText(test).width > maxW && line) { lines.push(line); line = w; } else line = test;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+function pill(c, cxp, y, lines, fonts, colors, lineH, padX) {
+  let w = 0;
+  lines.forEach((l, i) => { c.font = fonts[i]; w = Math.max(w, c.measureText(l).width); });
+  const h = lines.length * lineH + 14;
+  rr(c, cxp - w / 2 - padX, y, w + padX * 2, h, 10);
+  c.fillStyle = 'rgba(18,14,9,0.84)'; c.fill();
+  c.strokeStyle = 'rgba(240,180,41,0.32)'; c.lineWidth = 1; c.stroke();
+  c.textAlign = 'center';
+  lines.forEach((l, i) => { c.font = fonts[i]; c.fillStyle = colors[i]; c.fillText(l, cxp, y + 7 + lineH * (i + 0.78)); });
+  return h;
+}
+function drawHUD(c, now) {
+  const L = G.leader, compact = W < 640;
+  c.textBaseline = 'alphabetic';
+  // top-left: hearts, wave, army, banner
+  for (let i = 0; i < T.hearts; i++) heart(c, 26 + i * 28, 26, 10, i < L.hearts);
+  c.textAlign = 'left';
+  c.font = `500 12px ${FB}`; c.fillStyle = '#b8a988';
+  c.fillText(`${G.siege ? 'KALE KUŞATMASI' : 'DALGA ' + G.wave} · ${bpm} BPM`, 16, 58);
+  c.font = `26px ${FD}`; c.fillStyle = '#f1e6cc';
+  const army = String(G.soldiers.length);
+  c.fillText(army, 16, 90);
+  const aw = c.measureText(army).width;
+  c.font = `500 13px ${FB}`; c.fillStyle = '#b8a988'; c.fillText('asker', 22 + aw, 90);
+  const bdef = SOLDIER[G.banner], need = soldierNeed();
+  c.strokeStyle = '#8a6a3a'; c.lineWidth = 2; c.beginPath(); c.moveTo(19, 118); c.lineTo(19, 100); c.stroke();
+  c.fillStyle = bdef.color; c.beginPath(); c.moveTo(19, 100); c.lineTo(31, 104); c.lineTo(19, 108); c.closePath(); c.fill();
+  c.font = `500 13px ${FB}`; c.fillStyle = '#f1e6cc';
+  const st = beatStep();
+  c.fillText(`${bdef.name} sancağı · ${Math.min(Math.floor(G.prog / st), need / st)}/${need / st}`, 38, 113);
+  c.fillStyle = '#3a3223'; rr(c, 38, 119, 120, 4, 2); c.fill();
+  c.fillStyle = bdef.color; rr(c, 38, 119, 120 * clamp(G.prog / need, 0, 1), 4, 2); c.fill();
+
+  // top-right: loot
+  const gw = Math.min(240, W * 0.3), gx = W - 16 - gw, gy = 18;
+  c.fillStyle = '#3a3223'; rr(c, gx, gy, gw, 9, 4.5); c.fill();
+  c.fillStyle = '#f0b429'; rr(c, gx, gy, gw * clamp(G.ganimet / G.need, 0, 1), 9, 4.5); c.fill();
+  c.textAlign = 'right'; c.font = `500 12px ${FB}`; c.fillStyle = '#b8a988';
+  c.fillText(`GANİMET ${G.ganimet}/${G.need} · Terfi ${G.level + 1}`, W - 16, gy + 26);
+  c.fillText('Esc · duraklat ve ayarlar', W - 16, gy + 44);
+  c.fillText(settings.relaxed ? 'Tempo: sen çal, ordu cevap versin' : 'Tempo: her vuruş', W - 16, gy + 62);
+
+  // top-centre: preview, then hint
+  let y = compact ? 136 : 14;
+  if (G.phase === 'breather') {
+    const left = Math.max(0, G.breatherLen - G.breatherBeat);
+    const h = pill(c, W / 2, y,
+      [`SIRADAKİ DALGA · ${G.wave}`, enemySummary(G.def), `Sancak seç · ${left} vuruş · Boşluk: hemen başlat`],
+      [`700 11px ${FB}`, `20px ${FD}`, `500 12px ${FB}`], ['#f0b429', '#f1e6cc', '#b8a988'], 22, 18);
+    y += h + 8;
+  }
+  const gate = G.siege && G.siege.gate;
+  if (gate && !gate.dead && G.phase === 'wave') {
+    const bw = Math.min(420, W * 0.5), bx = W / 2 - bw / 2;
+    rr(c, bx - 12, y, bw + 24, 44, 10); c.fillStyle = 'rgba(18,14,9,0.84)'; c.fill();
+    c.textAlign = 'center'; c.font = `700 11px ${FB}`; c.fillStyle = '#f0b429'; c.fillText('KALE KAPISI', W / 2, y + 16);
+    c.fillStyle = '#3a3223'; rr(c, bx, y + 24, bw, 10, 5); c.fill();
+    c.fillStyle = '#ff7a5c'; rr(c, bx, y + 24, bw * clamp(gate.hp / gate.maxHp, 0, 1), 10, 5); c.fill();
+    y += 52;
+  }
+  if (G.hint) {
+    c.font = `500 15px ${FB}`;
+    const lines = wrapLines(c, G.hint.text, Math.min(560, W - 60));
+    c.globalAlpha = clamp(G.hint.life / 0.4, 0, 1);
+    pill(c, W / 2, y, lines, lines.map(() => `500 15px ${FB}`), lines.map(() => '#f1e6cc'), 20, 16);
+    c.globalAlpha = 1;
+  }
+
+  // big centre words
+  for (const b of G.big) {
+    const a = clamp(b.life / 0.35, 0, 1), age = b.max - b.life, pop = age < 0.15 ? 1 + (0.15 - age) * 2.2 : 1;
+    c.save(); c.globalAlpha = a; c.translate(W / 2, H * 0.3); c.scale(pop, pop);
+    c.textAlign = 'center';
+    c.font = `${compact ? 38 : 58}px ${FD}`; c.lineWidth = 7; c.strokeStyle = '#140f0a';
+    c.strokeText(b.text, 0, 0); c.fillStyle = b.color; c.fillText(b.text, 0, 0);
+    if (b.sub) { c.font = `500 ${compact ? 13 : 16}px ${FB}`; c.lineWidth = 4; c.strokeText(b.sub, 0, 28); c.fillStyle = '#f1e6cc'; c.fillText(b.sub, 0, 28); }
+    c.restore();
+  }
+
+  // bottom: drum cross
+  const cs = compact ? 0.78 : 1, cap = 46 * cs, gap = 50 * cs;
+  const ccx = W - 20 - gap - cap / 2, ccy = H - 20 - gap - cap / 2;
+  const cp = G.comboPrompt && G.comboPrompt.k >= G.curK ? BUFFS[G.comboPrompt.dir] : null;
+  const caps = [
+    ['up', 0, -1, '↑', 'VUR', '#c8322b'], ['left', -1, 0, '←', 'ZİL', '#f0b429'],
+    ['right', 1, 0, '→', 'ATIL', '#6fb35a'], ['down', 0, 1, '↓', 'DİREN', '#4f95d6'],
+  ];
+  for (const [dir, dx, dy, glyph, label, col] of caps) {
+    const x = ccx + dx * gap, yy = ccy + dy * gap, f = G.keyFlash[dir];
+    if (dir === 'left' && cp) {
+      const p = 0.5 + 0.5 * Math.sin(now / 120);
+      c.fillStyle = `rgba(${cp.color},${0.25 + 0.35 * p})`; rr(c, x - cap / 2 - 6, yy - cap / 2 - 6, cap + 12, cap + 12, 12); c.fill();
+    }
+    rr(c, x - cap / 2, yy - cap / 2, cap, cap, 9);
+    c.fillStyle = f > 0 ? col : 'rgba(30,25,18,0.9)'; c.globalAlpha = f > 0 ? 0.35 + 0.65 * f : 1; c.fill(); c.globalAlpha = 1;
+    c.strokeStyle = col; c.lineWidth = 2; c.stroke();
+    c.textAlign = 'center';
+    c.font = `700 ${Math.round(18 * cs)}px ${FB}`; c.fillStyle = '#f1e6cc'; c.fillText(glyph, x, yy + 1);
+    c.font = `700 ${Math.round(9.5 * cs)}px ${FB}`; c.fillStyle = dir === 'left' && cp ? '#ffcf4a' : '#d8c9a6'; c.fillText(label, x, yy + 15 * cs);
+  }
+
+  // bottom-left: the Cezbe bar and what its level gives, the running reinforcements and the
+  // combo key. Nothing here needs watching while playing.
+  const barX = 16, barW = Math.max(120, Math.min(360, ccx - gap - cap / 2 - 40)), barH = 12, barY = H - 32;
+  const lv = level(), cz = lv === 3;
+  c.fillStyle = '#2b241a'; rr(c, barX, barY, barW, barH, 6); c.fill();
+  c.fillStyle = cz ? (Math.floor(now / 90) % 2 ? '#ffd966' : '#fff1bf') : ['#6e5a3c', '#9c6f25', '#d69a2a'][lv];
+  rr(c, barX, barY, barW * clamp(G.bar / T.barMax, 0, 1), barH, 6); c.fill();
+  c.strokeStyle = '#1c1812'; c.lineWidth = 2;
+  for (const at of CEZBE_AT) { const x = barX + barW * at / T.barMax; c.beginPath(); c.moveTo(x, barY); c.lineTo(x, barY + barH); c.stroke(); }
+  c.textAlign = 'left'; c.font = `17px ${FD}`; c.fillStyle = ['#8a7d62', '#c9a468', '#f0b429', '#ffcf4a'][lv];
+  c.fillText(lv ? LV.name[lv] : 'CEZBE', barX + 2, barY - 7);
+  c.textAlign = 'right'; c.font = `500 11px ${FB}`; c.fillStyle = lv ? '#d8c9a6' : '#8a7d62';
+  c.fillText(lv ? cezbeLine(lv) : 'çaldıkça yükselir, kaçırınca düşer', barX + barW, barY - 8);
+  let bx = barX;
+  const by = barY - 34;
+  c.textAlign = 'left';
+  for (const b of [BUFFS.down, BUFFS.right, BUFFS.up]) {
+    if (!buffOn(b.id)) continue;
+    const txt = `${b.name} ${Math.max(0, Math.ceil((G.buffs[b.id] - G.curK) / beatStep()))}`;
+    c.font = `700 12px ${FB}`;
+    const w = c.measureText(txt).width + 18;
+    rr(c, bx, by - 14, w, 20, 10); c.fillStyle = `rgba(${b.color},0.22)`; c.fill();
+    c.strokeStyle = `rgb(${b.color})`; c.lineWidth = 1.5; c.stroke();
+    c.fillStyle = `rgb(${b.color})`; c.fillText(txt, bx + 9, by + 1);
+    bx += w + 6;
+  }
+  c.font = `500 11px ${FB}`; c.fillStyle = '#8a7d62';
+  c.fillText('Takviye: ↓↓← can · →→← hız · ↑↑← vuruş hızı', barX, by - 22);
+}
+function drawOverlays(c, now) {
+  if (G.mode === 'play' && inCezbe()) {
+    const g = c.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.max(W, H) * 0.75);
+    g.addColorStop(0, 'rgba(255,190,60,0)'); g.addColorStop(1, `rgba(255,190,60,${0.2 + 0.12 * G.beatPulse})`);
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+  }
+  if (G.mode === 'play' && G.leader.hearts === 1) {
+    const g = c.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.4, W / 2, H / 2, Math.max(W, H) * 0.8);
+    g.addColorStop(0, 'rgba(200,40,30,0)'); g.addColorStop(1, `rgba(200,40,30,${0.16 + 0.06 * Math.sin(now / 300)})`);
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+  }
+  if (G.flash > 0) { c.fillStyle = `rgba(${G.flashColor},${G.flash * (reduceMotion ? 0.1 : 0.26)})`; c.fillRect(0, 0, W, H); }
+}
+function render(now) {
+  const c = cx;
+  c.setTransform(DPR, 0, 0, DPR, 0, 0);
+  c.fillStyle = '#231f18'; c.fillRect(0, 0, W, H);
+  const sh = G.shake;
+  const shx = sh ? rand(-sh, sh) : 0, shy = sh ? rand(-sh, sh) : 0;
+  c.save();
+  c.translate(W / 2 + shx, H * 0.44 + shy); c.scale(zoom, zoom); c.translate(-G.cam.x, -G.cam.y);
+  drawWorld(c, now);
+  c.restore();
+  drawOverlays(c, now);
+  if (G.mode !== 'title') { drawIndicators(c); drawHUD(c, now); }
+}
+
+// ---------------------------------------------------------------- main loop
+let lastFrame = performance.now();
+function frame(now) {
+  requestAnimationFrame(frame);
+  const rdt = Math.min(0.05, (now - lastFrame) / 1000);
+  lastFrame = now;
+  pollPad();
+  if (G.mode === 'play' && !G.paused && actx) {
+    const h = heardNow();
+    G.h = h;
+    for (const b of beats) {
+      if (!b.done && h >= b.t) { b.done = true; onBeat(b); }
+      if (!b.closed && h >= b.t + T.goodWin) { b.closed = true; onBeatClosed(b); }
+    }
+    if (G.mode === 'play' && !G.terfi) {
+      resolvePending(h);
+      let dt = rdt;
+      if (G.hitstop > 0) { G.hitstop -= rdt; dt = 0; }
+      if (G.slowmo > 0) { G.slowmo -= rdt; dt *= 0.3; }
+      updateWorld(dt, rdt);
+    }
+    updateFx(rdt);
+  } else if (!G.paused) updateFx(rdt);
+  render(now);
+}
+
+// ---------------------------------------------------------------- controls
+function start() {
+  if (!actx) initAudio();
+  actx.resume();
+  newGame();
+  G.mode = 'play';
+  beats.length = 0; beatMap.clear();
+  nextBeatT = actx.currentTime + 0.35; nextBeatK = 0;
+  for (const id of ['titleOv', 'overOv', 'pauseOv', 'terfiOv']) $(id).hidden = true;
+  startBreather();
+  cv.focus();
+}
+function pause() {
+  if (!G || G.mode !== 'play' || G.paused) return;
+  G.paused = true;
+  held.clear();
+  if (actx) actx.suspend();
+  $('offset').value = settings.offsetMs;
+  $('offsetVal').textContent = `${settings.offsetMs} ms`;
+  const errs = G.errs;
+  const apply = $('applyBtn');
+  if (errs.length >= 8) {
+    const avg = errs.reduce((a, b) => a + b, 0) / errs.length * 1000;
+    const sug = clamp(Math.round((settings.offsetMs + avg) / 5) * 5, -150, 150);
+    $('calib').textContent = `Son ${errs.length} vuruşun ortalaması: ${avg >= 0 ? '+' : ''}${Math.round(avg)} ms (${Math.abs(avg) < 15 ? 'tam yerinde' : avg > 0 ? 'geç basıyorsun' : 'erken basıyorsun'}).`;
+    apply.hidden = Math.abs(avg) < 15;
+    apply.textContent = `Öneriyi uygula: ${sug} ms`;
+    apply.dataset.value = sug;
+  } else { $('calib').textContent = 'Öneri için birkaç vuruş daha çal.'; apply.hidden = true; }
+  refreshOptions();
+  $('pauseOv').hidden = false;
+  $('resumeBtn').focus();
+}
+function resume() {
+  if (!G.paused) return;
+  G.paused = false;
+  $('pauseOv').hidden = true;
+  if (actx) actx.resume();
+  cv.focus();
+}
+function refreshOptions() {
+  $('tempoBtn').textContent = settings.relaxed ? 'Sen çal, ordu cevap versin' : 'Her vuruş';
+  $('cueBtn').textContent = CUE_NAME[settings.cue];
+  $('clickBtn').textContent = settings.click ? 'Açık' : 'Kapalı';
+}
+function note(text) { if (G && G.mode === 'play') floatText(G.leader.x, G.leader.y - 80, text, '#f1e6cc', 14); }
+function toggleTempo() {
+  settings.relaxed = !settings.relaxed; store.set('mehter.relaxed', settings.relaxed);
+  G.silent = 0;
+  note(settings.relaxed ? 'tempo: sen çal, ordu cevap versin' : 'tempo: her vuruş');
+  refreshOptions();
+}
+function cycleCue() {
+  settings.cue = CUES[(CUES.indexOf(settings.cue) + 1) % CUES.length]; store.set('mehter.cue', settings.cue);
+  note('zamanlama: ' + CUE_NAME[settings.cue]);
+  refreshOptions();
+}
+function toggleClick() {
+  settings.click = !settings.click; store.set('mehter.click', settings.click);
+  note(settings.click ? 'tık sesi açık' : 'tık sesi kapalı');
+  refreshOptions();
+}
+
+// Gamepad: Y A B X drum (the diamond's top, bottom, right and left, like the arrow keys), the
+// left stick walks, Start pauses and Back skips the breather. Terfi cards take X, Y, B. The
+// first start still needs a click or a key: browsers only allow sound after one.
+const PAD_DRUM = { 3: 'up', 0: 'down', 1: 'right', 2: 'left' };
+const PAD_CARD = { 2: 0, 3: 1, 1: 2, 14: 0, 12: 1, 15: 2 };
+let padPrev = [];
+function pollPad() {
+  G.stick = null;
+  const pads = navigator.getGamepads ? navigator.getGamepads() : null;
+  const pad = pads && Array.from(pads).find((p) => p && p.connected && p.buttons.length >= 10);
+  if (!pad) { padPrev = []; return; }
+  const pressed = pad.buttons.map((b) => b.pressed);
+  const edge = (i) => pressed[i] && !padPrev[i];
+  padPrev = pressed;
+  const now = performance.now();
+  const stamp = pad.timestamp > 0 && pad.timestamp <= now ? pad.timestamp : now;
+  if (G.mode === 'over') { if (!$('overOv').hidden && (edge(0) || edge(9))) start(); return; }
+  if (G.mode !== 'play') return;
+  if (edge(9)) { if (G.paused) resume(); else pause(); return; }
+  if (G.paused) return;
+  if (G.terfi) { for (const i in PAD_CARD) if (edge(+i)) { pickCard(PAD_CARD[i], false); break; } return; }
+  for (const i in PAD_DRUM) if (edge(+i)) drum(PAD_DRUM[i], stamp);
+  if (edge(8) && G.phase === 'breather') startWave();
+  const ax = pad.axes[0] || 0, ay = pad.axes[1] || 0;
+  if (Math.hypot(ax, ay) > 0.25) G.stick = { x: ax, y: ay };
+}
+function setOffset(v) {
+  settings.offsetMs = v;
+  store.set('mehter.offsetMs', v);
+  $('offset').value = v;
+  $('offsetVal').textContent = `${v} ms`;
+}
+
+// Some keyboards and synthetic events leave `code` empty; fall back to `key`.
+const KEY_CODE = {
+  arrowup: 'ArrowUp', arrowdown: 'ArrowDown', arrowleft: 'ArrowLeft', arrowright: 'ArrowRight',
+  ' ': 'Space', enter: 'Enter', escape: 'Escape', w: 'KeyW', a: 'KeyA', s: 'KeyS', d: 'KeyD', p: 'KeyP', m: 'KeyM', h: 'KeyH', t: 'KeyT',
+  1: 'Digit1', 2: 'Digit2', 3: 'Digit3',
+};
+const codeOf = (e) => e.code || KEY_CODE[String(e.key || '').toLowerCase()] || '';
+
+window.addEventListener('keydown', (e) => {
+  const code = codeOf(e);
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(code)) e.preventDefault();
+  if (e.repeat) return;
+  if (G.mode === 'title' || (G.mode === 'over' && !$('overOv').hidden)) {
+    if (code === 'Enter' || code === 'Space') { e.preventDefault(); start(); }
+    return;
+  }
+  if (G.mode !== 'play') return;
+  if (code === 'Escape' || code === 'KeyP') { if (G.paused) resume(); else pause(); return; }
+  if (code === 'KeyH') { cycleCue(); return; }
+  if (code === 'KeyM') { toggleClick(); return; }
+  if (code === 'KeyT') { toggleTempo(); return; }
+  if (G.paused) return;
+  if (G.terfi) {
+    const idx = { KeyA: 0, KeyW: 1, KeyD: 2, Digit1: 0, Digit2: 1, Digit3: 2 }[code];
+    if (idx != null) { pickCard(idx, false); return; }
+  }
+  const dir = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[code];
+  if (dir) { drum(dir, e.timeStamp); return; }
+  if (code === 'Space') { if (G.phase === 'breather' && !G.terfi) startWave(); return; }
+  if (['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(code) && !G.terfi) held.add(code);
+});
+window.addEventListener('keyup', (e) => held.delete(codeOf(e)));
+window.addEventListener('blur', () => { held.clear(); pause(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+
+$('startBtn').addEventListener('click', start);
+$('againBtn').addEventListener('click', start);
+$('resumeBtn').addEventListener('click', resume);
+$('restartBtn').addEventListener('click', () => { G.paused = false; start(); });
+$('applyBtn').addEventListener('click', () => { setOffset(Number($('applyBtn').dataset.value) || 0); G.errs = []; $('applyBtn').hidden = true; $('calib').textContent = 'Uygulandı. Birkaç vuruş sonra tekrar bakabilirsin.'; });
+$('offset').addEventListener('input', (e) => setOffset(Number(e.target.value) || 0));
+$('tempoBtn').addEventListener('click', toggleTempo);
+$('cueBtn').addEventListener('click', cycleCue);
+$('clickBtn').addEventListener('click', toggleClick);
+
+const best = Number(store.get('mehter.best', 0)) || 0;
+const wins = Number(store.get('mehter.wins', 0)) || 0;
+if (best > 0) { $('bestLine').hidden = false; $('bestLine').textContent = wins > 0 ? `Kaleyi ${wins} kez düşürdün.` : `En iyi seferin: ${best}. dalga.`; }
+
+newGame();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
