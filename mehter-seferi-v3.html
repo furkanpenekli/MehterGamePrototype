@@ -1,12 +1,14 @@
 <!doctype html>
-<!-- Mehter Seferi, prototype 2 (the version 7 plan), published at https://claude.ai/artifact/RUvdwbP64UowN4ypcas6p2 .
-     Prototype 1 stays in mehter-seferi.html as the old version.
-     To update the artifact, republish only what sits between <head> and </body>, without this wrapper. -->
+<!-- Mehter Seferi, prototype 3: prototype 2 made real-time. Instruments are played at any time,
+     each with its own cooldown; a press on the beat is stronger, recharges sooner and fills Cezbe.
+     Monsters (dusman-plani.md) attack on their own clocks in shapes of their own, and now and
+     then charge together. Each chapter has its own monsters and serdar.
+     Prototypes 1 and 2 stay in mehter-seferi.html and mehter-seferi-v2.html. -->
 <html lang="tr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Mehter Seferi 2</title>
+<title>Mehter Seferi 3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Rubik:wght@400;500;700&display=swap">
@@ -180,6 +182,10 @@
   .mono { font-variant-numeric: tabular-nums; }
   .row label { min-width: 140px; }
   .vol { min-width: 44px; text-align: right; }
+  .build { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip { border-left: 3px solid var(--rar, #cfc3a6); background: #211c14; border-radius: 6px; padding: 5px 9px; font-size: 12.5px; line-height: 1.35; }
+  .chip b { color: var(--rar, #cfc3a6); font-weight: 700; }
+  .chip span { color: var(--ink-dim); }
   h3.sub { margin: 18px 0 4px; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); }
   @media (prefers-reduced-motion: reduce) { .card, .card:hover { transition: none; transform: none; } }
 </style>
@@ -187,20 +193,20 @@
 <body>
 
 <div class="stage">
-  <canvas id="game" tabindex="0" aria-label="Mehter Seferi 2 oyun alanı"></canvas>
+  <canvas id="game" tabindex="0" aria-label="Mehter Seferi 3 oyun alanı"></canvas>
 
   <div class="overlay" id="titleOv">
     <div class="panel">
-      <p class="eyebrow">Oynanabilir prototip · 2. sürüm</p>
+      <p class="eyebrow">Oynanabilir prototip · 3. sürüm · gerçek zamanlı</p>
       <h1>Mehter Seferi</h1>
-      <p>Mehterbaşısın. Kendin vurmazsın: vuruşta çaldığın çalgı, auradaki askerlere bir emirdir. <b>Hangi çalgıyı çalacağına sen karar verirsin</b>, doğru ya da yanlış çalgı yoktur; her birinin bir kazancı, bir bedeli var. Aura ısınınca bas. Kırmızıya ısınıyorsa düşman o vuruşta saldıracak: nasıl karşılayacağın senin planın. <b>Hedef: üç bölümü geç.</b></p>
+      <p>Mehterbaşısın. Kendin vurmazsın: çaldığın çalgı, auradaki askerlere bir emirdir. <b>Çalgıları istediğin an çal</b>; hangisini ne zaman çalacağın senin planın. Her çalgının bir kazancı, bir bedeli ve bir bekleme süresi var. <b>Tempoya denk getirirsen</b> emir güçlenir, çalgı daha çabuk hazır olur ve Cezbe dolar. Karşında ordular değil <b>canavarlar</b> var: her biri başka türlü saldırır ve vuracağı yeri kırmızıyla önceden gösterir, büyücüler morla. Arada bir topluca hücum ederler. <b>Hedef: üç bölümü geç.</b></p>
       <div class="cols">
         <div>
-          <h3>Sağ el çalar · aura ısınınca bas</h3>
+          <h3>Sağ el çalar · istediğin an, en iyisi tempoda</h3>
           <ul class="keys">
             <li><kbd>↑</kbd><span><b>Davul · VUR</b>: auradakiler hep birlikte tam vurur. <span class="red">Korumaz.</span></span></li>
-            <li><kbd>↓</kbd><span><b>Kös · DİREN</b>: o vuruştaki darbeler bloklanır, Perfect sersemletir. <span class="red">Kimse vurmaz.</span></span></li>
-            <li><kbd>→</kbd><span><b>Çevgen · ATIL</b>: askerler uzağa atılır, ×1.5 vurur, kurulan saldırıyı keser. <span class="red">Bir süre auradan çıkar, emir duymaz, Kös korumaz.</span></span></li>
+            <li><kbd>↓</kbd><span><b>Kös · DİREN</b>: halka kapanırken çal, o anda inen darbeler bloklanır; tam anında çalarsan sersemletir. <span class="red">Kimse vurmaz.</span></span></li>
+            <li><kbd>→</kbd><span><b>Çevgen · ATIL</b>: askerler uzağa atılır, ×1.5 vurur, kurulan saldırıyı keser. <span class="red">Birkaç saniye auradan çıkar, emir duymaz, Kös korumaz.</span></span></li>
             <li><kbd>←</kbd><span><b>Zil · TOPLAN</b>: herkes sana koşar, can dolar, Cezbe iki kat artar. <span class="red">Ne vurur ne korur.</span></span></li>
             <li><kbd>1-4</kbd><span><b>Ulti</b>: Cezbe kademesi harcar</span></li>
           </ul>
@@ -214,7 +220,7 @@
           </ul>
         </div>
       </div>
-      <p class="dim"><b>Cezbe</b> zamanında çalınan her vuruşta yükselir (Zil'de iki kat); kaçırınca, susunca ya da lider yara alınca düşer. Her kademe askerlerin canını, hasarını ve hızını %10 artırır. <b>Sefer</b> üç bölümdür, her bölüm beş dalga: açık savaş, karakol baskını, kale kuşatması ve serdar. Bölüm sonunda konakta dinlenir, dört ulti yuvanı seçersin. Kalpler biterse sefer biter.</p>
+      <p class="dim"><b>Cezbe</b> tempoya denk gelen her çalgıda yükselir (Zil'de iki kat); uzun süre tempoda çalmazsan ya da lider yara alınca düşer. Her kademe askerlerin canını, hasarını ve hızını %10 artırır. <b>Sefer</b> üç bölümdür: Tepegöz Yurdu, Şahmeran Diyarı, Ejderha Dağı. Her bölüm beş dalga: açık savaş, baskın, kuşatma ve sonunda serdarı. Her bölümün kendi canavarları var; yeni bir canavar gelmeden önce nasıl karşılanacağı yazılır. Bölüm sonunda konakta dinlenir, dört ulti yuvanı seçersin; ordu sınırın da orada büyür (12 → 16 → 20). Ordu doluyken gelen asker ganimet olarak gelir. Kalpler biterse sefer biter.</p>
       <div class="actions">
         <button class="btn" id="startBtn" type="button">Sefere çık</button>
         <button class="btn ghost" id="tutBtn" type="button">Eğitimle başla</button>
@@ -227,6 +233,9 @@
   <div class="overlay" id="pauseOv" hidden>
     <div class="panel">
       <h2>Duraklatıldı</h2>
+      <h3 class="sub">Aldığın terfiler</h3>
+      <div class="build" id="pauseBuild"></div>
+      <h3 class="sub">Gecikme</h3>
       <p class="dim">Vuruşların hep geç ya da hep erken sayılıyorsa gecikmeyi buradan düzelt.</p>
       <div class="row">
         <label for="offset">Gecikme düzeltmesi</label>
@@ -267,6 +276,8 @@
       <h2>Terfi: bir kart seç</h2>
       <p class="dim">Savaş seni bekler. Sol elle seç: <kbd>A</kbd> <kbd>W</kbd> <kbd>D</kbd> (oyun kolunda X Y B)</p>
       <div class="cards" id="cards"></div>
+      <h3 class="sub">Aldığın terfiler</h3>
+      <div class="build" id="terfiBuild"></div>
     </div>
   </div>
 
@@ -289,6 +300,8 @@
       <p class="eyebrow" id="overEyebrow">Lider düştü</p>
       <h2 id="overTitle">Sefer bitti</h2>
       <div class="stats" id="stats"></div>
+      <h3 class="sub">Terfiler</h3>
+      <div class="build" id="overBuild"></div>
       <div class="actions">
         <button class="btn" id="againBtn" type="button">Yeniden sefere çık</button>
         <span class="dim"><kbd>Enter</kbd></span>
@@ -327,19 +340,28 @@ const settings = {
 };
 
 // ---------------------------------------------------------------- tuning
-// The tempo is fixed. The player presses on every other beat, one "call" every 1.5 s, and the
-// beat between is silent. Per-press gains are doubled, as in prototype 1's relaxed tempo.
+// Real time on a fixed tempo. The player may play at any moment; every beat (0.75 s) is a
+// chance to be on time, and a press on the beat is stronger, recharges sooner and fills Cezbe.
 const BPM = 80;
-const beatStep = () => 2;
-const isCallBeat = (k) => k % 2 === 0;
+const beatStep = () => 1;
+const isCallBeat = () => true;
 
 const T = {
   perfectWin: 0.06, goodWin: 0.15,
   barMax: 36, goodGain: 1, perfectGain: 1.5,
-  missDrop: 6, hitDrop: 12, silenceBeats: 4, silenceDrop: 3,
-  pickCompanies: 2, armyCap: 15, waveSize: 2, groupSize: 8, groupBeats: 8, enemyCap: 30,
+  hitDrop: 12, silenceSec: 3, silenceDrop: 3,
+  pickCompanies: 2, waveSize: 2, groupSize: 8, groupBeats: 8, enemyCap: 30,
   auraR: 170, leaderSpeed: 150, hearts: 3, breatherBeats: 12,
   levelStep: 0.1, wavesPerChapter: 5, chapters: 3,
+  // The army's size limit per chapter: it only grows at a konak. A soldier who would join a
+  // full army comes as loot instead.
+  armyCaps: [12, 16, 20], overflowLoot: 2,
+  // Loot needed for the next terfi: base, then this much more for each terfi taken.
+  terfiBase: 15, terfiStep: 10,
+  // The band cannot walk away from a wave: a goal fort farther than nearGoal sends its monsters
+  // at the band instead of out of its gate, and a monster farther than catchUpDist from the
+  // leader runs catchUpMul times faster until it is back in the fight.
+  nearGoal: 700, catchUpDist: 650, catchUpMul: 3,
 };
 
 // Four instruments, four orders. None is the right answer: which one to play on a call is the
@@ -356,8 +378,60 @@ const ORDERS = {
   left:  { key: '←', inst: 'Zil',    name: 'TOPLAN', color: '143,212,106', hud: '#5fa34a' },
 };
 const ORD = {
-  atilDmg: 1.5, atilReach: 260, atilRangedReach: 1.4, atilOutBeats: 2, dashSpeed: 820,
+  atilDmg: 1.5, atilReach: 260, atilRangedReach: 1.4, atilOutBeats: 3, dashSpeed: 820,
   zilHeal: 0.15, zilCezbe: 2, rallySpeed: 1.8,
+  // Cooldowns in seconds. On the beat they are ×onBeatCd; off the beat the order is ×offBeat.
+  cd: { up: 0.9, down: 1.2, right: 3.5, left: 5 }, onBeatCd: 0.7, offBeat: 0.75,
+  // The Kös guards blows landing up to kosWin s after the press (kosLate before it); one that
+  // lands within kosStun s of the press stuns its attacker.
+  kosWin: 0.4, kosWinOnBeat: 0.55, kosLate: 0.08, kosStun: 0.2,
+};
+// Enemy attacks. Each monster winds up on its own when its target is in reach and it has rested,
+// and its telegraph (a closing ring, a filling disc, a fan, a strip, or a purple spell ring)
+// fills over the wind-up. Now and then they charge together.
+const ATK = {
+  leaderWind: 1.4, rest: [2.2, 3.4], first: [0.6, 1.6], hucumEvery: [16, 24], hucumLead: 3,
+  poisonDps: 3, dragDps: 5, dragSec: 5, dragSpeed: 80, fireDps: 8, fireSec: 3,
+  lowSec: 1.4, crackSec: 2, eyeSec: 3.5, eyeBlocked: 5, burrowSec: 2.6,
+};
+// The attack shapes monsters are built from (dusman-plani.md). Every blow is telegraphed.
+//   single  a ring closes on one target          circle  a disc fills on the ground
+//   cone    a fan in front of the monster        line    a strip it rushes along
+//   spell   a purple ring fills round the caster; an ATIL blow breaks it
+//   roar    no damage: the whole army is thrown out of the aura and dazed until TOPLAN
+// Extras: knock (px) and daze (s) throw a soldier out of the aura and stop it until it recovers
+// or TOPLAN; poison (s) drains health until TOPLAN; grab drags a soldier off until TOPLAN or ATIL;
+// move is what the monster does when the blow lands (dive, leap, dash); dmg scales its damage.
+// Circles sit where the target stood when the wind-up began, unless they follow it or the
+// monster itself (self).
+const ATTACKS = {
+  ram:    { shape: 'single', wind: 0.9, knock: 150, daze: 0.8 },
+  dive:   { shape: 'circle', r: 28, wind: 1.0, move: 'dive' },
+  leap:   { shape: 'circle', r: 58, wind: 1.3, move: 'leap' },
+  sling:  { shape: 'circle', r: 42, wind: 1.5 },
+  slam:   { shape: 'circle', r: 62, wind: 1.5, follow: true },
+  bite:   { shape: 'single', wind: 1.0, poison: 5 },
+  spit:   { shape: 'line', len: 300, w: 36, wind: 1.1, poison: 4, move: 'dash' },
+  grab:   { shape: 'single', wind: 1.3, grab: true, dmg: 0.5 },
+  nest:   { shape: 'spell', wind: 3.0, spell: 'nest' },
+  surge:  { shape: 'circle', r: 72, wind: 1.4, move: 'leap', knock: 90, daze: 0.6, next: 'crawl' },
+  crawl:  { shape: 'line', len: 340, w: 46, wind: 1.0, move: 'dash' },
+  claw:   { shape: 'single', wind: 1.0 },
+  blaze:  { shape: 'line', len: 300, w: 36, wind: 1.1, move: 'dash', fire: true },
+  breath: { shape: 'cone', r: 125, half: 0.5, wind: 1.2 },
+  rain:   { shape: 'spell', wind: 3.5, spell: 'rain' },
+  sweep:  { shape: 'cone', r: 165, half: 0.75, wind: 1.6, knock: 190, daze: 1.4 },
+  // The serdars. A serdar's blow is never broken by ATIL, except where cut says so.
+  rock:   { shape: 'circle', r: 80, wind: 1.8, far: true },
+  stomp:  { shape: 'circle', r: 200, wind: 1.8, self: true, knock: 170, daze: 1.0 },
+  herd:   { shape: 'spell', wind: 2.0, spell: 'herd', far: true },
+  fang:   { shape: 'single', wind: 1.4, poison: 6 },
+  venom:  { shape: 'cone', r: 235, half: 0.55, wind: 1.6, poison: 6 },
+  brood:  { shape: 'spell', wind: 2.6, spell: 'brood', cut: true, far: true },
+  rise:   { shape: 'circle', r: 90, wind: 1.4, move: 'leap', knock: 120, daze: 0.8 },
+  fire:   { shape: 'cone', r: 270, half: 0.5, wind: 1.8 },
+  swoop:  { shape: 'line', len: 560, w: 66, wind: 1.8, move: 'dash', fly: true, far: true },
+  roar:   { shape: 'roar', wind: 2.2, block: false, far: true },
 };
 
 // Cezbe is the one meter. Each level adds 10% to the soldiers' health, damage and speed, and a
@@ -367,24 +441,74 @@ const LV_NAME = ['', 'CEZBE I', 'CEZBE II', 'CEZBE III'];
 
 // Unit stats come from UnitStats.xlsx. Range and speed are in pixels here.
 const SOLDIER = {
-  azap:     { name: 'Azap',     hp: 40, dmg: 15, speed: 110, reach: 14,  ranged: false, r: 9,  color: '#b89868', rim: '#5e4a2e', role: 'Mızraklı tank · Atlıya karşı' },
-  yeniceri: { name: 'Yeniçeri', hp: 30, dmg: 25, speed: 110, reach: 300, ranged: true,  r: 9,  color: '#f2ead8', rim: '#c8322b', role: 'Tüfek · Kalkanlıya karşı · önüne tank ister', gun: true },
-  kemankes: { name: 'Kemankeş', hp: 20, dmg: 30, speed: 110, reach: 230, ranged: true,  r: 8,  color: '#6fb35a', rim: '#2f5a25', role: 'Okçu · sert vurur, çabuk düşer' },
-  deli:     { name: 'Deli',     hp: 30, dmg: 20, speed: 190, reach: 10,  ranged: false, r: 11, color: '#e0762f', rim: '#6f2a0d', role: 'Hızlı atlı · Okçuya karşı' },
+  azap:     { name: 'Azap',     hp: 40, dmg: 15, speed: 110, reach: 14,  ranged: false, r: 9,  color: '#b89868', rim: '#5e4a2e', role: 'Mızraklı tank · hücum edenlere karşı' },
+  yeniceri: { name: 'Yeniçeri', hp: 30, dmg: 25, speed: 110, reach: 300, ranged: true,  r: 9,  color: '#f2ead8', rim: '#c8322b', role: 'Tüfek · zırhlı devlere karşı' },
+  kemankes: { name: 'Kemankeş', hp: 20, dmg: 30, speed: 110, reach: 230, ranged: true,  r: 8,  color: '#6fb35a', rim: '#2f5a25', role: 'Okçu · uçanlara karşı' },
+  deli:     { name: 'Deli',     hp: 30, dmg: 20, speed: 190, reach: 10,  ranged: false, r: 11, color: '#e0762f', rim: '#6f2a0d', role: 'Hızlı atlı · arka hattaki büyücülere' },
 };
 const SOLDIER_ORDER = ['azap', 'yeniceri', 'kemankes', 'deli'];
 const SUMMON = { azap: 3, yeniceri: 2, kemankes: 2, deli: 3 };
 // Rock-paper-scissors: a soldier deals double to what it is strong against and takes double
-// from what it is weak against.
-const STRONG = { azap: ['atli'], yeniceri: ['kalkanli'], kemankes: [], deli: ['okcu'] };
-const WEAK = { azap: [], yeniceri: ['piyade', 'atli'], kemankes: ['kalkanli', 'atli'], deli: ['piyade'] };
+// from what it is weak against. Every chapter has one monster each soldier is strong against.
+const STRONG = {
+  azap: ['koc', 'evren', 'yavru'], yeniceri: ['kaya', 'akrep', 'oddevi'],
+  kemankes: ['yarasa', 'kanatli', 'korkusu'], deli: ['sapanci', 'kahin', 'odcadi'],
+};
+const WEAK = {
+  azap: ['sapanci', 'kanatli', 'oddevi'], yeniceri: ['karakoncolos', 'evren', 'hortlak'],
+  kemankes: ['koc', 'akrep', 'yavru'], deli: ['yarasa', 'yilan', 'korkusu'],
+};
 
+// Monsters instead of armies (decision 20). Each chapter has its own five, one per slot (a swarm,
+// a flyer, a middle one, a back-line caster and a big one), and a serdar.
+//   move   melee walks into reach · ranged keeps within its band · fly hovers out of melee reach
+//          and comes low only when it dives · burrow travels under the ground
+//   armor  the share of damage it takes until a Perfect Kös cracks it (Tepegöz: until his eye opens)
+//   atk    its attacks; a serdar goes through them in turn
 const ENEMY = {
-  piyade:   { name: 'Piyade',        hp: 30,   dmg: 15, speed: 80,  reach: 16,  coins: 1,  r: 10, color: '#7f8da6' },
-  kalkanli: { name: 'Kalkanlı',      hp: 40,   dmg: 20, speed: 55,  reach: 12,  coins: 2,  r: 12, color: '#93a0b6' },
-  okcu:     { name: 'Okçu',          hp: 20,   dmg: 20, speed: 70,  reach: 230, coins: 1,  r: 9,  color: '#6f9c9a' },
-  atli:     { name: 'Atlı',          hp: 40,   dmg: 15, speed: 190, reach: 95,  coins: 2,  r: 13, color: '#9a86c0' },
-  boss:     { name: 'Serdar',        hp: 900,  dmg: 30, speed: 55,  reach: 40,  coins: 12, r: 22, color: '#8a5a9e', area: 70, goal: true },
+  // 1 · Tepegöz Yurdu
+  koc:      { name: 'Kara Koç', hp: 30, dmg: 12, speed: 95, reach: 16, coins: 1, r: 10, color: '#3b342d', atk: ['ram'],
+              tip: 'Kara Koç toslar, askeri auradan savurur, asker sersemler. ← Zil ile geri topla. Azap güçlü.' },
+  yarasa:   { name: 'Yarasa', hp: 16, dmg: 10, speed: 150, reach: 150, coins: 1, r: 8, color: '#4d3f57', move: 'fly', atk: ['dive'],
+              tip: 'Yarasa uçar: yakın dövüşçü onu yalnızca dalışta vurur. Dalışı ↓ Kös ile karşıla. Kemankeş güçlü.' },
+  karakoncolos: { name: 'Karakoncolos', hp: 60, dmg: 16, speed: 70, reach: 170, coins: 2, r: 12, color: '#3f3a36', atk: ['leap'],
+              tip: 'Karakoncolos sıçrayıp auranın içine düşer. İneceği daireden çık ya da ↓ Kös çal.' },
+  sapanci:  { name: 'Sapancı', hp: 28, dmg: 14, speed: 65, reach: 280, coins: 1, r: 10, color: '#8a7358', move: 'ranged', band: [200, 260], atk: ['sling'],
+              tip: 'Sapancı uzaktan taş atar. Taşı kurarken → Çevgen ile kes. Deli güçlü.' },
+  kaya:     { name: 'Kaya İyesi', hp: 500, dmg: 24, speed: 45, reach: 70, coins: 5, r: 20, color: '#6e6a62', big: true, armor: 0.25, atk: ['slam'],
+              tip: 'Kaya İyesi zırhlı, hasarın dörtte birini alır. Yumruğunu tam anında ↓ Kös ile karşıla, çatlasın; sonra ↑ vur. Yeniçeri güçlü.' },
+  tepegoz:  { name: 'Tepegöz', hp: 2400, dmg: 30, speed: 40, reach: 190, coins: 14, r: 26, color: '#9a7a5e', boss: true, goal: true, armor: 0.25,
+              atk: ['rock', 'stomp', 'rock', 'herd'], fallback: 'rock',
+              tip: 'Tepegöz yalnızca gözü açıkken tam hasar alır. Göz bir saldırıdan sonra açılır; saldırıyı ↓ Kös ile karşılarsan daha uzun açık kalır.' },
+  // 2 · Şahmeran Diyarı
+  yilan:    { name: 'Yılan', hp: 24, dmg: 8, speed: 90, reach: 14, coins: 1, r: 8, color: '#4f7a3a', atk: ['bite'],
+              tip: 'Yılan ısırığı zehirler, can yavaşça akar. ← Zil zehri temizler.' },
+  kanatli:  { name: 'Kanatlı Yılan', hp: 20, dmg: 10, speed: 140, reach: 200, coins: 1, r: 9, color: '#5f8a4a', move: 'fly', atk: ['spit'],
+              tip: 'Kanatlı Yılan bir şerit boyunca zehir tükürür. ↓ Kös ile karşıla ya da şeritten çık. Kemankeş güçlü.' },
+  akrep:    { name: 'Dev Akrep', hp: 120, dmg: 12, speed: 60, reach: 18, coins: 3, r: 15, color: '#6b4a2a', armor: 0.5, grabber: true, atk: ['grab'],
+              tip: 'Dev Akrep askeri kıskacıyla yakalayıp sürükler. ← Zil ya da → Çevgen kurtarır. Zırhlı: Yeniçeri güçlü.' },
+  kahin:    { name: 'Yılan Kâhini', hp: 40, dmg: 0, speed: 60, reach: 340, coins: 2, r: 10, color: '#5a4a7a', move: 'ranged', band: [230, 300], atk: ['nest'],
+              tip: 'Yılan Kâhini mor bir büyü yükler; biterse yılanlar çıkar. → Çevgen büyüyü keser. Deli güçlü.' },
+  evren:    { name: 'Evren', hp: 520, dmg: 22, speed: 55, reach: 420, coins: 6, r: 20, color: '#4a6a3a', big: true, move: 'burrow', atk: ['surge'],
+              tip: 'Evren toprağa dalar, ordunun altından çıkar: çatlayan daireden kaç. Sonra düz bir şeritte sürünür. Azap güçlü.' },
+  sahmeran: { name: 'Şahmeran', hp: 3000, dmg: 30, speed: 45, reach: 220, coins: 14, r: 24, color: '#6a9a4a', boss: true, goal: true,
+              atk: ['venom', 'fang', 'brood', 'venom'], fallback: 'brood', burrowAt: [0.66, 0.33],
+              tip: 'Şahmeran zehir saçar ve yılan çağırır; çağırmayı → Çevgen keser. Yaralandıkça toprağa gömülür.' },
+  // 3 · Ejderha Dağı
+  hortlak:  { name: 'Kül Hortlağı', hp: 24, dmg: 10, speed: 85, reach: 14, coins: 1, r: 9, color: '#4a4440', atk: ['claw'], burst: { r: 52, wind: 0.7, dmg: 1.2 },
+              tip: 'Kül Hortlağı ölünce patlar, yakındaki askerler yanar. Uzaktan vur ya da patlamada ↓ Kös çal.' },
+  korkusu:  { name: 'Kor Kuşu', hp: 20, dmg: 10, speed: 150, reach: 200, coins: 1, r: 9, color: '#d9622a', move: 'fly', atk: ['blaze'],
+              tip: 'Kor Kuşu geçtiği şeride alev bırakır, alevde kalan asker yanar. Kemankeş güçlü.' },
+  yavru:    { name: 'Ejder Yavrusu', hp: 60, dmg: 14, speed: 70, reach: 110, coins: 2, r: 13, color: '#8a3a2a', atk: ['breath'],
+              tip: 'Ejder Yavrusu önüne alev saçar. ↓ Kös tam anındaysa sersemler. Azap güçlü.' },
+  odcadi:   { name: 'Od Cadısı', hp: 45, dmg: 16, speed: 55, reach: 360, coins: 2, r: 10, color: '#7a2a3a', move: 'ranged', band: [250, 320], atk: ['rain'],
+              tip: 'Od Cadısı uzun bir büyü yükler, sonra ateş yağdırır. → Çevgen keser. Deli güçlü.' },
+  oddevi:   { name: 'Od Devi', hp: 560, dmg: 22, speed: 45, reach: 150, coins: 6, r: 22, color: '#5a2a1e', big: true, atk: ['sweep'],
+              tip: 'Od Devi önünü süpürür, askerleri savurur. ↓ Kös ile karşıla, savrulanları ← Zil ile topla. Yeniçeri güçlü.' },
+  ejderha:  { name: 'Ejderha', hp: 3600, dmg: 30, speed: 50, reach: 250, coins: 14, r: 28, color: '#8a2a22', boss: true, goal: true,
+              atk: ['fire', 'swoop', 'fire', 'roar'], fallback: 'swoop',
+              tip: 'Ejderha alev saçar, havalanıp dalar. Kükreyince bütün ordu savrulur: ← Zil ile topla.' },
+  // Forts
   karakol:  { name: 'İleri karakol', hp: 1200, dmg: 0,  speed: 0,   reach: 0,   coins: 8,  r: 34, color: '#7a6446', fixed: true, goal: true },
   kapi:     { name: 'Kale kapısı',   hp: 3000, dmg: 0,  speed: 0,   reach: 0,   coins: 14, r: 38, color: '#7a6446', fixed: true, goal: true },
   hisar:    { name: 'Hisar',         hp: 1800, dmg: 0,  speed: 0,   reach: 0,   coins: 16, r: 46, color: '#6b6152', fixed: true },
@@ -396,36 +520,46 @@ const RAID = {
   karakol: { count: 2, dist: [650, 820], hp: 700, garrison: 12, sally: 4, every: 6, wake: 430, companies: 1, heart: false },
   hisar:   { count: 1, dist: [1000, 1150], hp: 1800, garrison: 22, sally: 6, every: 6, wake: 500, companies: 2, heart: true },
 };
-const ENEMY_ORDER = ['piyade', 'kalkanli', 'okcu', 'atli'];
 
-// A chapter is five waves, each with a goal, and a konak after the fifth.
-const GOALS = {
-  dagit:   { name: 'Açık savaş',       goal: 'Düşmanı dağıt' },
-  karakol: { name: 'Karakol baskını',  goal: 'İleri karakolu bas' },
-  kale:    { name: 'Kale kuşatması',   goal: 'Kale kapısını yık' },
-  boss:    { name: 'Serdar',           goal: 'Serdarı yen' },
-};
+// A chapter is five waves, each with a goal, and a konak after the fifth. After the konak the
+// theme changes: its ground, its forts, its monsters and its serdar.
 const CHAPTER_PLAN = ['dagit', 'karakol', 'dagit', 'kale', 'boss'];
-const CHAPTER_NAME = ['Tuna Boyu', 'Balkan Geçidi', 'Kale Önü'];
-const GOAL_UNIT = { karakol: 'karakol', kale: 'kapi', boss: 'boss' };
+const THEMES = [
+  { name: 'Tepegöz Yurdu', boss: 'tepegoz', karakol: 'Ağıl', hisar: 'Mağara', kapi: 'Mağara ağzı',
+    raidGoal: 'Ağılı bas', kaleName: 'Mağara kuşatması', kaleGoal: 'Mağara ağzını yık', bossGoal: "Tepegöz'ü yen",
+    pool: ['koc', 'koc', 'koc', 'yarasa', 'sapanci'], lead: 'karakoncolos', escort: null,
+    ground: '#262b2e', tufts: ['#3d464b', '#56616a'], patch: '#3a4348', wood: '#5d4a32', stone: '#5f5c57', flag: '#c8322b' },
+  { name: 'Şahmeran Diyarı', boss: 'sahmeran', karakol: 'Yılan yuvası', hisar: 'Yeraltı tapınağı', kapi: 'Tapınak kapısı',
+    raidGoal: 'Yılan yuvasını bas', kaleName: 'Tapınak kuşatması', kaleGoal: 'Tapınak kapısını yık', bossGoal: "Şahmeran'ı yen",
+    pool: ['yilan', 'yilan', 'yilan', 'kanatli', 'akrep'], lead: 'akrep', escort: null,
+    ground: '#1c231b', tufts: ['#2d3f25', '#3c5230'], patch: '#1a2c2b', wood: '#44523a', stone: '#50594c', flag: '#6aa04a' },
+  { name: 'Ejderha Dağı', boss: 'ejderha', karakol: 'Kor ocağı', hisar: 'Ejder yuvası', kapi: 'Yuva kapısı',
+    raidGoal: 'Kor ocağını söndür', kaleName: 'Ejder yuvası kuşatması', kaleGoal: 'Yuva kapısını yık', bossGoal: "Ejderha'yı yen",
+    pool: ['hortlak', 'hortlak', 'hortlak', 'korkusu', 'yavru'], lead: 'yavru', escort: ['hortlak', 'hortlak', 'hortlak', 'korkusu'],
+    ground: '#271b16', tufts: ['#3d2a20', '#4d3020'], patch: '#5a2412', wood: '#3a2a24', stone: '#4a3c36', flag: '#e0602a' },
+];
+const theme = () => THEMES[clamp(G.chapter, 1, THEMES.length) - 1];
+const GOAL_UNIT = (goal) => ({ karakol: 'karakol', kale: 'kapi', boss: theme().boss }[goal]);
+const goalName = (goal) => ({ dagit: 'Açık savaş', karakol: `${theme().karakol} baskını`, kale: theme().kaleName, boss: `Serdar · ${ENEMY[theme().boss].name}` }[goal]);
+const goalText = (goal) => ({ dagit: 'Canavarları dağıt', karakol: theme().raidGoal, kale: theme().kaleGoal, boss: theme().bossGoal }[goal]);
+const unitName = (type) => ({ karakol: theme().karakol, hisar: theme().hisar, kapi: theme().kapi }[type] || ENEMY[type].name);
+const upper = (s) => s.toLocaleUpperCase('tr');
 
-function waveDef(ch, wi) {
-  const base = [null,
-    { piyade: 10 },
-    { piyade: 8, okcu: 3 },
-    { piyade: 10, atli: 3 },
-    { piyade: 8, kalkanli: 4, okcu: 2 },
-    { piyade: 8, kalkanli: 2 },
-  ][wi];
-  const d = Object.assign({}, base);
-  if (ch >= 2) for (const t of ['okcu', 'atli', 'kalkanli']) d[t] = Math.max(d[t] || 0, ch - 1);
-  const m = T.waveSize * (1 + 0.6 * (ch - 1));
-  for (const t of ENEMY_ORDER) if (d[t]) d[t] = Math.round(d[t] * m);
-  return d;
-}
+// The waves of each chapter. Every wave brings in something new, so no two waves play alike:
+// the chapter's swarm first, then its flyer, its middle monster with its caster, and its big one
+// guarding the gate, before the serdar. Big monsters come in the later groups.
+const WAVES = [null,
+  [null, { koc: 18 }, { yarasa: 8, koc: 12 }, { karakoncolos: 4, sapanci: 4, koc: 10 },
+    { kaya: 2, karakoncolos: 2, sapanci: 3, yarasa: 4, koc: 8 }, { sapanci: 3, yarasa: 4 }],
+  [null, { yilan: 18 }, { kanatli: 7, yilan: 12 }, { akrep: 3, kahin: 3, yilan: 12 },
+    { evren: 2, akrep: 2, kahin: 2, kanatli: 4, yilan: 8 }, { kanatli: 4, akrep: 2 }],
+  [null, { hortlak: 20 }, { korkusu: 7, hortlak: 14 }, { yavru: 4, odcadi: 3, hortlak: 12 },
+    { oddevi: 2, yavru: 3, odcadi: 2, korkusu: 4, hortlak: 10 }, { yavru: 3, korkusu: 3, hortlak: 10 }],
+];
+const waveDef = (ch, wi) => Object.assign({}, WAVES[ch][wi]);
 const enemySummary = (goal, def) => {
-  const lead = GOAL_UNIT[goal] ? ENEMY[GOAL_UNIT[goal]].name + ' · ' : '';
-  return lead + ENEMY_ORDER.filter((t) => def[t]).map((t) => `${def[t]} ${ENEMY[t].name}`).join(' · ');
+  const lead = GOAL_UNIT(goal) ? unitName(GOAL_UNIT(goal)) + ' · ' : '';
+  return lead + Object.keys(def).map((t) => `${def[t]} ${ENEMY[t].name}`).join(' · ');
 };
 
 // Four of these sit in the ulti slots; the konak is where they are chosen.
@@ -456,8 +590,26 @@ const CARDS = [
   { id: 'atil', t: 'Akın Çevgeni', d: 'ATIL hasarı ×1.5 yerine ×2.', r: 2, once: true, apply() { G.up.atil = 2; } },
   { id: 'zilHeal', t: 'Zil Merhemi', d: 'TOPLAN askerlere iki kat can verir.', r: 1, once: true, apply() { G.up.zilHeal = 2; } },
   { id: 'perfect', t: 'Keskin Davul', d: 'Perfect vuruşun hasar çarpanı ×1.25 yerine ×1.6.', r: 2, once: true, apply() { G.up.perfect = 1.6; } },
-  { id: 'heart', t: 'Şifa', d: 'Bir kalp geri gelir.', r: 2, cond: () => G.leader.hearts < T.hearts, apply() { G.leader.hearts++; } },
+  { id: 'heart', t: 'Şifa', d: 'Bir kalp geri gelir.', r: 2, build: false, cond: () => G.leader.hearts < T.hearts, apply() { G.leader.hearts++; } },
 ];
+const CARD_BY_ID = Object.fromEntries(CARDS.map((c) => [c.id, c]));
+// The build so far: each lasting terfi once, with how many times it was taken, in the order taken.
+function buildList() {
+  const m = new Map();
+  for (const id of G.picks) if (CARD_BY_ID[id].build !== false) m.set(id, (m.get(id) || 0) + 1);
+  return [...m].map(([id, n]) => ({ cd: CARD_BY_ID[id], n }));
+}
+function renderBuild(box) {
+  box.textContent = '';
+  const list = buildList();
+  if (!list.length) { box.innerHTML = '<span class="dim">Henüz terfi yok.</span>'; return; }
+  for (const { cd, n } of list) {
+    const el = document.createElement('span');
+    el.className = 'chip'; el.style.setProperty('--rar', RAR[cd.r].color);
+    el.innerHTML = `<b>${cd.t}${n > 1 ? ` ×${n}` : ''}</b> <span>${cd.d}</span>`;
+    box.appendChild(el);
+  }
+}
 
 // ---------------------------------------------------------------- audio
 let actx = null, master, beatBus, sfxBus, noiseBuf;
@@ -563,7 +715,7 @@ const S = {
     const n = noise(t, 0.18), f = filt('lowpass', 1800), g = gainTo(bus); env(g, t, 0.001, v * 0.7, 0.16); n.connect(f); f.connect(g);
     const o = osc('sine', 90, t, 0.2), go = gainTo(bus); env(go, t, 0.002, v * 0.5, 0.15); o.connect(go);
   },
-  // The enemy's war drum: a low double knock when a volley starts to wind up.
+  // The enemy's war drum: a low double knock when an attack winds up.
   warn(t, v, bus) {
     for (const dt of [0, 0.16]) {
       const g = gainTo(bus); env(g, t + dt, 0.004, v, 0.3);
@@ -648,16 +800,18 @@ const newStats = (army) => ({
 function newGame() {
   G = {
     mode: 'title', phase: 'breather', paused: false, terfi: null, konak: null, tut: null,
-    leader: { kind: 'leader', x: 0, y: 0, r: 14, face: -Math.PI / 2, hearts: T.hearts, invuln: 0, pulse: 0 },
+    leader: { kind: 'leader', x: 0, y: 0, r: 14, face: -Math.PI / 2, hearts: T.hearts, invuln: 0, pulse: 0, kx: 0, ky: 0 },
     cam: { x: 0, y: 0 },
-    soldiers: [], enemies: [], forts: [], coins: [], shots: [], parts: [], texts: [], banners: [], pending: [], groups: [],
-    bar: 0, guardK: -1, guardPerfect: false, guardShow: 0,
-    volley: null, nextVolleyK: 0, wallUntil: -1, rushUntil: -1,
+    soldiers: [], enemies: [], forts: [], coins: [], shots: [], parts: [], texts: [], banners: [], pending: [], groups: [], zones: [],
+    seen: new Set(),
+    bar: 0, guardShow: 0, kos: null,
+    hucum: null, nextHucum: 0, wallUntil: -1, rushUntil: -1,
+    cd: { up: 0, down: 0, right: 0, left: 0 }, cdLen: { up: 1, down: 1, right: 1, left: 1 }, lastBeatPress: 0,
     ultis: DEFAULT_ULTIS.slice(), ultFlash: [0, 0, 0, 0],
-    picked: false, banner: 'azap', ganimet: 0, level: 0, need: 7,
+    picked: false, banner: 'azap', ganimet: 0, level: 0, need: T.terfiBase, cap: T.armyCaps[0], picks: [],
     wave: 0, wi: 0, chapter: 1, goal: 'dagit', target: null, def: null,
     waveBeat: 0, dir: 0, breatherBeat: 0, breatherLen: 16, victoryBeat: 0,
-    hpScale: 1, dmgScale: 1, silent: 0, streak: 0, curK: 0, h: 0, coinChain: 0, lastCoin: 0,
+    hpScale: 1, dmgScale: 1, streak: 0, curK: 0, h: 0, coinChain: 0, lastCoin: 0,
     stick: null, killTimes: [],
     stats: newStats(6),
     up: {
@@ -674,7 +828,7 @@ function newGame() {
 const auraR = () => T.auraR * G.up.aura;
 const inAura = (u) => dist(u, G.leader) <= auraR();
 // A soldier hears orders when it stands in the aura and has not charged out of it.
-const isOut = (s) => !!s.dash || s.outUntil >= G.curK;
+const isOut = (s) => !!s.dash || s.outUntil >= G.curK || !!s.grabbed || s.dazeUntil > G.h;
 const hears = (s) => s.spawnT >= 1 && !isOut(s) && inAura(s);
 const level = () => (G.bar >= CEZBE_AT[2] ? 3 : G.bar >= CEZBE_AT[1] ? 2 : G.bar >= CEZBE_AT[0] ? 1 : 0);
 const cz = () => 1 + T.levelStep * level();
@@ -684,10 +838,16 @@ function growHp(type, f) {
   G.up.hp[type] *= f;
   for (const s of G.soldiers) if (s.type === type) { s.maxHp *= f; s.hp *= f; }
 }
-// True when enemies are winding up a volley that lands on call beat `k`.
-const volleyOn = (k) => (!!G.tut && G.tut.red.has(k)) ||
-  (!!G.volley && G.volley.k === k && G.enemies.some((e) => !e.dead && e.state === 'wind' && e.strikeK === k));
-const volleyNext = () => { const n = nextCall(); return !!n && volleyOn(n.k); };
+// True when a blow is about to land on the leader, or a mass charge is on its way: the aura
+// warms red then. It is information; the player decides what to play.
+const dangerSoon = () => {
+  if (G.tut) return !!G.tut.fake;
+  if (G.hucum) return true;
+  return G.pending.some((p) => !p.done && p.at - G.h < 0.9 && p.atk.shape !== 'spell' && (p.atk.shape === 'roar' || covers(p.atk, G.leader)));
+};
+// Is a blow landing at `at` inside the Kös's guard? A press a little late still counts.
+const kosCovers = (at) => !!G.kos && at >= G.kos.t - ORD.kosLate && at <= G.kos.t + G.kos.win;
+const gradeMult = (g) => (g === 'p' ? G.up.perfect : g === 'g' ? 1 : ORD.offBeat);
 
 // ---------------------------------------------------------------- feedback
 function addShake(v) { if (!reduceMotion) G.shake = Math.max(G.shake, v); }
@@ -725,15 +885,13 @@ function slash(x, y, a, color, size) { part({ type: 'slash', x, y, a, life: 0.18
 
 // ---------------------------------------------------------------- spawning
 function spawnSoldier(type, quiet) {
-  if (G.soldiers.length >= T.armyCap) {
-    if (!quiet) floatText(G.leader.x, G.leader.y - 46, 'ORDU DOLU', '#b8a988', 14, true);
-    return false;
-  }
+  if (G.soldiers.length >= G.cap) return false;
   const def = SOLDIER[type], L = G.leader, a = rand(0, TAU), hp = def.hp * G.up.hp[type];
   const s = {
     kind: 'soldier', type, x: L.x + Math.cos(a) * 32, y: L.y + Math.sin(a) * 32, r: def.r,
     hp, maxHp: hp, face: a, cool: rand(0.3, 1.2), lunge: 0, spawnT: quiet ? 1 : 0,
     returning: false, retarget: 0, target: null, hitFlash: 0, dead: false, outUntil: -1, dash: null, rally: 0,
+    kx: 0, ky: 0, dazeUntil: 0, poisonUntil: 0, grabbed: null,
   };
   G.soldiers.push(s);
   G.stats.maxArmy = Math.max(G.stats.maxArmy, G.soldiers.length);
@@ -743,29 +901,41 @@ function spawnSoldier(type, quiet) {
   }
   return true;
 }
-// A summon brings whole companies of one soldier type.
+// A summon brings whole companies of one soldier type. Whoever finds the army full comes as
+// loot instead, so a big army still gets paid. Returns how many joined and how much loot came.
 function summonCompany(type, companies = 1) {
-  let n = 0;
-  for (let i = 0; i < SUMMON[type] * companies; i++) if (spawnSoldier(type, false)) n++;
-  if (!n) return false;
-  floatText(G.leader.x, G.leader.y - 70, `+${n} ${SOLDIER[type].name}`, SOLDIER[type].color, 20, true);
-  sfx('spawn', 0.05, (t) => { S.kos(t, 0.45, sfxBus); S.cevgen(t + 0.05, 0.9, sfxBus); });
-  return true;
+  let n = 0, loot = 0;
+  for (let i = 0; i < SUMMON[type] * companies; i++) if (spawnSoldier(type, false)) n++; else loot += T.overflowLoot;
+  const L = G.leader;
+  if (n) {
+    floatText(L.x, L.y - 70, `+${n} ${SOLDIER[type].name}`, SOLDIER[type].color, 20, true);
+    sfx('spawn', 0.05, (t) => { S.kos(t, 0.45, sfxBus); S.cevgen(t + 0.05, 0.9, sfxBus); });
+  }
+  if (loot) {
+    for (let i = 0; i < loot; i++) { const a = rand(0, TAU), sp = rand(160, 280); G.coins.push({ x: L.x, y: L.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0 }); }
+    floatText(L.x, L.y - (n ? 96 : 70), `ORDU DOLU · +${loot} GANİMET`, '#f0b429', 18, true);
+    burst(L.x, L.y, '#ffcf4a', 18, 240);
+  }
+  return { n, loot };
 }
 function spawnEnemy(type, x, y) {
   const d = ENEMY[type], hp = d.hp * G.hpScale;
   const e = {
     kind: 'enemy', type, x, y, r: d.r, hp, maxHp: hp, face: 0,
-    state: 'emerge', emergeT: 0, target: null, retarget: 0, windK: 0, windBeats: 2, strikeK: 0, aim: null, aimTarget: null,
+    state: 'emerge', emergeT: 0, target: null, retarget: 0, windAt: 0, strikeAt: 0, atkReady: G.h + rand(ATK.first[0], ATK.first[1]), aim: null, aimTarget: null,
     recoverUntil: 0, stunUntil: -1, hitFlash: 0, kx: 0, ky: 0, gallop: 0, gx: 0, gy: 0, dead: false,
+    atk: null, cycle: 0, lowUntil: 0, crackUntil: 0, eyeUntil: 0, hidden: false, burrowUntil: 0, holding: null,
+    orbit: rand(0, TAU), burrowMarks: (d.burrowAt || []).slice(), alt: d.move === 'fly' ? 30 : 0, airborne: false,
   };
+  if (d.boss) e.atkReady = G.h + 2.5;
   G.enemies.push(e);
   return e;
 }
 function spawnGroup(list) {
-  const st = G.target && ENEMY[G.target.type].fixed ? G.target : null;
-  if (st) { spawnAtStructure(st, list); return; }
-  const L = G.leader, a = G.dir + rand(-0.55, 0.55), R = rand(500, 560);
+  const L = G.leader, tg = G.target && !G.target.dead ? G.target : null, far = tg && dist(tg, L) >= T.nearGoal;
+  if (tg && ENEMY[tg.type].fixed && !far) { spawnAtStructure(tg, list); return; }
+  // Far from its goal the wave follows the band, coming from the goal's side.
+  const a = (far ? Math.atan2(tg.y - L.y, tg.x - L.x) : G.dir) + rand(-0.55, 0.55), R = rand(500, 560);
   const cx = L.x + Math.cos(a) * R, cy = L.y + Math.sin(a) * R;
   for (const t of list) spawnEnemy(t, cx + rand(-80, 80), cy + rand(-80, 80));
   sfx('horn', 0.2, (t) => S.kos(t, 0.3, sfxBus));
@@ -803,13 +973,13 @@ function raidBeat() {
     const r = RAID[f.type], d = dist(f, L);
     if (!f.awake && (d < r.wake || f.hp < f.maxHp)) {
       f.awake = true; f.nextSally = G.waveBeat;
-      floatText(f.x, f.y - 70, `${ENEMY[f.type].name.toUpperCase()} UYANDI!`, '#ff9a80', 18, true);
+      floatText(f.x, f.y - 70, `${upper(unitName(f.type))} UYANDI!`, '#ff9a80', 18, true);
     }
     if (f.awake && d > 900 && f.hp >= f.maxHp) f.awake = false;
     if (!f.awake || f.garrison <= 0 || G.waveBeat < f.nextSally || G.enemies.length >= T.enemyCap) continue;
-    const n = Math.min(r.sally, f.garrison), pool = G.chapter === 1 ? ['piyade', 'piyade', 'okcu'] : ['piyade', 'kalkanli', 'okcu', 'atli'];
+    const n = Math.min(r.sally, f.garrison), th = theme();
     const list = [];
-    for (let i = 0; i < n; i++) list.push(i === 0 && f.type === 'hisar' ? 'kalkanli' : pick(pool));
+    for (let i = 0; i < n; i++) list.push(i === 0 && f.type === 'hisar' ? th.lead : pick(th.pool));
     f.garrison -= n; f.nextSally = G.waveBeat + r.every;
     spawnAtStructure(f, list);
   }
@@ -820,12 +990,10 @@ function raidFell(f) {
   G.stats.raids++;
   addShake(10); G.flash = 0.7; G.flashColor = '255,200,80';
   const type = pick(SOLDIER_ORDER);
-  const before = G.soldiers.length;
-  summonCompany(type, r.companies);
-  const got = G.soldiers.length - before;
-  let sub = got ? `Esirler kurtuldu · +${got} ${SOLDIER[type].name}` : 'Esirler kurtuldu · ordu dolu';
+  const { n: got, loot } = summonCompany(type, r.companies);
+  let sub = 'Esirler kurtuldu' + (got ? ` · +${got} ${SOLDIER[type].name}` : '') + (loot ? ` · ordu dolu, +${loot} ganimet` : '');
   if (r.heart && G.leader.hearts < T.hearts) { G.leader.hearts++; sub += ' · +1 kalp'; }
-  bigText(f.type === 'hisar' ? 'HİSAR DÜŞTÜ!' : 'KARAKOL BASILDI!', sub, '#ffcf4a', 1.8);
+  bigText(`${upper(unitName(f.type))} DÜŞTÜ!`, sub, '#ffcf4a', 1.8);
   sfx('kale', 0.5, (t) => { S.zil(t, 1, sfxBus, true); S.kos(t, 1, sfxBus); S.shout(t, 1, sfxBus, 200); S.shout(t + 0.15, 1, sfxBus, 250); });
 }
 
@@ -833,15 +1001,15 @@ function raidFell(f) {
 // A short drill before the first wave: one step per instrument, no enemies and nothing to lose.
 // Each step shows what the instrument gives and what it costs; in the run the choice is free.
 const TUT_STEPS = [null,
-  { key: 'up', need: 3, text: 'Auradaki askerler hep birlikte vurur. Ama korumaz: o vuruştaki darbeler iner.' },
-  { key: 'down', need: 2, red: true, text: 'Aura kırmızı: düşman bu vuruşta vuracak. Kös darbeyi bloklar, ama kimse vurmaz.' },
-  { key: 'right', need: 2, text: 'Askerler uzağa atılır, sert vurur, kurulan saldırıyı keser. Ama bir süre emir duymazlar.' },
+  { key: 'up', need: 3, text: 'İstediğin an çal. Tempoya denk gelirse daha sert vurur, daha çabuk hazır olur, Cezbe dolar.' },
+  { key: 'down', need: 2, red: true, text: 'Kırmızı halka sana kapanıyor. Kapandığı an ↓ çal: darbe bloklanır. Ama kimse vurmaz.' },
+  { key: 'right', need: 2, text: 'Askerler uzağa atılır, sert vurur, kurulan saldırıyı keser. Ama birkaç saniye emir duymazlar.' },
   { key: 'left', need: 2, text: 'Ordu sana koşar, can ve iki kat Cezbe kazanır. Ama ne vurur ne korur.' },
 ];
 const tutTitle = (st) => `${ORDERS[st.key].key} ${ORDERS[st.key].inst} · ${ORDERS[st.key].name}`;
 function startTutorial() {
   G.phase = 'tutorial';
-  G.tut = { step: 1, count: 0, red: new Set() };
+  G.tut = { step: 1, count: 0, fake: null };
   bigText('EĞİTİM', 'Dört çalgı, dört emir · Boşluk: atla', '#f0b429', 2);
 }
 function tutStep(n) {
@@ -851,10 +1019,11 @@ function tutStep(n) {
   sfx('tutStep', 0.2, (t) => S.arp(t, 0.8, sfxBus, [587.33, 880], 0.08));
 }
 function endTutorial(skipped) {
-  store.set('mehter2.tutorial', true);
+  store.set('mehter3.tutorial', true);
   G.tut = null;
   // Practice presses do not carry over into the run.
-  G.bar = 0; G.streak = 0;
+  G.bar = 0; G.streak = 0; G.kos = null;
+  for (const k in G.cd) G.cd[k] = 0;
   for (const s of G.soldiers) { s.outUntil = -1; s.dash = null; }
   G.stats = newStats(G.soldiers.length);
   if (!skipped) {
@@ -864,34 +1033,37 @@ function endTutorial(skipped) {
   }
   startBreather();
 }
-// On each call of the Kös step, the call after it is scripted red.
-function tutorialBeat(k) {
+// In the Kös step a practice blow closes on the leader and lands three beats after it starts;
+// a new one starts on the beat after the last has landed.
+function tutorialBeat(b) {
   const tu = G.tut;
-  if (!TUT_STEPS[tu.step].red) return;
-  tu.red.add(k + 2);
+  if (!TUT_STEPS[tu.step].red || tu.fake) return;
+  tu.fake = { from: b.t, at: b.t + 3 * 60 / BPM };
   sfx('warn', 0.2, (t) => S.warn(t, 0.5, sfxBus));
 }
-// An on-time press in the drill: a red call is blocked or lands, and the step's own
-// instrument counts towards the next step.
-function tutorialPress(dir, k) {
-  const tu = G.tut, L = G.leader;
-  if (tu.red.has(k)) {
-    if (dir === 'down') {
-      floatText(L.x, L.y - 30, 'BLOK', '#9ecbff', 18, true);
-      ring(L.x, L.y, '#7fb6ff', 40);
-      sfx('kang', 0.05, (t) => S.kang(t, 0.9, sfxBus));
-    } else tutorialMissed(k);
-  }
-  if (dir !== TUT_STEPS[tu.step].key) return;
-  tu.count++;
-  if (tu.count >= TUT_STEPS[tu.step].need) { if (tu.step < TUT_STEPS.length - 1) tutStep(tu.step + 1); else endTutorial(false); }
-}
-function tutorialMissed(k) {
-  const L = G.leader;
-  if (G.tut.red.has(k)) {
+function tutorialUpdate(h) {
+  const f = G.tut && G.tut.fake, L = G.leader;
+  if (!f || h < f.at + ORD.kosLate) return;
+  G.tut.fake = null;
+  if (kosCovers(f.at)) {
+    floatText(L.x, L.y - 30, 'BLOK', '#9ecbff', 18, true);
+    ring(L.x, L.y, '#7fb6ff', 40);
+    sfx('kang', 0.05, (t) => S.kang(t, 0.9, sfxBus));
+    tutCount();
+  } else {
     floatText(L.x, L.y - 30, 'darbe!', '#ff6a55', 18, true);
     addShake(4); G.flash = 0.35; G.flashColor = '255,60,40';
-  } else floatText(L.x, L.y - 30, 'aura parlarken bas', '#b8a988', 14, true);
+  }
+}
+// A press of the step's instrument counts; in the Kös step only a block does.
+function tutorialPress(dir) {
+  const st = TUT_STEPS[G.tut.step];
+  if (dir === st.key && !st.red) tutCount();
+}
+function tutCount() {
+  const tu = G.tut;
+  tu.count++;
+  if (tu.count >= TUT_STEPS[tu.step].need) { if (tu.step < TUT_STEPS.length - 1) tutStep(tu.step + 1); else endTutorial(false); }
 }
 
 // ---------------------------------------------------------------- flow
@@ -910,47 +1082,51 @@ function startBreather() {
     if (room > best) { best = room; G.dir = a; }
   }
   G.breatherLen = G.wave === 1 ? 16 : T.breatherBeats;
-  G.target = null; G.volley = null; G.picked = false;
+  G.target = null; G.hucum = null; G.picked = false;
   const L = G.leader;
   G.banners = SOLDIER_ORDER.map((type, i) => {
     const a = -Math.PI / 2 + (i - 1.5) * 0.95;
     return { type, x: L.x + Math.cos(a) * 185, y: L.y + Math.sin(a) * 150 + 30 };
   });
-  if (G.wi === 1) bigText(`${G.chapter}. BÖLÜM`, CHAPTER_NAME[G.chapter - 1], '#f0b429', 2);
-  if (G.wave === 1) showHint('Bir sancağın altına yürü: askerleri hemen gelir. Dalga başına bir sancak. Beklerken prova et: aura ısınınca bir çalgı çal.', 16);
-  else showHint(`Sıradaki: ${GOALS[G.goal].name}. Düşmana göre bir sancak seç: askerleri hemen gelir. Boşluk: hemen başlat.`, 8);
+  if (G.wi === 1) bigText(`${G.chapter}. BÖLÜM`, theme().name, '#f0b429', 2);
+  // A monster seen for the first time is introduced in the breather before it comes.
+  const fresh = Object.keys(G.def).concat(G.goal === 'boss' ? [theme().boss] : []).filter((t) => !G.seen.has(t));
+  fresh.forEach((t) => G.seen.add(t));
+  G.fresh = fresh;
+  if (G.wave === 1) showHint('Bir sancağın altına yürü: askerleri hemen gelir. Dalga başına bir sancak. Beklerken prova et: çalgıları tempoya denk getir.', 16);
+  else if (fresh.length) showHint('Yeni: ' + fresh.map((t) => ENEMY[t].tip).join(' '), G.breatherLen);
+  else showHint(`Sıradaki: ${goalName(G.goal)}. Düşmana göre bir sancak seç: askerleri hemen gelir. Boşluk: hemen başlat.`, 8);
 }
 function startWave() {
   G.phase = 'wave'; G.waveBeat = 0; G.banners = [];
   G.hpScale = 1 + 0.35 * (G.chapter - 1) + 0.05 * (G.wi - 1);
   G.dmgScale = 1 + 0.2 * (G.chapter - 1);
-  const list = [];
-  for (const t of ENEMY_ORDER) for (let i = 0; i < (G.def[t] || 0); i++) list.push(t);
+  // Small monsters are shuffled; the big ones join the later groups, spread apart.
+  const list = [], bigs = [];
+  for (const t in G.def) for (let i = 0; i < G.def[t]; i++) (ENEMY[t].big ? bigs : list).push(t);
   for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; }
+  bigs.forEach((t, i) => list.splice(Math.min(list.length, T.groupSize + Math.round((i + 0.5) * (list.length - T.groupSize) / bigs.length)), 0, t));
   G.target = null;
-  const gt = GOAL_UNIT[G.goal];
+  const gt = GOAL_UNIT(G.goal);
   if (gt) {
-    const L = G.leader, R = gt === 'boss' ? 480 : 440;
+    const L = G.leader, R = ENEMY[gt].boss ? 480 : 440;
     G.target = spawnEnemy(gt, L.x + Math.cos(G.dir) * R, L.y + Math.sin(G.dir) * R);
     G.target.face = Math.atan2(L.y - G.target.y, L.x - G.target.x);
   }
   G.groups = [];
   for (let i = 0; i < list.length; i += T.groupSize) G.groups.push({ at: 1 + (i / T.groupSize) * T.groupBeats, list: list.slice(i, i + T.groupSize), done: false });
-  const k0 = G.curK + (G.curK % 2);
-  G.nextVolleyK = k0 + 2 * 3; G.volley = null;
-  bigText(GOALS[G.goal].name.toUpperCase(), enemySummary(G.goal, G.def), '#f1e6cc', 1.6);
-  const hint = {
-    1: G.chapter === 1 ? 'Her çağrıda hangi çalgıyı çalacağın senin kararın. Aura KIRMIZI ısınıyorsa düşman o vuruşta saldıracak: blokla, atılıp kes ya da önce sen vur.' : null,
-    2: 'Karakolu bas: askerlerin karakolu döver. Karakol durdukça içinden asker çıkar.',
-    3: G.chapter === 1 ? 'Atlılar lidere ve arkadaki okçulara dalar. Mızraklı Azap onları durdurur.' : null,
-    4: 'Kale kapısı! Kapı düşünce dalga biter. Kalkanlıyı Yeniçeri deler.',
-    5: 'Serdar geniş vurur ve ATIL onun saldırısını kesemez. Cezbe kademen varsa 1-4 ile ulti at.',
+  G.hucum = null; G.nextHucum = G.h + hucumGap() * 0.7; G.lastBeatPress = G.h;
+  bigText(upper(goalName(G.goal)), enemySummary(G.goal, G.def), '#f1e6cc', 1.6);
+  const hint = G.fresh.length ? 'Yeni: ' + G.fresh.map((t) => ENEMY[t].tip).join(' ') : {
+    1: G.chapter === 1 ? 'Çalgıları istediğin an çal; tempoya denk gelirse güçlenir. Kırmızı işareti Kös ile blokla, Çevgen ile kes ya da önce sen vur.' : null,
+    2: `${theme().karakol}: askerlerin onu döver. Durdukça içinden canavar çıkar.`,
+    4: `${theme().kapi} düşünce dalga biter.`,
   }[G.wi];
-  if (hint) showHint(hint, 12);
+  if (hint) showHint(hint, 14);
   sfx('wave', 0.2, (t) => { S.kos(t, 0.8, sfxBus); S.zil(t, 0.5, sfxBus, true); });
 }
 function victory(title, sub) {
-  G.phase = 'victory'; G.victoryBeat = 0; G.volley = null; G.pending = [];
+  G.phase = 'victory'; G.victoryBeat = 0; G.hucum = null; G.pending = []; G.zones = [];
   bigText(title || 'ZAFER!', sub || `${G.chapter}. bölüm · ${G.wi}. dalga temizlendi`, '#ffcf4a', 2);
   const L = G.leader;
   for (let i = 0; i < 6; i++) { const a = rand(0, TAU); G.coins.push({ x: L.x + Math.cos(a) * 140, y: L.y + Math.sin(a) * 140, vx: 0, vy: 0, t: 0.2 }); }
@@ -977,7 +1153,7 @@ function onBeat(b) {
     }
   }
   if (G.phase === 'tutorial') {
-    if (call) tutorialBeat(b.k);
+    tutorialBeat(b);
   } else if (G.phase === 'breather') {
     G.breatherBeat++;
     if (G.breatherBeat >= G.breatherLen) startWave();
@@ -985,12 +1161,22 @@ function onBeat(b) {
     G.waveBeat++;
     for (const g of G.groups) if (!g.done && G.waveBeat >= g.at) { g.done = true; spawnGroup(g.list); }
     const tg = G.target;
+    // A fort sends out its garrison; a serdar without summons of its own brings an escort.
+    const th = theme();
     if (tg && !tg.dead && G.waveBeat % 10 === 0 && G.enemies.length < T.enemyCap) {
-      const list = ['piyade', 'piyade', 'piyade', G.chapter >= 2 ? 'okcu' : 'piyade', G.goal === 'kale' && G.waveBeat % 20 === 0 ? 'kalkanli' : 'piyade', G.chapter >= 2 ? 'kalkanli' : 'piyade'];
-      if (ENEMY[tg.type].fixed) spawnAtStructure(tg, list); else spawnGroup(list.slice(0, 4));
+      if (ENEMY[tg.type].fixed) {
+        const list = [0, 1, 2, 3, 4].map(() => pick(th.pool));
+        if (G.goal === 'kale' && G.waveBeat % 20 === 0) list.push(th.lead);
+        spawnGroup(list);
+      } else if (th.escort) spawnGroup(th.escort);
     }
     raidBeat();
-    if (call) scheduleVolley(b.k);
+    hucumBeat(b);
+    // Long stretches without a press on the beat cool the Cezbe.
+    if (G.h - G.lastBeatPress > T.silenceSec && G.waveBeat % 2 === 0) {
+      G.streak = 0;
+      if (G.bar > 0) { dropBar(T.silenceDrop); floatText(G.leader.x, G.leader.y - 50, 'sessizlik', '#8a7d62', 13); }
+    }
   } else if (G.phase === 'victory') {
     G.victoryBeat++;
     if (G.victoryBeat >= 4) afterVictory();
@@ -999,31 +1185,22 @@ function onBeat(b) {
     if (G.victoryBeat === 6) endRun(true);
   }
 }
-function onBeatClosed(b) {
-  if (G.mode === 'play' && G.phase === 'tutorial' && G.tut && !b.claimed && isCallBeat(b.k)) { tutorialMissed(b.k); return; }
-  if (G.mode !== 'play' || G.terfi || G.konak || G.phase !== 'wave' || b.claimed || !isCallBeat(b.k)) return;
-  G.streak = 0;
-  G.silent++;
-  if (G.silent >= T.silenceBeats / beatStep()) {
-    G.silent = 0;
-    if (G.bar > 0) { dropBar(T.silenceDrop); floatText(G.leader.x, G.leader.y - 50, 'sessizlik', '#8a7d62', 13); }
-  }
-}
 function gameOver() { endRun(false); }
 function endRun(won) {
   G.mode = 'over';
   if (!won) sfx('over', 0.5, (t) => { S.kos(t, 1, sfxBus); S.kos(t + 0.5, 0.8, sfxBus); });
   $('overEyebrow').textContent = won ? 'Sefer tamam' : 'Lider düştü';
   $('overTitle').textContent = won ? 'Üç bölüm geçildi!' : 'Sefer bitti';
-  const best = Math.max(Number(store.get('mehter2.best', 0)) || 0, G.wave);
-  store.set('mehter2.best', best);
-  if (won) store.set('mehter2.wins', (Number(store.get('mehter2.wins', 0)) || 0) + 1);
+  const best = Math.max(Number(store.get('mehter3.best', 0)) || 0, G.wave);
+  store.set('mehter3.best', best);
+  if (won) store.set('mehter3.wins', (Number(store.get('mehter3.wins', 0)) || 0) + 1);
   const s = G.stats;
   const rows = [
     won ? ['Sefer', 'tamam'] : ['Ulaşılan', `${G.chapter}. bölüm · ${G.wi}. dalga`], ['Düşen düşman', s.kills], ['En büyük ordu', s.maxArmy],
-    ['Perfect', s.perfect], ['İyi', s.good], ['Kaçan', s.miss],
+    ['Perfect', s.perfect], ['İyi', s.good], ['Ritim dışı', s.miss],
     ['Çalgılar', Object.keys(ORDERS).map((d) => ORDERS[d].key + s.use[d]).join(' ')], ['En uzun seri', s.bestStreak], ['Atılan ulti', s.ultis], ['Basılan kale', s.raids],
   ];
+  renderBuild($('overBuild'));
   const box = $('stats'); box.textContent = '';
   for (const [l, v] of rows) {
     const d = document.createElement('div'); d.className = 'stat';
@@ -1059,56 +1236,61 @@ function announceLevel(l) {
 }
 
 // ---------------------------------------------------------------- the drum hand
-// Timing is the only thing judged. Any instrument played on time raises Cezbe and gives its
-// order; which one fits the moment is the player's call, and the world answers it.
+// Any instrument can be played at any moment it is ready. Timing only decides how well: on the
+// beat the order is stronger, the instrument recharges sooner and Cezbe rises; off the beat the
+// order still goes out, weaker. Which instrument fits the moment is the player's call.
 function drum(dir, stamp) {
   if (!actx) return;
   const t = actx.currentTime;
+  // An instrument that is not ready yet only ticks.
+  if (G.mode === 'play' && !G.paused && G.cd[dir] > heardAt(stamp)) { drumNotReady(dir); return; }
   if (dir === 'up') S.dum(t, 1, sfxBus);
   else if (dir === 'down') S.kos(t, 0.95, sfxBus);
   else if (dir === 'right') { S.cevgen(t, 1, sfxBus); S.tek(t, 0.8, sfxBus); }
   else S.zil(t, 0.7, sfxBus, false);
   G.keyFlash[dir] = 1;
   if (G.mode !== 'play' || G.paused || G.terfi || G.konak) return;
+  const h = heardAt(stamp), o = ORDERS[dir];
   G.leader.pulse = 1;
-  const h = heardAt(stamp), b = nearestBeat(h);
-  if (!b) return;
-  const err = h - b.t, ae = Math.abs(err);
+  const b = nearestBeat(h);
+  const err = b ? h - b.t : 1, ae = Math.abs(err);
   if (ae <= 0.25) { G.errs.push(err); if (G.errs.length > 24) G.errs.shift(); }
-  if (ae > T.goodWin) {
-    G.stats.miss++; G.streak = 0;
-    judge('KAÇTI', '#d88a74', G.tut ? (err < 0 ? 'erken: aura parlayınca bas' : 'geç: aura parlayınca bas') : err < 0 ? 'erken' : 'geç');
-    G.ringFlash = { color: '216,110,90', life: 0.3 };
-    S.tick(t, 1, sfxBus);
-    if (G.phase === 'wave') dropBar(T.missDrop);
-    return;
-  }
-  if (b.claimed) { floatText(G.leader.x + 22, G.leader.y - 30, '·', '#8a7d62', 16); return; }
-  b.claimed = true;
-  const perfect = ae <= T.perfectWin;
-  b.grade = perfect ? 'p' : 'g';
-  G.silent = 0;
-  if (perfect) G.stats.perfect++; else G.stats.good++;
+  const grade = ae <= T.perfectWin ? 'p' : ae <= T.goodWin ? 'g' : 'o';
+  const len = ORD.cd[dir] * (grade === 'o' ? 1 : ORD.onBeatCd);
+  G.cd[dir] = h + len; G.cdLen[dir] = len;
   if (G.phase === 'wave') G.stats.use[dir]++;
-  G.streak++; G.stats.bestStreak = Math.max(G.stats.bestStreak, G.streak);
-  const streakTxt = G.streak >= 5 ? `${G.streak} seri` : '';
-  judge(perfect ? 'PERFECT' : 'İYİ', perfect ? '#ffcf4a' : '#f1e6cc',
-    perfect ? streakTxt : (err < 0 ? 'erken' : 'geç') + (streakTxt ? ' · ' + streakTxt : ''));
-  G.ringFlash = { color: perfect ? '255,207,74' : '241,230,204', life: 0.3 };
-  addBar((perfect ? T.perfectGain : T.goodGain) * beatStep() * (dir === 'left' ? ORD.zilCezbe : 1));
-  if (STREAK_MARKS.includes(G.streak) || (G.streak > 200 && G.streak % 50 === 0)) celebrate(G.streak);
-  const o = ORDERS[dir];
+  if (grade === 'o') {
+    G.stats.miss++; G.streak = 0;
+    judge('RİTİM DIŞI', '#b8a988', (err < 0 ? 'erken' : 'geç') + ' · emir zayıf');
+  } else {
+    const perfect = grade === 'p';
+    G.lastBeatPress = h;
+    if (perfect) G.stats.perfect++; else G.stats.good++;
+    G.streak++; G.stats.bestStreak = Math.max(G.stats.bestStreak, G.streak);
+    const streakTxt = G.streak >= 5 ? `${G.streak} seri` : '';
+    judge(perfect ? 'PERFECT' : 'İYİ', perfect ? '#ffcf4a' : '#f1e6cc',
+      perfect ? streakTxt : (err < 0 ? 'erken' : 'geç') + (streakTxt ? ' · ' + streakTxt : ''));
+    G.ringFlash = { color: perfect ? '255,207,74' : '241,230,204', life: 0.3 };
+    // One Cezbe gain per beat, so a chord of instruments does not pay twice.
+    if (!b.claimed) { b.claimed = true; addBar((perfect ? T.perfectGain : T.goodGain) * (dir === 'left' ? ORD.zilCezbe : 1)); }
+    if (STREAK_MARKS.includes(G.streak) || (G.streak > 200 && G.streak % 50 === 0)) celebrate(G.streak);
+  }
   G.cmdFx = { text: o.name + '!', color: o.color, life: 0.5 }; G.order = { color: o.color, life: 0.3 };
-  if (dir === 'up') cmdStrike(perfect);
-  else if (dir === 'down') cmdGuard(b.k, perfect);
-  else if (dir === 'right') cmdCharge(perfect);
-  else cmdRally(perfect);
-  if (G.tut) tutorialPress(dir, b.k);
+  if (dir === 'up') cmdStrike(grade);
+  else if (dir === 'down') cmdGuard(h, grade);
+  else if (dir === 'right') cmdCharge(grade);
+  else cmdRally(grade);
+  if (G.tut) tutorialPress(dir);
+}
+function drumNotReady(dir) {
+  floatText(G.leader.x, G.leader.y - 30, `${ORDERS[dir].inst} hazır değil`, '#8a7d62', 12);
+  S.tick(actx.currentTime, 0.6, sfxBus);
 }
 function nearestEnemy(p, maxD, exclude, leash) {
   let best = null, bd = maxD;
   for (const e of G.enemies) {
-    if (e.dead || e.state === 'emerge' || e === exclude) continue;
+    if (e.dead || e.state === 'emerge' || e === exclude || e.hidden) continue;
+    if (p.kind === 'soldier' && !canHit(p, e)) continue;
     const d = dist(p, e) - e.r;
     if (d > bd) continue;
     if (leash && dist(e, G.leader) > leash + e.r) continue;
@@ -1124,7 +1306,7 @@ function preyFor(s, range, leash) {
   let prey = null, ps = Infinity, other = null, os = Infinity;
   const strong = STRONG[s.type], weak = WEAK[s.type];
   for (const e of G.enemies) {
-    if (e.dead || e.state === 'emerge') continue;
+    if (e.dead || e.state === 'emerge' || !canHit(s, e)) continue;
     const isPrey = strong.includes(e.type);
     const d = Math.max(0, dist(s, e) - e.r);
     if (d > range * (isPrey ? PREY.range : 1)) continue;
@@ -1140,26 +1322,28 @@ const reachOf = (s) => {
   return def.ranged ? def.reach * (s.type === 'kemankes' ? G.up.kRange : 1) : def.reach + s.r + 36;
 };
 // VUR: every soldier that hears strikes its prey, or the nearest enemy in reach.
-function cmdStrike(perfect) {
+function cmdStrike(grade) {
   let n = 0, hits = 0;
   for (const s of G.soldiers) {
     if (!hears(s)) continue;
     n++;
-    const t = s.target && !s.target.dead && dist(s, s.target) - s.target.r <= reachOf(s) ? s.target : null;
+    const t = s.target && !s.target.dead && canHit(s, s.target) && dist(s, s.target) - s.target.r <= reachOf(s) ? s.target : null;
     const e = t || nearestEnemy(s, reachOf(s));
-    if (e) { attack(s, e, 'vur', perfect); hits++; } else s.lunge = 0.6;
+    if (e) { attack(s, e, 'vur', grade); hits++; } else s.lunge = 0.6;
   }
   if (n) sfx('hah', 0.08, (t) => S.shout(t, Math.min(0.9, 0.3 + n * 0.05), sfxBus, 150 + Math.random() * 20));
-  if (hits && perfect) { G.hitstop = 0.055; addShake(5); } else if (hits) addShake(2.5);
+  if (hits && grade === 'p') { G.hitstop = 0.055; addShake(5); } else if (hits) addShake(2.5);
 }
-// DİREN: blows landing on this call on the leader or anyone standing in the aura are blocked.
-function cmdGuard(k, perfect) {
-  G.guardK = k; G.guardPerfect = perfect; G.guardShow = 0.4;
+// DİREN: blows landing in the next moment on the leader or on soldiers that hear are blocked.
+// On the beat the guard stays up longer.
+function cmdGuard(h, grade) {
+  G.kos = { t: h, win: grade === 'o' ? ORD.kosWin : ORD.kosWinOnBeat };
+  G.guardShow = 0.4;
 }
 // ATIL: every soldier that hears dashes at its prey much further out than VUR reaches, strikes
 // harder and breaks a wind-up. It then stays out of the aura for a while: it fights on its own,
 // does not hear orders, and DİREN does not cover it.
-function cmdCharge(perfect) {
+function cmdCharge(grade) {
   const L = G.leader, out = G.curK + ORD.atilOutBeats;
   let n = 0;
   for (const s of G.soldiers) {
@@ -1168,36 +1352,40 @@ function cmdCharge(perfect) {
     const ranged = SOLDIER[s.type].ranged;
     const e = preyFor(s, ranged ? reachOf(s) * ORD.atilRangedReach : ORD.atilReach, null);
     s.outUntil = out; s.returning = false; s.rally = 0;
-    if (e) { s.dash = { e, perfect, t: 0.7 }; s.target = e; }
+    if (e) { s.dash = { e, grade, t: 0.7 }; s.target = e; }
     else {
       // Nobody to hit: they still charge out ahead of the leader, and still leave the aura.
       const a = L.face + rand(-0.5, 0.5);
-      s.dash = { x: s.x + Math.cos(a) * 150, y: s.y + Math.sin(a) * 150, perfect, t: 0.5 };
+      s.dash = { x: s.x + Math.cos(a) * 150, y: s.y + Math.sin(a) * 150, grade, t: 0.5 };
     }
   }
   if (n) {
     sfx('hucum', 0.08, (t) => { S.shout(t, Math.min(1, 0.4 + n * 0.05), sfxBus, 190); S.shout(t + 0.1, Math.min(1, 0.4 + n * 0.05), sfxBus, 240); });
-    addShake(perfect ? 5 : 3);
-    if (G.phase === 'wave') hintOnce('atil', 'ATIL: askerlerin dışarıda. Bir süre emir duymazlar ve Kös onları korumaz. ← Zil ile geri topla.', 8);
+    addShake(grade === 'p' ? 5 : 3);
+    if (G.phase === 'wave') hintOnce('atil', 'ATIL: askerlerin dışarıda. Birkaç saniye emir duymazlar ve Kös onları korumaz. ← Zil ile geri topla.', 8);
   }
 }
 // TOPLAN: everyone, wherever they are, breaks off and runs back fast, and heals a little.
 // Nobody strikes and nothing is blocked; the zil pays in Cezbe instead (see drum()).
-function cmdRally(perfect) {
-  let n = 0;
+function cmdRally(grade) {
+  let n = 0, freed = 0;
   for (const s of G.soldiers) {
     if (s.spawnT < 1) continue;
+    if (s.grabbed) releaseGrab(s.grabbed);
+    if (s.poisonUntil > G.h || s.dazeUntil > G.h) { freed++; burst(s.x, s.y, '#bfe8a0', 6, 100); }
+    s.dazeUntil = 0; s.poisonUntil = 0;
     s.outUntil = -1; s.dash = null; s.target = null; s.returning = true; s.rally = 1.5;
-    const heal = s.maxHp * ORD.zilHeal * G.up.zilHeal * (perfect ? 1.5 : 1);
+    const heal = s.maxHp * ORD.zilHeal * G.up.zilHeal * (grade === 'p' ? 1.5 : grade === 'o' ? ORD.offBeat : 1);
     if (s.hp < s.maxHp) { s.hp = Math.min(s.maxHp, s.hp + heal); burst(s.x, s.y, '#8fd46a', 4, 90); }
     n++;
   }
   if (n) ring(G.leader.x, G.leader.y, '#8fd46a', auraR() / 3);
+  if (freed) floatText(G.leader.x, G.leader.y - 84, `${freed} asker toparlandı`, '#bfe8a0', 15, true);
 }
-function attack(s, e, command, perfect) {
-  const def = SOLDIER[s.type];
+function attack(s, e, command, grade) {
+  const def = SOLDIER[s.type], perfect = grade === 'p';
   let dmg = def.dmg * G.up.dmg[s.type] * cz();
-  if (command) dmg *= (perfect ? G.up.perfect : 1) * (rushOn() ? 2 : 1) * (command === 'atil' ? G.up.atil : 1);
+  if (command) dmg *= gradeMult(grade) * (rushOn() ? 2 : 1) * (command === 'atil' ? G.up.atil : 1);
   else dmg *= 0.5;
   s.face = Math.atan2(e.y - s.y, e.x - s.x);
   const src = command === 'atil' ? { type: s.type, x: s.x, y: s.y, charge: true } : s;
@@ -1217,30 +1405,48 @@ function attack(s, e, command, perfect) {
 function fireShot(s, e, dmg, kb, perfect, delay, src) {
   G.shots.push({ x: s.x, y: s.y, e, dmg, src: src || s, kb, perfect, delay, gun: !!SOLDIER[s.type].gun, a: Math.atan2(e.y - s.y, e.x - s.x) });
 }
+// Who a soldier can strike: nothing under the ground, and a flyer only with a ranged weapon, or
+// while it is low after a dive or stunned.
+const flying = (e) => (ENEMY[e.type].move === 'fly' || !!e.airborne) && e.lowUntil < G.h && e.stunUntil < G.curK;
+const canHit = (s, e) => !e.hidden && (SOLDIER[s.type].ranged || !flying(e));
 function hitEnemy(e, dmg, src, kb) {
-  if (e.dead) return;
+  if (e.dead || e.hidden) return;
+  const def = ENEMY[e.type];
   const strong = (STRONG[src.type] || []).includes(e.type);
-  const d = dmg * (strong ? 2 : 1);
+  // Armor: a big one takes only a share until a Perfect Kös cracks it, Tepegöz until his eye opens.
+  const shut = !!def.armor && G.h > (def.boss ? e.eyeUntil : e.crackUntil);
+  const d = dmg * (strong ? 2 : 1) * (shut ? def.armor : 1);
   e.hp -= d; e.hitFlash = 1;
   const a = Math.atan2(e.y - src.y, e.x - src.x);
-  const kbm = ENEMY[e.type].fixed ? 0 : e.type === 'boss' ? 0.15 : e.type === 'kalkanli' ? 0.4 : e.type === 'atli' ? 0.6 : 1;
+  const kbm = def.fixed ? 0 : def.boss ? 0.15 : def.big ? 0.25 : def.armor ? 0.4 : 1;
   e.kx += Math.cos(a) * kb * kbm; e.ky += Math.sin(a) * kb * kbm;
   floatText(e.x + rand(-6, 6), e.y - e.r - 8, Math.max(1, Math.round(d)) + (strong ? '!' : ''),
-    strong ? '#ffcf4a' : '#f1e6cc', clamp(12 + d * 0.3, 12, 32), strong);
-  sparks(e.x, e.y, a, '#ffe2a0', 6);
+    shut ? '#9a9486' : strong ? '#ffcf4a' : '#f1e6cc', clamp(12 + d * 0.3, 12, 32), strong);
+  sparks(e.x, e.y, a, shut ? '#c9c4b8' : '#ffe2a0', 6);
   sfx('impact', 0.035, (t) => S.impact(t, 0.9, sfxBus));
-  if (strong) hintOnce('counter', 'Altın sayı: asker güçlü olduğu düşmana iki kat vurur.', 6);
-  // An ATIL blow breaks a wind-up: that enemy's blow on the coming call never lands.
-  if (src.charge && e.state === 'wind' && e.type !== 'boss' && e.hp > 0) {
-    e.state = 'recover'; e.recoverUntil = G.curK + 2;
-    floatText(e.x, e.y - e.r - 26, 'KESİLDİ', '#ffb14a', 15, true);
+  if (strong) hintOnce('counter', 'Altın sayı: asker güçlü olduğu canavara iki kat vurur.', 6);
+  if (shut) hintOnce('armor' + e.type, def.boss
+    ? 'Tepegöz gözü kapalıyken neredeyse hiç hasar almaz. Bir saldırısından sonra göz açılır: o an vur.'
+    : `${def.name} zırhlı: saldırısını tam anında ↓ Kös ile karşıla, çatlasın; sonra vur.`, 8);
+  // An ATIL blow breaks a wind-up or a spell, and frees a soldier from a grab. A serdar's blow
+  // holds, unless its attack says it can be cut.
+  if (src.charge && e.hp > 0) {
+    if (e.holding) releaseGrab(e);
+    const atk = e.atk, cut = atk && (atk.cut != null ? atk.cut : !def.boss);
+    if (e.state === 'wind' && cut) {
+      e.state = 'recover'; e.recoverUntil = G.curK + 2; e.atk = null; e.airborne = false;
+      floatText(e.x, e.y - e.r - 26, atk.shape === 'spell' ? 'BÜYÜ BOZULDU' : 'KESİLDİ', '#ffb14a', 15, true);
+    }
   }
+  if (e.burrowMarks.length && e.hp > 0 && e.hp / e.maxHp < e.burrowMarks[0]) { e.burrowMarks.shift(); burrow(e); }
   if (e.hp <= 0) killEnemy(e, a);
 }
-function killEnemy(e, a) {
+// `quiet` is a rout when the wave's goal falls: nobody bursts then.
+function killEnemy(e, a, quiet) {
   if (e.dead) return;
   e.dead = true;
   const d = ENEMY[e.type];
+  if (e.holding) releaseGrab(e);
   G.stats.kills++;
   burst(e.x, e.y, d.color, d.goal ? 50 : 16, d.goal ? 380 : 230);
   ring(e.x, e.y, '#ffffff', d.goal ? 90 : 30);
@@ -1248,6 +1454,11 @@ function killEnemy(e, a) {
     // The body is thrown along the blow that killed it.
     const fa = a == null ? rand(0, TAU) : a;
     part({ type: 'corpse', x: e.x, y: e.y, vx: Math.cos(fa) * 300, vy: Math.sin(fa) * 300, life: 0.5, max: 0.5, color: d.color, size: e.r, rot: 0, spin: rand(-14, 14), kind: e.type });
+  }
+  // A Kül Hortlağı bursts where it falls.
+  if (d.burst && !quiet && !e.hidden) {
+    hazard(e.type, { shape: 'circle', r: d.burst.r, wind: d.burst.wind, dmg: d.burst.dmg }, e.x, e.y);
+    burst(e.x, e.y, '#ff8a3a', 10, 160);
   }
   const now = performance.now();
   G.killTimes = G.killTimes.filter((k) => now - k < 500);
@@ -1261,8 +1472,8 @@ function killEnemy(e, a) {
 }
 // The wave's goal falls: the outpost, the gate or the serdar. The rest of the enemy breaks.
 function goalFell(e) {
-  for (const o of G.enemies) if (!o.dead && o !== e && !o.side) killEnemy(o);
-  const title = { karakol: 'KARAKOL DÜŞTÜ!', kapi: 'KALE DÜŞTÜ!', boss: 'SERDAR DÜŞTÜ!' }[e.type];
+  for (const o of G.enemies) if (!o.dead && o !== e && !o.side) killEnemy(o, null, true);
+  const title = `${upper(unitName(e.type))} DÜŞTÜ!`;
   addShake(14); G.flash = 1; G.flashColor = '255,200,80';
   sfx('kale', 0.5, (t) => {
     S.zil(t, 1, sfxBus, true); S.kos(t, 1, sfxBus);
@@ -1272,104 +1483,286 @@ function goalFell(e) {
 }
 
 // ---------------------------------------------------------------- enemies
+// A monster goes for the nearest of the leader and the soldiers. A Dev Akrep wants a soldier to
+// drag off, and only takes the leader when nobody else is near.
 function pickTarget(e) {
   const L = G.leader;
-  let best = L, bd = dist(e, L);
+  let best = L, bd = dist(e, L) * (ENEMY[e.type].grabber ? 3 : 1);
   for (const s of G.soldiers) {
-    if (s.dead || s.spawnT < 1) continue;
-    // Riders go for the leader and the back line, never for the front.
-    if (e.type === 'atli' && !SOLDIER[s.type].ranged) continue;
+    if (s.dead || s.spawnT < 1 || s.grabbed) continue;
     const d = dist(e, s);
     if (d < bd) { bd = d; best = s; }
   }
   return best;
 }
-// A volley calls in every enemy close enough to its target: foot soldiers lunge the last
-// stretch while the aura warms, so the whole front strikes together on the beat.
+const nextAttack = (e) => { const list = ENEMY[e.type].atk; return list[e.cycle % list.length]; };
+// Spells, far blows and the roar are aimed at the leader; the rest at the monster's own target.
+const aimsAtLeader = (spec) => spec.shape === 'spell' || spec.shape === 'roar' || !!spec.far;
+// Can this attack reach its target from here? In a mass charge (extra) melee monsters lunge the
+// last stretch, so the whole front strikes together.
 const LUNGE = 90;
-function inReach(e, tg, extra) {
+function reaches(e, tg, spec, extra) {
   const d = ENEMY[e.type], dd = dist(e, tg);
-  return e.type === 'okcu' || e.type === 'atli' ? dd <= d.reach + (extra ? 40 : 0) : dd - tg.r - e.r <= d.reach + (extra ? LUNGE : 0);
+  if (spec.far) return dd <= 560;
+  if (spec.shape === 'spell') return dd <= d.reach;
+  if (spec.shape === 'single') return dd - tg.r - e.r <= d.reach + (extra ? LUNGE : 0);
+  return dd <= d.reach + e.r + (extra ? 40 : 0);
 }
-const volleyGap = () => {
-  if (G.chapter === 1 && G.wi === 1) return 3;
-  return pick(G.chapter === 1 ? [2, 3, 3] : G.chapter === 2 ? [2, 2, 3] : [2, 2, 2, 3]);
-};
-// Enemies strike together, in volleys a few calls apart. One call before a volley, every enemy
-// in reach of its target winds up at once, and the aura starts to warm red instead of gold.
-function scheduleVolley(k) {
-  if (G.nextVolleyK - 2 < k) G.nextVolleyK = k + 2 * volleyGap();
-  if (k !== G.nextVolleyK - 2) return;
-  const strikeK = G.nextVolleyK, L = G.leader;
-  G.nextVolleyK += 2 * volleyGap();
-  let atLeader = 0, n = 0;
-  const maxAtLeader = G.chapter === 1 ? 1 : 2;
+const leaderAttackers = () => G.pending.filter((p) => !p.done && p.e && !ENEMY[p.e.type].boss && p.e.aimTarget === G.leader).length;
+const maxAtLeader = () => (G.chapter === 1 ? 1 : 2);
+const hucumGap = () => rand(ATK.hucumEvery[0], ATK.hucumEvery[1]) / (1 + 0.15 * (G.chapter - 1));
+const angDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
+// Distance from a point to an attack's strip.
+function lineDist(u, a) {
+  const dx = a.x2 - a.x, dy = a.y2 - a.y, l2 = dx * dx + dy * dy || 1;
+  const t = clamp(((u.x - a.x) * dx + (u.y - a.y) * dy) / l2, 0, 1);
+  return Math.hypot(u.x - (a.x + dx * t), u.y - (a.y + dy * t));
+}
+// Does an attack's shape cover this unit? A single blow only ever hits its one target.
+function covers(a, u) {
+  const pad = u.r * 0.5;
+  if (a.shape === 'single') return u === a.target;
+  if (a.shape === 'circle') return dist(u, a) <= a.r + pad;
+  if (a.shape === 'cone') {
+    const d = dist(u, a);
+    return d <= a.r + pad && (d < 24 || Math.abs(angDiff(Math.atan2(u.y - a.y, u.x - a.x), a.a)) <= a.half);
+  }
+  if (a.shape === 'line') return lineDist(u, a) <= a.w / 2 + pad;
+  if (a.shape === 'roar') return u.kind === 'soldier';
+  return false;
+}
+// A wind-up: the telegraph fills over it, and the blow lands at `at` (by default after the
+// attack's own wind-up, at least ATK.leaderWind when it is aimed at the leader).
+function windUp(e, tg, id, at) {
+  const spec = ATTACKS[id], L = G.leader;
+  const wind = at != null ? at - G.h : Math.max(spec.wind, tg === L && spec.shape !== 'spell' ? ATK.leaderWind : 0);
+  const a = Object.assign({ id, target: tg }, spec);
+  if (spec.shape === 'cone' || spec.shape === 'line') {
+    a.x = e.x; a.y = e.y; a.a = Math.atan2(tg.y - e.y, tg.x - e.x);
+    if (spec.shape === 'line') {
+      const len = Math.max(spec.len, dist(e, tg) + 80);
+      a.x2 = e.x + Math.cos(a.a) * len; a.y2 = e.y + Math.sin(a.a) * len;
+    }
+  } else if (spec.shape === 'spell') { a.x = e.x; a.y = e.y; a.r = e.r + 24; }
+  else if (spec.shape === 'roar') { a.x = e.x; a.y = e.y; a.r = 330; }
+  else { const c = spec.self ? e : tg; a.x = c.x; a.y = c.y; if (spec.shape === 'single') a.r = 24; }
+  e.state = 'wind'; e.windAt = G.h; e.strikeAt = G.h + wind; e.atk = a; e.aimTarget = tg;
+  if (spec.fly) e.airborne = true;
+  G.pending.push({ e, type: e.type, atk: a, from: G.h, at: G.h + wind, done: false });
+  if (spec.shape === 'spell') sfx('spell', 0.3, (t) => S.arp(t, 0.35, sfxBus, [311, 294, 277], 0.12));
+  if (spec.shape === 'roar') { bigText('KÜKREME!', 'Ordu savrulacak · sonra ← Zil ile topla', '#ff6a55', 1.4); sfx('warn', 0.2, (t) => { S.warn(t, 0.9, sfxBus); S.warn(t + 0.3, 0.9, sfxBus); }); }
+}
+// A blow with no monster behind it: a burst or a fire from the sky.
+function hazard(type, spec, x, y) {
+  const a = Object.assign({ x, y }, spec);
+  G.pending.push({ e: null, type, atk: a, from: G.h, at: G.h + spec.wind, done: false });
+}
+// Each monster attacks on its own clock: when its target is in reach and it has rested. A serdar
+// goes through its attacks in turn and, when its next one cannot reach, falls back on a far one.
+function tryAttack(e) {
+  const d = ENEMY[e.type], L = G.leader;
+  if (G.phase !== 'wave' || G.h < e.atkReady || e.gallop > 0 || e.stunUntil >= G.curK || e.hidden) return;
+  const tg = e.target;
+  if (!tg || tg.dead) return;
+  let id = nextAttack(e), spec = ATTACKS[id], aim = aimsAtLeader(spec) ? L : tg, advance = true;
+  if (!reaches(e, aim, spec, false)) {
+    if (!d.fallback || G.h < e.atkReady + 2.5) return;
+    id = d.fallback; spec = ATTACKS[id]; aim = L; advance = false;
+    if (!reaches(e, aim, spec, false)) return;
+  }
+  if (d.move === 'burrow') { e.cycle++; burrow(e); return; }
+  if (aim === L && !d.boss && spec.shape !== 'spell' && leaderAttackers() >= maxAtLeader()) return;
+  if (advance) e.cycle++;
+  windUp(e, aim, id);
+}
+// Evren and Şahmeran sink into the ground, travel under the army and burst out under it.
+function burrow(e) {
+  if (e.holding) releaseGrab(e);
+  e.state = 'burrow'; e.hidden = true; e.atk = null; e.airborne = false;
+  e.burrowUntil = G.h + ATK.burrowSec; e.burrowNext = ENEMY[e.type].boss ? 'rise' : 'surge';
+  burst(e.x, e.y, '#6b5a3a', 18, 200);
+  floatText(e.x, e.y - 40, 'TOPRAĞA DALDI', '#c9a468', 16, true);
+  sfx('burrow', 0.2, (t) => S.thud(t, 0.5, sfxBus));
+}
+// Now and then the monsters charge together: every one near its target winds up at once, the
+// melee ones lunge in, and every blow lands on the same beat. Spells, burrowers and serdars keep
+// their own clocks.
+function hucumBeat(b) {
+  if (G.hucum && G.h > G.hucum.at + 0.3) G.hucum = null;
+  if (G.hucum || G.h < G.nextHucum) return;
+  G.nextHucum = G.h + hucumGap();
+  const at = b.t + ATK.hucumLead * 60 / BPM, L = G.leader;
+  let n = 0, atLeader = leaderAttackers();
   for (const e of G.enemies) {
     const d = ENEMY[e.type];
-    if (e.dead || d.fixed || e.state !== 'approach' || e.stunUntil >= k || e.gallop > 0) continue;
-    const tg = e.target;
-    if (!tg || tg.dead || !inReach(e, tg, true)) continue;
-    if (tg === L && e.type !== 'boss') { if (atLeader >= maxAtLeader) continue; atLeader++; }
-    e.state = 'wind'; e.windK = k; e.windBeats = strikeK - k; e.strikeK = strikeK;
-    e.aim = { x: tg.x, y: tg.y }; e.aimTarget = tg;
-    G.pending.push({ e, k: strikeK, done: false });
-    n++;
+    if (e.dead || d.fixed || d.boss || d.move === 'burrow' || e.hidden || e.state !== 'approach' || e.stunUntil >= G.curK || e.gallop > 0) continue;
+    const id = nextAttack(e), spec = ATTACKS[id], tg = e.target;
+    if (spec.shape === 'spell' || !tg || tg.dead || !reaches(e, tg, spec, true)) continue;
+    if (tg === L) { if (atLeader >= maxAtLeader()) continue; atLeader++; }
+    e.cycle++;
+    windUp(e, tg, id, at); n++;
   }
-  G.volley = n ? { k: strikeK } : null;
-  if (n) {
-    sfx('warn', 0.2, (t) => S.warn(t, 0.5, sfxBus));
-    hintOnce('volley', 'Aura KIRMIZI ısınıyor: düşman bu vuruşta saldıracak. ↓ Kös ile blokla, → Çevgen ile atılıp kes ya da ↑ Davul ile önce sen vur.', 10);
-  }
+  if (!n) return;
+  G.hucum = { at };
+  floatText(L.x, L.y - 96, 'TOPLU HÜCUM!', '#ff6a55', 22, true);
+  sfx('warn', 0.2, (t) => { S.warn(t, 0.7, sfxBus); S.warn(t + 0.35, 0.6, sfxBus); });
+  hintOnce('hucum', 'TOPLU HÜCUM: bütün canavarlar aynı vuruşta vuracak. ↓ Kös ile hepsini blokla, → Çevgen ile kes ya da ↑ Davul ile önce sen vur.', 10);
 }
 function resolvePending(h) {
   for (const p of G.pending) {
     if (p.done) continue;
-    if (p.e.dead || p.e.state !== 'wind') { p.done = true; continue; }
-    const b = beatMap.get(p.k);
-    if (!b) continue;
-    const guarded = G.guardK === p.k;
-    if ((guarded && h >= b.t - 0.02) || h >= b.t + T.goodWin) resolveStrike(p, guarded);
+    const e = p.e;
+    if (e && (e.dead || e.state !== 'wind' || e.atk !== p.atk)) { p.done = true; continue; }
+    const guarded = p.atk.block !== false && kosCovers(p.at);
+    if ((guarded && h >= p.at - 0.02) || h >= p.at + ORD.kosLate) resolveStrike(p, guarded);
   }
   G.pending = G.pending.filter((p) => !p.done);
 }
 function resolveStrike(p, guarded) {
   p.done = true;
-  const e = p.e, d = ENEMY[e.type], L = G.leader, wall = G.wallUntil >= p.k;
-  const allies = [L].concat(G.soldiers.filter((s) => !s.dead));
+  const e = p.e, a = p.atk, d = ENEMY[p.type], L = G.leader, wall = wallOn() && a.block !== false;
+  if (a.shape === 'spell') { castSpell(e, a); finishAttack(e, false); return; }
+  if (a.shape === 'roar') { roar(e); finishAttack(e, false); return; }
+  // A leap or a dive lands on its disc; a burrower comes up there.
+  if (e && (a.move === 'leap' || a.move === 'dive')) {
+    e.x = a.x + rand(-6, 6); e.y = a.y + rand(-6, 6); e.hidden = false; e.kx = e.ky = 0;
+    if (a.move === 'dive') e.lowUntil = G.h + ATK.lowSec;
+    burst(e.x, e.y, '#8a7a5a', 12, 180);
+  }
   let victims;
-  if (e.type === 'boss') victims = allies.filter((a) => dist(a, e.aim) <= d.area + a.r * 0.5);
-  else if (e.type === 'okcu' || e.type === 'atli') victims = allies.filter((a) => dist(a, e.aim) <= 34 + a.r * 0.5);
-  else { const t = e.aimTarget; victims = t && !t.dead && inReach(e, t, false) ? [t] : []; }
+  if (a.shape === 'single') {
+    const t = a.target;
+    victims = t && !t.dead && (!e || dist(e, t) - t.r - e.r <= d.reach + 30) ? [t] : [];
+  } else victims = [L].concat(G.soldiers.filter((s) => !s.dead)).filter((u) => covers(a, u));
+  const dmg = d.dmg * (a.dmg || 1) * G.dmgScale;
   let blocked = false, hitLeader = false;
   for (const v of victims) {
     const covered = wall || (guarded && (v === L || (!isOut(v) && inAura(v))));
     if (covered) {
       blocked = true;
       ring(v.x, v.y, '#7fb6ff', 26);
-      sparks(v.x, v.y, Math.atan2(e.y - v.y, e.x - v.x), '#bfe0ff', 8);
+      sparks(v.x, v.y, Math.atan2(a.y - v.y, a.x - v.x), '#bfe0ff', 8);
       if (v === L) hitLeader = true;
-    } else if (v === L) hurtLeader();
-    else hurtSoldier(v, d.dmg * G.dmgScale, e.type);
+      continue;
+    }
+    const from = a.shape === 'circle' && !a.self ? a : e || a;
+    if (v === L) { hurtLeader(); if (a.knock) knock(L, from, a.knock * 0.3, 0); continue; }
+    hurtSoldier(v, dmg, p.type);
+    if (v.dead) continue;
+    if (a.poison) {
+      if (v.poisonUntil < G.h) floatText(v.x, v.y - 30, 'ZEHİR', '#8fd46a', 13, true);
+      v.poisonUntil = Math.max(v.poisonUntil, G.h + a.poison);
+      hintOnce('poison', 'Zehirlenen askerin canı akar. ← Zil zehri temizler.', 7);
+    }
+    if (a.knock) knock(v, from, a.knock, a.daze || 0);
+    if (a.grab && e && !e.holding) grab(e, v);
   }
-  if (e.type === 'boss') { ring(e.aim.x, e.aim.y, '#ff7a5c', d.area); addShake(6); }
-  else if (e.type === 'okcu') { ring(e.aim.x, e.aim.y, '#ff7a5c', 34); sparks(e.aim.x, e.aim.y, -Math.PI / 2, '#ffb199', 5); }
-  else slash(e.aim.x, e.aim.y, Math.atan2(e.aim.y - e.y, e.aim.x - e.x), '#ff6a55', 18);
-  e.state = 'recover'; e.recoverUntil = p.k + 2;
+  // What the blow looks like when it lands.
+  if (a.shape === 'circle') { ring(a.x, a.y, '#ff7a5c', a.r); if (a.r >= 60) addShake(6); }
+  else if (a.shape === 'cone') {
+    for (let i = 0; i < 14; i++) {
+      const aa = a.a + rand(-a.half, a.half), sp = rand(a.r * 1.2, a.r * 2.4);
+      part({ type: 'dot', x: a.x, y: a.y, vx: Math.cos(aa) * sp, vy: Math.sin(aa) * sp, life: 0.4, max: 0.4, color: a.poison ? '#8fd46a' : '#ff9a4a', size: rand(3, 6) });
+    }
+    addShake(4);
+  } else if (a.shape === 'single') slash(a.x, a.y, e ? Math.atan2(a.y - e.y, a.x - e.x) : 0, '#ff6a55', 18);
+  // A Kor Kuşu leaves fire along its strip.
+  if (a.fire) {
+    const len = Math.hypot(a.x2 - a.x, a.y2 - a.y);
+    for (let s = 20; s < len; s += 34) G.zones.push({ x: a.x + (a.x2 - a.x) * s / len, y: a.y + (a.y2 - a.y) * s / len, r: 24, until: G.h + ATK.fireSec });
+  }
+  // A dash runs the monster down its strip.
+  if (e && a.move === 'dash') {
+    const ex = a.x2 - e.x, ey = a.y2 - e.y, l = Math.hypot(ex, ey) || 1, sp = 900;
+    e.gx = ex / l * sp; e.gy = ey / l * sp; e.gallop = l / sp;
+    if (ENEMY[e.type].move === 'fly') e.lowUntil = G.h + e.gallop + ATK.lowSec;
+  }
+  if (e) finishAttack(e, blocked);
   if (blocked) {
-    floatText(e.aim.x, e.aim.y - 30, 'BLOK', '#9ecbff', 18, true);
+    floatText(a.x, a.y - 30, 'BLOK', '#9ecbff', 18, true);
     sfx('kang', 0.05, (t) => S.kang(t, 0.9, sfxBus));
     if (G.up.kosHeal) for (const s of G.soldiers) if (!isOut(s) && inAura(s)) s.hp = Math.min(s.maxHp, s.hp + 6);
-    if (guarded && G.guardPerfect && e.type !== 'boss') {
-      e.stunUntil = p.k + 4; e.recoverUntil = p.k + 4;
-      floatText(e.x, e.y - 26, 'SERSEM', '#9ecbff', 15, true);
+    // A block right on the blow stuns the monster, and cracks an armored one.
+    if (e && guarded && Math.abs(p.at - G.kos.t) <= ORD.kosStun && !d.boss) {
+      e.stunUntil = G.curK + 4; e.recoverUntil = G.curK + 4; e.atkReady = Math.max(e.atkReady, G.h + 3);
+      e.state = 'recover'; e.atk = null; e.gallop = 0; e.airborne = false;
+      floatText(e.x, e.y - 26, d.armor ? 'ÇATLADI' : 'SERSEM', '#9ecbff', 15, true);
+      if (d.armor) { e.crackUntil = G.h + ATK.crackSec; burst(e.x, e.y, '#c9c4b8', 16, 200); }
       addShake(6);
       if (hitLeader) { G.slowmo = 0.45; G.flash = 0.55; G.flashColor = '120,180,255'; }
     }
   } else if (victims.length) sfx('enemyHit', 0.05, (t) => S.impact(t, 1, sfxBus));
-  if (e.type === 'atli' && e.stunUntil < p.k) {
-    const a = Math.atan2(e.aim.y - e.y, e.aim.x - e.x);
-    e.gx = Math.cos(a) * 520; e.gy = Math.sin(a) * 520; e.gallop = 0.45;
+}
+// After a blow: the monster rests, a chained attack follows at once, and Tepegöz opens his eye.
+function finishAttack(e, blocked) {
+  if (!e || e.dead) return;
+  const d = ENEMY[e.type], a = e.atk;
+  e.atk = null;
+  if (e.gallop <= 0) e.airborne = false;
+  if (a && a.next) { windUp(e, G.leader, a.next); return; }
+  e.state = 'recover'; e.recoverUntil = G.curK + 2;
+  e.atkReady = G.h + (d.boss ? rand(1.6, 2.4) : d.move === 'burrow' ? 4 : rand(ATK.rest[0], ATK.rest[1]) / (1 + 0.15 * (G.chapter - 1)));
+  if (e.type === 'tepegoz') {
+    e.eyeUntil = G.h + (blocked ? ATK.eyeBlocked : ATK.eyeSec);
+    floatText(e.x, e.y - 90, 'GÖZ AÇILDI', '#ffcf4a', 16, true);
   }
+}
+// What a finished spell does.
+function castSpell(e, a) {
+  if (!e) return;
+  const spawnAround = (type, n) => {
+    for (let i = 0; i < n && G.enemies.length < T.enemyCap + 6; i++) {
+      const ang = rand(0, TAU);
+      spawnEnemy(type, e.x + Math.cos(ang) * (e.r + 30), e.y + Math.sin(ang) * (e.r + 30));
+    }
+  };
+  if (a.spell === 'nest') { spawnAround('yilan', 3); floatText(e.x, e.y - 40, 'YILAN YUVASI', '#b48aff', 16, true); }
+  else if (a.spell === 'brood') { spawnAround('yilan', 5); floatText(e.x, e.y - 70, 'YILANLAR!', '#b48aff', 18, true); }
+  else if (a.spell === 'herd') { spawnAround('koc', 5); floatText(e.x, e.y - 90, 'SÜRÜ!', '#ff9a80', 18, true); }
+  else if (a.spell === 'rain') {
+    // Fire falls on the leader and around the army.
+    const L = G.leader, R = auraR() * 0.9;
+    hazard(e.type, { shape: 'circle', r: 55, wind: 1.1 }, L.x, L.y);
+    for (let i = 0; i < 4; i++) { const ang = rand(0, TAU), rr = rand(50, R); hazard(e.type, { shape: 'circle', r: 55, wind: 1.1 + i * 0.12 }, L.x + Math.cos(ang) * rr, L.y + Math.sin(ang) * rr); }
+    floatText(e.x, e.y - 40, 'ATEŞ YAĞMURU', '#ff9a4a', 16, true);
+  }
+  burst(e.x, e.y, '#b48aff', 20, 220);
+  sfx('spellDone', 0.2, (t) => S.zil(t, 0.6, sfxBus, true));
+}
+// Ejderha's roar: every soldier is thrown out of the aura and stays dazed until TOPLAN.
+function roar(e) {
+  const L = G.leader, R = auraR();
+  for (const s of G.soldiers) {
+    if (s.dead) continue;
+    const d = dist(s, L), a = d > 1 ? Math.atan2(s.y - L.y, s.x - L.x) : rand(0, TAU);
+    knock(s, { x: s.x - Math.cos(a), y: s.y - Math.sin(a) }, Math.max(60, R + 90 - d), 4);
+  }
+  addShake(16); G.flash = 0.8; G.flashColor = '255,110,60';
+  if (e) ring(e.x, e.y, '#ff6a55', 200);
+  sfx('roar', 0.3, (t) => { S.thud(t, 1, sfxBus); S.warn(t + 0.1, 1, sfxBus); });
+}
+// Throws a unit `px` away from `from`; a soldier stays dazed for `daze` seconds (TOPLAN wakes it).
+function knock(u, from, px, daze) {
+  const a = Math.atan2(u.y - from.y, u.x - from.x) || rand(0, TAU);
+  u.kx += Math.cos(a) * px * 6; u.ky += Math.sin(a) * px * 6;
+  if (u.kind === 'soldier' && daze) {
+    u.dazeUntil = Math.max(u.dazeUntil, G.h + daze);
+    floatText(u.x, u.y - 30, 'SAVRULDU', '#ffb14a', 13, true);
+    hintOnce('daze', 'Savrulan asker sersemler ve emir duymaz. ← Zil ile hemen toparla.', 7);
+  }
+}
+// A Dev Akrep holds a soldier and drags it away from the band.
+function grab(e, s) {
+  e.holding = s; s.grabbed = e;
+  e.state = 'drag'; e.dragUntil = G.h + ATK.dragSec;
+  floatText(s.x, s.y - 32, 'YAKALANDI', '#ff9a80', 15, true);
+  hintOnce('grab', 'Akrep askerini sürüklüyor! ← Zil ya da → Çevgen onu kurtarır.', 7);
+}
+function releaseGrab(e) {
+  const s = e.holding;
+  e.holding = null;
+  if (s) s.grabbed = null;
+  if (e.state === 'drag') { e.state = 'recover'; e.recoverUntil = G.curK + 2; e.atkReady = G.h + rand(ATK.rest[0], ATK.rest[1]); }
 }
 function hurtLeader() {
   const L = G.leader;
@@ -1379,7 +1772,7 @@ function hurtLeader() {
   addShake(12); G.flash = 1; G.flashColor = '255,60,40';
   floatText(L.x, L.y - 34, '−1 KALP', '#ff6a55', 22, true);
   sfx('hurt', 0.1, (t) => S.thud(t, 1, sfxBus));
-  if (L.hearts === 1) hintOnce('lastHeart', 'Son kalp! Kırmızı çağrıda ↓ Kös lideri kesin korur.', 6);
+  if (L.hearts === 1) hintOnce('lastHeart', 'Son kalp! Sana kapanan kırmızı işarette ↓ Kös çal ya da içinden çık.', 6);
   if (L.hearts <= 0) gameOver();
 }
 function hurtSoldier(s, dmg, fromType) {
@@ -1387,11 +1780,14 @@ function hurtSoldier(s, dmg, fromType) {
   dmg = dmg * (weak ? 2 : 1) / cz();
   s.hp -= dmg; s.hitFlash = 1;
   floatText(s.x, s.y - 18, '-' + Math.max(1, Math.round(dmg)) + (weak ? '!' : ''), weak ? '#ff5a45' : '#ff8a75', weak ? 15 : 12, weak);
-  if (s.hp <= 0 && !s.dead) {
-    s.dead = true;
-    burst(s.x, s.y, SOLDIER[s.type].color, 12, 180);
-    sfx('fall', 0.06, (t) => S.tek(t, 0.5, sfxBus));
-  }
+  if (s.hp <= 0) killSoldier(s);
+}
+function killSoldier(s) {
+  if (s.dead) return;
+  s.dead = true;
+  if (s.grabbed) releaseGrab(s.grabbed);
+  burst(s.x, s.y, SOLDIER[s.type].color, 12, 180);
+  sfx('fall', 0.06, (t) => S.tek(t, 0.5, sfxBus));
 }
 
 // ---------------------------------------------------------------- ultis
@@ -1413,7 +1809,7 @@ function fireUlti(i) {
   if (u.id === 'top') {
     const R = auraR() * 2;
     for (const e of G.enemies.slice()) {
-      if (e.dead || e.state === 'emerge' || dist(e, L) > R + e.r) continue;
+      if (e.dead || e.state === 'emerge' || e.hidden || dist(e, L) > R + e.r) continue;
       burst(e.x, e.y, '#ffb070', 10, 220);
       hitEnemy(e, 40 * cz(), { type: 'top', x: L.x, y: L.y }, 160);
     }
@@ -1428,9 +1824,10 @@ function fireUlti(i) {
     summonCompany(G.banner);
   } else if (u.id === 'zil') {
     for (const e of G.enemies) {
-      if (e.dead || ENEMY[e.type].fixed) continue;
+      if (e.dead || ENEMY[e.type].fixed || e.hidden) continue;
       e.stunUntil = G.curK + 6;
-      if (e.state === 'wind') e.state = 'recover';
+      if (e.holding) releaseGrab(e);
+      if (e.state === 'wind') { e.state = 'recover'; e.atk = null; e.airborne = false; }
       e.recoverUntil = G.curK + 6;
     }
     G.pending = [];
@@ -1454,8 +1851,8 @@ function openTerfi() {
     cards.push(pool.splice(i, 1)[0]);
   }
   G.terfi = { cards, openAt: performance.now() };
-  for (const e of G.enemies) if (e.state === 'wind') e.state = 'approach';
-  G.pending = []; G.volley = null;
+  for (const e of G.enemies) if (e.state === 'wind') { e.state = 'approach'; e.atk = null; e.airborne = false; e.hidden = false; }
+  G.pending = []; G.hucum = null;
   held.clear();
   const box = $('cards'); box.textContent = '';
   const keys = ['A', 'W', 'D'];
@@ -1463,10 +1860,12 @@ function openTerfi() {
     const b = document.createElement('button');
     b.className = 'card'; b.type = 'button';
     b.style.setProperty('--rar', RAR[cd.r].color);
-    b.innerHTML = `<kbd class="k">${keys[i]}</kbd><span class="rar">${RAR[cd.r].name}</span><span class="t">${cd.t}</span><span class="d">${cd.d}</span>`;
+    const own = cd.build === false ? 0 : G.picks.filter((id) => id === cd.id).length;
+    b.innerHTML = `<kbd class="k">${keys[i]}</kbd><span class="rar">${RAR[cd.r].name}${own ? ` · sende ×${own}` : ''}</span><span class="t">${cd.t}</span><span class="d">${cd.d}</span>`;
     b.addEventListener('click', () => pickCard(i, true));
     box.appendChild(b);
   });
+  renderBuild($('terfiBuild'));
   $('terfiOv').hidden = false;
   sfx('terfi', 0.3, (t) => S.arp(t, 1, sfxBus, [587.33, 739.99, 880, 1174.66], 0.07));
 }
@@ -1477,7 +1876,8 @@ function pickCard(i, fromClick) {
   if (!cd) return;
   cd.apply();
   if (cd.once) G.taken.add(cd.id);
-  G.ganimet -= G.need; G.level++; G.need = 7 + G.level * 5;
+  G.ganimet -= G.need; G.level++; G.need = T.terfiBase + G.level * T.terfiStep;
+  G.picks.push(cd.id);
   G.terfi = null;
   $('terfiOv').hidden = true;
   held.clear();
@@ -1494,11 +1894,13 @@ function openKonak() {
   for (const s of G.soldiers) s.hp = s.maxHp;
   const healed = L.hearts < T.hearts;
   if (healed) L.hearts++;
+  const oldCap = G.cap;
+  G.cap = T.armyCaps[Math.min(G.chapter, T.armyCaps.length - 1)];
   G.konak = { sel: G.ultis.slice() };
   G.phase = 'konak';
   held.clear();
-  $('konakEyebrow').textContent = `${G.chapter}. bölüm bitti · sıradaki: ${CHAPTER_NAME[G.chapter]}`;
-  $('konakNote').textContent = `Askerlerin canı doldu${healed ? ', bir kalp geri geldi' : ''}. Ordu: ${G.soldiers.length} asker.`;
+  $('konakEyebrow').textContent = `${G.chapter}. bölüm bitti · sıradaki: ${THEMES[G.chapter].name}`;
+  $('konakNote').textContent = `Askerlerin canı doldu${healed ? ', bir kalp geri geldi' : ''}. Ordu: ${G.soldiers.length} asker · ordu sınırı ${oldCap} → ${G.cap}.`;
   renderKonak();
   $('konakOv').hidden = false;
   $('konakGo').focus();
@@ -1551,11 +1953,31 @@ function updateSoldier(s, i, dt) {
   s.cool -= dt;
   s.rally = Math.max(0, s.rally - dt);
   const speed = def.speed * cz();
+  // Thrown, burning, poisoned, held or dazed.
+  if (s.kx || s.ky) {
+    s.x += s.kx * dt; s.y += s.ky * dt;
+    const f = Math.exp(-dt * 6); s.kx *= f; s.ky *= f;
+    if (Math.abs(s.kx) + Math.abs(s.ky) < 3) s.kx = s.ky = 0;
+  }
+  let burn = s.poisonUntil > G.h ? ATK.poisonDps : 0;
+  for (const z of G.zones) if (dist(s, z) < z.r + s.r * 0.5) { burn += ATK.fireDps; break; }
+  if (s.grabbed) burn += ATK.dragDps;
+  if (burn) {
+    s.hp -= burn * G.dmgScale / cz() * dt;
+    if (s.hp <= 0) { killSoldier(s); return; }
+  }
+  if (s.grabbed) {
+    const e = s.grabbed;
+    s.x = e.x + Math.cos(e.face) * (e.r + s.r); s.y = e.y + Math.sin(e.face) * (e.r + s.r);
+    s.dash = null;
+    return;
+  }
+  if (s.dazeUntil > G.h) { s.dash = null; return; }
   // An ATIL dash: straight at the target, fast, and the blow lands on arrival.
   if (s.dash) {
     const ds = s.dash, e = ds.e;
     ds.t -= dt;
-    if (e && e.dead) { s.dash = null; return; }
+    if (e && (e.dead || !canHit(s, e))) { s.dash = null; return; }
     const tx = e ? e.x : ds.x, ty = e ? e.y : ds.y;
     const reach = e ? (def.ranged ? reachOf(s) : def.reach + e.r + s.r + 4) : 4;
     s.face = Math.atan2(ty - s.y, tx - s.x);
@@ -1565,7 +1987,7 @@ function updateSoldier(s, i, dt) {
       return;
     }
     s.dash = null;
-    if (e && dist(s, e) - e.r <= (def.ranged ? reachOf(s) * ORD.atilRangedReach : reach + 20)) { attack(s, e, 'atil', ds.perfect); s.cool = 1.5; }
+    if (e && dist(s, e) - e.r <= (def.ranged ? reachOf(s) * ORD.atilRangedReach : reach + 20)) { attack(s, e, 'atil', ds.grade); s.cool = 1.5; }
     return;
   }
   const out = isOut(s);
@@ -1584,14 +2006,14 @@ function updateSoldier(s, i, dt) {
       hintOnce('prey', `${SOLDIER[s.type].name} kendi avını arar: güçlü olduğu ${ENEMY[s.target.type].name} önce onun hedefi.`, 6);
   }
   let tg = s.target;
-  if (tg && tg.dead) tg = s.target = null;
+  if (tg && (tg.dead || !canHit(s, tg))) tg = s.target = null;
   if (tg) {
     const d = dist(s, tg) - tg.r - s.r;
     s.face = Math.atan2(tg.y - s.y, tg.x - s.x);
     const reach = def.ranged ? reachOf(s) : def.reach;
     if (d > reach) moveToward(s, tg.x, tg.y, speed, dt);
-    // Soldiers that hear wait for an order. The rest cannot hear, and fight on their own.
-    else if (!hears(s) && s.cool <= 0) { attack(s, tg, false, false); s.cool = 1.5; }
+    // Every soldier fights on its own at half damage; an order is a full strike on top of it.
+    else if (s.cool <= 0) { attack(s, tg, false, false); s.cool = 1.5; }
   } else {
     const ang = i * 2.39996 + 0.5, rad = 46 + 13 * Math.sqrt(i);
     const tx = L.x + Math.cos(ang) * rad, ty = L.y + Math.sin(ang) * rad;
@@ -1604,49 +2026,79 @@ function updateSoldier(s, i, dt) {
   }
 }
 function updateEnemy(e, dt) {
-  const d = ENEMY[e.type];
+  const d = ENEMY[e.type], L = G.leader;
   e.hitFlash = Math.max(0, e.hitFlash - dt * 6);
+  // Flyers hang in the air and come down only to dive, or when stunned.
+  e.alt += ((flying(e) ? (e.airborne ? 60 : 30) : 0) - e.alt) * Math.min(1, dt * 7);
   if (e.state === 'emerge') { e.emergeT += dt * 1.5; if (e.emergeT >= 1) e.state = 'approach'; if (!d.fixed) { e.x += e.kx * dt; e.y += e.ky * dt; } return; }
   if (d.fixed) return;
   e.x += e.kx * dt; e.y += e.ky * dt;
   const f = Math.exp(-dt * 8); e.kx *= f; e.ky *= f;
   if (e.state === 'recover' && G.curK >= e.recoverUntil) e.state = 'approach';
-  if (e.stunUntil >= G.curK) return;
-  if (e.gallop > 0) { e.gallop -= dt; e.x += e.gx * dt; e.y += e.gy * dt; e.face = Math.atan2(e.gy, e.gx); return; }
-  e.retarget -= dt;
-  if (e.retarget <= 0 || !e.target || e.target.dead) { e.target = pickTarget(e); e.retarget = 0.4; }
-  if (e.state === 'wind') {
-    const t = e.aimTarget;
-    if (e.type !== 'okcu' && e.type !== 'atli' && t && !t.dead) {
-      // Melee winders follow their target and close the gap in time for the beat.
-      e.aim.x = t.x; e.aim.y = t.y;
-      const gapLeft = dist(e, t) - t.r - e.r - d.reach * 0.6;
-      const b = beatMap.get(e.strikeK), left = b ? Math.max(0.05, b.t - G.h) : 0.5;
-      if (gapLeft > 0) moveToward(e, t.x, t.y, Math.max(d.speed, gapLeft / left), dt);
-    }
-    e.face = Math.atan2(e.aim.y - e.y, e.aim.x - e.x);
+  if (e.state === 'drag') {
+    const s = e.holding;
+    if (!s || s.dead || G.h > e.dragUntil || e.stunUntil >= G.curK) { releaseGrab(e); return; }
+    const a = Math.atan2(e.y - L.y, e.x - L.x);
+    e.x += Math.cos(a) * ATK.dragSpeed * dt; e.y += Math.sin(a) * ATK.dragSpeed * dt;
+    e.face = a + Math.PI;
     return;
   }
-  const tg = e.target;
+  if (e.stunUntil >= G.curK) return;
+  if (e.gallop > 0) {
+    e.gallop -= dt; e.x += e.gx * dt; e.y += e.gy * dt; e.face = Math.atan2(e.gy, e.gx);
+    if (e.gallop <= 0) e.airborne = false;
+    return;
+  }
+  // Under the ground it heads for the leader, then bursts out under the army.
+  if (e.state === 'burrow') {
+    if (dist(e, L) > 24) moveToward(e, L.x, L.y, 140, dt);
+    if (G.h >= e.burrowUntil) windUp(e, L, e.burrowNext);
+    return;
+  }
+  e.retarget -= dt;
+  if (e.retarget <= 0 || !e.target || e.target.dead) { e.target = pickTarget(e); e.retarget = 0.4; }
+  if (e.state === 'approach') tryAttack(e);
+  if (e.state === 'wind') {
+    const a = e.atk, t = e.aimTarget;
+    if ((a.shape === 'single' || a.follow) && t && !t.dead) { a.x = t.x; a.y = t.y; }
+    if (a.self || a.shape === 'spell' || a.shape === 'roar') { a.x = e.x; a.y = e.y; }
+    if (a.shape === 'single' && t && !t.dead) {
+      // Melee winders follow their target and close the gap in time for the blow.
+      const gapLeft = dist(e, t) - t.r - e.r - d.reach * 0.6;
+      const left = Math.max(0.05, e.strikeAt - G.h);
+      if (gapLeft > 0) moveToward(e, t.x, t.y, Math.max(d.speed, gapLeft / left), dt);
+    }
+    if (!e.hidden) e.face = a.a != null ? a.a : Math.atan2(a.y - e.y, a.x - e.x);
+    return;
+  }
+  const spec = ATTACKS[nextAttack(e)];
+  const tg = aimsAtLeader(spec) ? L : e.target;
   if (!tg) return;
   const dd = dist(e, tg), a = Math.atan2(tg.y - e.y, tg.x - e.x);
+  const sp = d.speed * (e.state === 'recover' ? 0.5 : 1) * (dist(e, L) > T.catchUpDist ? T.catchUpMul : 1);
   e.face = a;
+  if (d.move === 'fly') {
+    // Circle the target out of spear reach.
+    e.orbit += dt * 0.9;
+    const R = Math.min(d.reach * 0.75, 130);
+    moveToward(e, tg.x + Math.cos(e.orbit) * R, tg.y + Math.sin(e.orbit) * R, sp, dt);
+    return;
+  }
   let want = 0;
-  if (e.type === 'okcu') { if (dd > 215) want = 1; else if (dd < 160) want = -1; }
-  else if (e.type === 'atli') { if (dd > d.reach - 10) want = 1; }
-  else if (dd - tg.r - e.r > d.reach - 4) want = 1;
-  const sp = d.speed * (e.state === 'recover' ? 0.5 : 1) * want;
-  e.x += Math.cos(a) * sp * dt; e.y += Math.sin(a) * sp * dt;
+  if (d.move === 'ranged') { if (dd > d.band[1]) want = 1; else if (dd < d.band[0]) want = -1; }
+  else if (spec.shape === 'single') { if (dd - tg.r - e.r > d.reach - 4) want = 1; }
+  else if (dd > (d.reach + e.r) * 0.85) want = 1;
+  e.x += Math.cos(a) * sp * want * dt; e.y += Math.sin(a) * sp * want * dt;
 }
 function separate() {
-  const all = [G.leader].concat(G.soldiers, G.enemies.filter((e) => e.state !== 'emerge' && e.gallop <= 0));
+  const all = [G.leader].concat(G.soldiers.filter((s) => !s.grabbed), G.enemies.filter((e) => e.state !== 'emerge' && e.gallop <= 0 && !e.hidden && !flying(e)));
   for (let i = 0; i < all.length; i++) {
     for (let j = i + 1; j < all.length; j++) {
       const a = all[i], b = all[j];
       const dx = b.x - a.x, dy = b.y - a.y, rr = a.r + b.r + 1.5, d2 = dx * dx + dy * dy;
       if (d2 >= rr * rr || d2 === 0) continue;
-      // Structures never move, a serdar barely does, and the leader gives way far less than a soldier.
-      const mass = (u, first) => (u.kind === 'enemy' && ENEMY[u.type].fixed ? 0 : u.type === 'boss' ? 0.1 : first ? 0.15 : 0.5);
+      // Structures never move, big monsters barely do, and the leader gives way far less than a soldier.
+      const mass = (u, first) => (u.kind === 'enemy' && ENEMY[u.type].fixed ? 0 : u.kind === 'enemy' && (ENEMY[u.type].boss || ENEMY[u.type].big) ? 0.1 : first ? 0.15 : 0.5);
       const ma = mass(a, i === 0), mb = mass(b, false);
       if (ma + mb === 0) continue;
       const d = Math.sqrt(d2), push = rr - d, nx = dx / d, ny = dy / d;
@@ -1674,10 +2126,13 @@ function updateWorld(dt, rdt) {
     L.x += mx / m * sp; L.y += my / m * sp; L.face = Math.atan2(my, mx);
   }
   L.invuln = Math.max(0, L.invuln - rdt);
+  if (L.kx || L.ky) { L.x += L.kx * dt; L.y += L.ky * dt; const f = Math.exp(-dt * 6); L.kx *= f; L.ky *= f; if (Math.abs(L.kx) + Math.abs(L.ky) < 3) L.kx = L.ky = 0; }
+  G.zones = G.zones.filter((z) => z.until > G.h);
 
   if (G.phase === 'breather') {
     for (const b of G.banners) {
-      if (G.picked || dist(L, b) >= 40 || !summonCompany(b.type, T.pickCompanies)) continue;
+      if (G.picked || dist(L, b) >= 40) continue;
+      summonCompany(b.type, T.pickCompanies);
       G.banner = b.type; G.picked = true; G.banners = [b];
       ring(b.x, b.y, '#f0b429', 50);
       sfx('banner', 0.1, (t) => { S.kos(t, 0.5, sfxBus); S.cevgen(t, 0.8, sfxBus); });
@@ -1784,6 +2239,7 @@ function drawGround(c) {
   const x0 = Math.floor((G.cam.x - hw) / tile), x1 = Math.floor((G.cam.x + hw) / tile);
   const y0 = Math.floor((G.cam.y - top) / tile), y1 = Math.floor((G.cam.y + bot) / tile);
   c.lineCap = 'round'; c.lineWidth = 2;
+  const th = theme();
   for (let tx = x0; tx <= x1; tx++) {
     for (let ty = y0; ty <= y1; ty++) {
       let s = hash(tx, ty) || 1;
@@ -1792,10 +2248,10 @@ function drawGround(c) {
       for (let i = 0; i < n; i++) {
         const x = tx * tile + rnd() * tile, y = ty * tile + rnd() * tile, k = rnd();
         if (k < 0.14) {
-          c.fillStyle = '#332d22';
+          c.fillStyle = th.patch;
           c.beginPath(); c.ellipse(x, y, 4 + rnd() * 7, 3 + rnd() * 3, rnd() * 3, 0, TAU); c.fill();
         } else {
-          c.strokeStyle = k < 0.6 ? '#2f3622' : '#3a3824';
+          c.strokeStyle = k < 0.6 ? th.tufts[0] : th.tufts[1];
           c.beginPath();
           c.moveTo(x - 4, y); c.lineTo(x - 2, y - 6);
           c.moveTo(x, y); c.lineTo(x + 1, y - 8);
@@ -1813,10 +2269,10 @@ function callPhase() {
 }
 // The aura is the only timing cue. It warms as the next call comes, dull right after a beat
 // and bright at the moment to press, then flashes. Its colour is information, not an answer:
-// gold for a quiet call, red when the enemy strikes on it. The player picks the instrument.
+// gold when quiet, red when a blow closes on the leader or the enemy charges together.
 function drawAura(c, now) {
   const L = G.leader, R = auraR(), p = G.beatPulse;
-  const w = callPhase() ** 2, red = (G.phase === 'wave' || G.phase === 'tutorial') && volleyNext();
+  const w = callPhase() ** 2, red = (G.phase === 'wave' || G.phase === 'tutorial') && dangerSoon();
   const mix = (a, b) => Math.round(a + (b - a) * w);
   const col = red ? [mix(110, 255), mix(44, 64), mix(36, 48)] : [mix(110, 255), mix(86, 214), mix(52, 110)];
   c.fillStyle = red ? `rgba(255,60,40,${0.03 + 0.12 * w})` : `rgba(240,180,41,${0.02 + 0.07 * w})`;
@@ -1861,21 +2317,65 @@ function drawBanners(c, now) {
   }
 }
 function drawTelegraphs(c) {
-  const bd = 60 / BPM;
-  for (const e of G.enemies) {
-    if (e.state !== 'wind' || !e.aim) continue;
-    const b0 = beatMap.get(e.windK);
-    const prog = b0 ? clamp((G.h - b0.t) / (e.windBeats * bd), 0, 1) : 0;
-    const R = e.type === 'boss' ? ENEMY.boss.area : e.type === 'okcu' || e.type === 'atli' ? 34 : 24;
-    const atLeader = e.aimTarget === G.leader;
-    if (e.type === 'okcu' || e.type === 'atli') {
-      c.strokeStyle = `rgba(255,90,70,${0.25 + 0.4 * prog})`; c.lineWidth = 2; c.setLineDash([6, 7]);
-      c.beginPath(); c.moveTo(e.x, e.y); c.lineTo(e.aim.x, e.aim.y); c.stroke(); c.setLineDash([]);
-    }
+  const f = G.tut && G.tut.fake, L = G.leader;
+  if (f) {
+    const prog = clamp((G.h - f.from) / (f.at - f.from), 0, 1);
     c.fillStyle = `rgba(255,70,50,${0.12 + 0.3 * prog})`;
-    c.beginPath(); c.arc(e.aim.x, e.aim.y, R * prog, 0, TAU); c.fill();
-    c.strokeStyle = `rgba(255,90,70,${0.6 + 0.4 * prog})`; c.lineWidth = atLeader ? 3.5 : 2;
-    c.beginPath(); c.arc(e.aim.x, e.aim.y, R, 0, TAU); c.stroke();
+    c.beginPath(); c.arc(L.x, L.y, 34 * prog, 0, TAU); c.fill();
+    c.strokeStyle = 'rgba(255,90,70,0.9)'; c.lineWidth = 3.5;
+    c.beginPath(); c.arc(L.x, L.y, 34, 0, TAU); c.stroke();
+  }
+  // Fire left on the ground.
+  const t = performance.now() / 90;
+  for (const z of G.zones) {
+    const a = clamp((z.until - G.h) / 0.5, 0, 1);
+    c.fillStyle = `rgba(255,${110 + 40 * Math.sin(t + z.x)},40,${0.35 * a})`;
+    c.beginPath(); c.arc(z.x, z.y, z.r * (0.85 + 0.15 * Math.sin(t * 0.7 + z.y)), 0, TAU); c.fill();
+  }
+  // Every blow on its way: the shape fills as it comes. Spells fill purple round their caster.
+  for (const p of G.pending) {
+    if (p.done) continue;
+    const a = p.atk, prog = clamp((G.h - p.from) / Math.max(0.1, p.at - p.from), 0, 1);
+    const atLeader = a.shape !== 'spell' && (a.shape === 'roar' || covers(a, L));
+    const fill = `rgba(255,70,50,${0.1 + 0.28 * prog})`, edge = `rgba(255,90,70,${0.55 + 0.4 * prog})`;
+    c.lineWidth = atLeader ? 3.5 : 2;
+    if (a.shape === 'spell') {
+      c.strokeStyle = 'rgba(180,138,255,0.5)'; c.lineWidth = 3;
+      c.beginPath(); c.arc(a.x, a.y, a.r, 0, TAU); c.stroke();
+      c.strokeStyle = 'rgba(200,160,255,0.95)'; c.lineWidth = 5;
+      c.beginPath(); c.arc(a.x, a.y, a.r, -Math.PI / 2, -Math.PI / 2 + TAU * prog); c.stroke();
+    } else if (a.shape === 'roar') {
+      c.strokeStyle = `rgba(255,90,70,${0.3 + 0.5 * prog})`; c.lineWidth = 3 + 4 * prog;
+      c.beginPath(); c.arc(a.x, a.y, a.r * prog, 0, TAU); c.stroke();
+    } else if (a.shape === 'cone') {
+      c.fillStyle = fill;
+      c.beginPath(); c.moveTo(a.x, a.y); c.arc(a.x, a.y, a.r * prog, a.a - a.half, a.a + a.half); c.closePath(); c.fill();
+      c.strokeStyle = edge;
+      c.beginPath(); c.moveTo(a.x, a.y); c.arc(a.x, a.y, a.r, a.a - a.half, a.a + a.half); c.closePath(); c.stroke();
+    } else if (a.shape === 'line') {
+      const len = Math.hypot(a.x2 - a.x, a.y2 - a.y);
+      c.save(); c.translate(a.x, a.y); c.rotate(a.a);
+      c.fillStyle = fill; c.fillRect(0, -a.w / 2, len * prog, a.w);
+      c.strokeStyle = edge; c.strokeRect(0, -a.w / 2, len, a.w);
+      c.restore();
+    } else {
+      // A single blow closes a small ring on its target; a disc fills where the blow will land.
+      // A burrower's disc cracks.
+      c.fillStyle = fill;
+      c.beginPath(); c.arc(a.x, a.y, a.r * prog, 0, TAU); c.fill();
+      c.strokeStyle = edge;
+      c.beginPath(); c.arc(a.x, a.y, a.r, 0, TAU); c.stroke();
+      if (p.e && p.e.hidden) {
+        c.strokeStyle = `rgba(40,24,12,${0.4 + 0.5 * prog})`; c.lineWidth = 2;
+        for (let i = 0; i < 6; i++) {
+          const ang = i * TAU / 6 + 0.4;
+          c.beginPath(); c.moveTo(a.x, a.y);
+          c.lineTo(a.x + Math.cos(ang) * a.r * prog * 0.6, a.y + Math.sin(ang) * a.r * prog * 0.6 + 4);
+          c.lineTo(a.x + Math.cos(ang + 0.2) * a.r * prog, a.y + Math.sin(ang + 0.2) * a.r * prog);
+          c.stroke();
+        }
+      }
+    }
   }
 }
 // Side-view figures in a flat style. Each figure is drawn facing right with its feet at the
@@ -1883,9 +2383,15 @@ function drawTelegraphs(c) {
 // are a shade darker than near ones. Soldiers wear warm cloth, enemies grey steel.
 const SKIN = '#e8b98a', SKIN_E = '#efcaa6', INK = '#2a1a10', STEEL = '#b8c1cd';
 // How tall each figure stands above its feet, in art units; the HP bar sits on top of it.
-const FIG_TOP = { azap: 46, yeniceri: 54, kemankes: 53, deli: 74, piyade: 44, kalkanli: 48, okcu: 45, atli: 66, boss: 56 };
+const FIG_TOP = {
+  azap: 46, yeniceri: 54, kemankes: 53, deli: 74,
+  koc: 30, yarasa: 24, karakoncolos: 42, sapanci: 46, kaya: 62, tepegoz: 52,
+  yilan: 14, kanatli: 28, akrep: 34, kahin: 52, evren: 46, sahmeran: 50,
+  hortlak: 44, korkusu: 28, yavru: 30, odcadi: 52, oddevi: 54, ejderha: 56,
+};
 const FIG_SCALE = 0.72;
-function figScale(type) { return type === 'boss' ? FIG_SCALE * 1.6 : FIG_SCALE; }
+const FIG_SIZE = { akrep: 1.15, kaya: 1.35, evren: 1.4, oddevi: 1.4, tepegoz: 1.9, sahmeran: 1.8, ejderha: 2 };
+function figScale(type) { return FIG_SCALE * (FIG_SIZE[type] || 1); }
 function figTop(u) { return u.y + u.r * 0.55 - FIG_TOP[u.type] * figScale(u.type); }
 function stepPhase(u) {
   const moved = u.lastX === undefined ? 0 : Math.hypot(u.x - u.lastX, u.y - u.lastY);
@@ -2105,119 +2611,287 @@ function drawSoldierShape(c, type, st) {
   else drawDeli(c, st);
 }
 
-function drawPiyade(c, body, st) {
-  legs(c, st, '#4a4f5c', '#2a2d34', false);
-  // A long pike carried low in both hands.
-  const bh = limbEnd(-1, -29, 1.0, 10.5), fh = limbEnd(1.5, -29, 1.35, 10.5);
-  const a = Math.atan2(fh[1] - bh[1], fh[0] - bh[0]);
-  arm(c, -1, -29, 1.0, 10.5, shade(body, -0.2), SKIN_E);
-  blade(c, pole(c, bh, a, 16, 28, '#7a5a34', 1.9), a, 7, '#e4e8ee');
-  legs(c, st, '#4a4f5c', '#2a2d34', true);
+// The monsters, drawn like the soldiers: facing right, feet at the origin. `e` is the living
+// monster when there is one (a corpse has none), for the parts that show its state.
+const now9 = () => performance.now();
+// Four legs: the far pair now, the near pair from the returned function, after the body.
+function quadLegs(c, st, color, xs, top, len, w) {
+  const far = shade(color, -0.25);
+  limb(c, xs[0], top, len, w, st * 0.45, far); limb(c, xs[1], top, len, w, -st * 0.45, far);
+  return () => { limb(c, xs[0] + 2, top, len, w, -st * 0.45, color); limb(c, xs[1] + 2, top, len, w, st * 0.45, color); };
+}
+function drawKoc(c, body, st) {
+  const near = quadLegs(c, st, '#2a2420', [-8, 8], -12, 12, 3.4);
+  for (const [x, y, r] of [[-9, -17, 6], [-3, -20, 7], [4, -20, 7], [9, -17, 6], [-6, -13, 6], [2, -13, 6.5], [8, -13, 5.5]]) dot(c, x, y, r, body);
+  for (const [x, y] of [[-5, -21], [3, -22], [8, -19]]) dot(c, x, y, 2.2, shade(body, 0.15));
+  near();
+  c.fillStyle = '#1f1a16'; c.beginPath(); c.ellipse(16, -18, 5.5, 4.2, 0.35, 0, TAU); c.fill();
+  dot(c, 18.5, -19.5, 1, '#e0a040');
+  c.strokeStyle = '#b0a48a'; c.lineWidth = 2.6; c.lineCap = 'round';
+  c.beginPath(); c.arc(12.5, -20, 4.2, -2.6, 1.6); c.stroke();
+}
+function drawYarasa(c, body) {
+  const flap = Math.sin(now9() / 70);
+  const wing = (dir) => {
+    c.fillStyle = dir < 0 ? shade(body, -0.25) : body;
+    c.beginPath(); c.moveTo(0, -12);
+    c.quadraticCurveTo(dir * 10, -22 - flap * 8, dir * 20, -14 - flap * 10);
+    c.lineTo(dir * 15, -10 - flap * 5); c.lineTo(dir * 10, -11); c.lineTo(dir * 6, -8); c.closePath(); c.fill();
+  };
+  wing(-1);
+  c.fillStyle = body; c.beginPath(); c.ellipse(0, -11, 4.5, 6, 0, 0, TAU); c.fill();
+  c.beginPath(); c.moveTo(-2.5, -16); c.lineTo(-3.5, -21); c.lineTo(-0.5, -17); c.fill();
+  c.beginPath(); c.moveTo(2.5, -16); c.lineTo(3.5, -21); c.lineTo(0.5, -17); c.fill();
+  dot(c, -1.4, -14, 0.9, '#ff5040'); dot(c, 1.4, -14, 0.9, '#ff5040');
+  wing(1);
+}
+function drawKarakoncolos(c, body, st) {
+  const dark = shade(body, -0.3);
+  legs(c, st, dark, '#1a1612', false);
+  limb(c, -2, -30, 17, 4, 0.2 + st * 0.3, dark);
+  legs(c, st, body, '#1a1612', true);
+  c.fillStyle = body;
+  c.beginPath(); c.moveTo(-9, -12); c.quadraticCurveTo(-12, -30, -2, -38); c.quadraticCurveTo(10, -40, 11, -28);
+  c.quadraticCurveTo(10, -16, 7, -12); c.closePath(); c.fill();
+  c.strokeStyle = shade(body, 0.2); c.lineWidth = 1.2;
+  for (let i = 0; i < 6; i++) { const x = -8 + i * 3; c.beginPath(); c.moveTo(x, -14); c.lineTo(x - 1.5, -9); c.stroke(); }
+  dot(c, 9, -35, 6, body);
+  dot(c, 12, -36, 1.3, '#ffd04a'); dot(c, 9.5, -36.5, 1.1, '#ffd04a');
+  seg(c, 13, -32, 15, -30, '#e8e0cc', 1.4);
+  const h = limb(c, 4, -30, 18, 4.4, 0.5 - st * 0.3, body);
+  for (const k of [-0.6, 0, 0.6]) seg(c, h[0], h[1], h[0] + 3 + k, h[1] + 3, '#e8e0cc', 1);
+}
+function drawSapanci(c, body, st) {
+  const skin = '#b39a7a', sw = now9() / 110;
+  legs(c, st, '#5a4632', '#2a1f16', false);
+  const h = arm(c, -1, -29, 3.0, 10, shade(body, -0.2), skin);
+  const sx = h[0] + Math.cos(sw) * 8, sy = h[1] - 4 + Math.sin(sw) * 3;
+  seg(c, h[0], h[1], sx, sy, '#6b4a2a', 0.9); dot(c, sx, sy, 2, '#8a8478');
+  legs(c, st, '#5a4632', '#2a1f16', true);
   coat(c, body, -12);
-  sash(c, '#5a4a3a');
-  face(c, SKIN_E, false);
-  // A brimmed kettle helmet.
-  c.fillStyle = STEEL; c.beginPath(); c.arc(1, -39.2, 5.9, Math.PI, 0); c.fill();
-  c.beginPath(); c.ellipse(1, -39.2, 9.5, 1.8, 0, 0, TAU); c.fill();
-  dot(c, -1, -42, 1.5, shade(STEEL, 0.4));
-  arm(c, 1.5, -29, 1.35, 10.5, body, SKIN_E);
+  c.fillStyle = '#d8ccb0'; c.beginPath(); c.ellipse(1, -31, 7, 2.6, 0, 0, TAU); c.fill();
+  face(c, skin, false);
+  c.fillStyle = '#6b5236'; c.beginPath(); c.arc(1, -38, 6, Math.PI, 0); c.fill();
+  arm(c, 1.5, -29, 0.9, 10, body, skin);
 }
-function drawKalkanli(c, body, st) {
-  legs(c, st, '#4a4f5c', '#2a2d34', false);
-  // A sword held up behind the helm.
-  const bh = arm(c, -1, -29, 3.4, 10, shade(body, -0.2), SKIN_E);
-  seg(c, bh[0], bh[1], bh[0] - 5, bh[1] - 15, '#dfe4ea', 2.4);
-  seg(c, bh[0] - 3, bh[1] + 1, bh[0] + 3, bh[1] - 1, '#8a6a3a', 2);
-  legs(c, st, '#4a4f5c', '#2a2d34', true);
-  coat(c, body, -12);
-  sash(c, '#5a4a3a');
-  face(c, SKIN_E, false);
-  // A great helm with an eye slit.
-  rr(c, -4.8, -44.5, 12, 13, 3); c.fillStyle = STEEL; c.fill();
-  rr(c, -4.8, -44.5, 12, 3, 1.5); c.fillStyle = shade(STEEL, 0.3); c.fill();
-  seg(c, 1.5, -38.6, 6.6, -38.6, '#2a2d34', 1.3);
-  // A heater shield on the near arm, covering the body.
-  arm(c, 1.5, -29, 0.7, 9, body, SKIN_E);
-  c.fillStyle = '#8a2a24';
-  c.beginPath(); c.moveTo(2.5, -34.5); c.lineTo(15.5, -34.5); c.lineTo(15.5, -23.5);
-  c.quadraticCurveTo(15, -13, 9, -9); c.quadraticCurveTo(3, -13, 2.5, -23.5); c.closePath(); c.fill();
-  c.strokeStyle = '#c9d2de'; c.lineWidth = 1.6; c.stroke();
-  seg(c, 9, -32.5, 9, -13, '#e0c060', 2);
-  seg(c, 4.5, -26, 13.5, -26, '#e0c060', 2);
-}
-function drawOkcu(c, body, st) {
-  const hood = '#3f5f5d';
-  legs(c, st, '#4a4f5c', '#2a2d34', false);
-  arm(c, -1, -29, 1.5, 10, shade(body, -0.2), SKIN_E);
-  legs(c, st, '#4a4f5c', '#2a2d34', true);
-  coat(c, body, -12);
-  sash(c, '#5a4a3a');
-  // A hood with its tail hanging down the back.
-  c.fillStyle = hood;
-  c.beginPath(); c.moveTo(-4.5, -41); c.lineTo(-12, -29); c.lineTo(-3.5, -33); c.closePath(); c.fill();
-  dot(c, 0.2, -37.4, 7, hood);
-  face(c, SKIN_E, false);
-  c.strokeStyle = hood; c.lineWidth = 2.6;
-  c.beginPath(); c.arc(1, -36.5, 5.9, Math.PI * 1.08, Math.PI * 1.95); c.stroke();
-  // A crossbow levelled ahead.
-  seg(c, 3, -28.5, 18, -29.5, '#6b4a2a', 3);
-  c.strokeStyle = '#c9d2de'; c.lineWidth = 2;
-  c.beginPath(); c.moveTo(14.5, -35.5); c.quadraticCurveTo(18.5, -29.5, 14.5, -23.5); c.stroke();
-  c.strokeStyle = '#e8dcc0'; c.lineWidth = 0.7;
-  c.beginPath(); c.moveTo(14.5, -35.5); c.lineTo(10, -29.2); c.lineTo(14.5, -23.5); c.stroke();
-  arm(c, 1.5, -29, 1.4, 10.5, body, SKIN_E);
-}
-function drawAtli(c, body, st) {
-  horse(c, st, '#3d3550', '#1b1824', body);
-  c.save(); c.translate(-4, -16);
-  leg(c, 1, 0.75, '#4a4f5c', '#2a2d34');
-  coat(c, body, -15);
-  face(c, SKIN_E, false);
-  rr(c, -4.8, -44.5, 12, 13, 3); c.fillStyle = STEEL; c.fill();
-  seg(c, 1.5, -38.6, 6.6, -38.6, '#2a2d34', 1.3);
-  c.strokeStyle = '#c8322b'; c.lineWidth = 3; c.lineCap = 'round';
-  c.beginPath(); c.moveTo(0, -44.5); c.quadraticCurveTo(-5, -50, -11, -46); c.stroke();
-  // A lance couched under the arm.
-  const h = arm(c, 1.5, -29, 1.3, 10.5, body, SKIN_E);
-  blade(c, pole(c, h, -0.12, 22, 30, '#d9d0bd', 2.2), -0.12, 6, '#e4e8ee');
-  c.restore();
-}
-function drawSerdar(c, body, st) {
-  // A red cape, plate on the shoulders, a crested helm and a flanged mace.
-  c.fillStyle = '#7a1f2a';
-  c.beginPath(); c.moveTo(-4.5, -32); c.quadraticCurveTo(-14, -20, -14.5, -3); c.lineTo(-3, -5); c.closePath(); c.fill();
-  legs(c, st, '#3e3a48', '#23252c', false);
-  arm(c, -1, -29, 0.6, 10.5, shade(STEEL, -0.25), SKIN_E);
-  legs(c, st, '#3e3a48', '#23252c', true);
-  coat(c, body, -10, '#e0c060');
-  sash(c, '#e0c060');
-  face(c, SKIN_E, false);
-  rr(c, -5, -45, 12.5, 13.5, 3); c.fillStyle = STEEL; c.fill();
-  seg(c, 1.5, -38.6, 7, -38.6, '#2a2d34', 1.4);
-  c.fillStyle = '#e0c060';
-  c.beginPath(); c.moveTo(-4, -45); c.lineTo(-3, -49); c.lineTo(-0.5, -46); c.lineTo(1.2, -50); c.lineTo(3, -46);
-  c.lineTo(5.5, -49); c.lineTo(6.5, -45); c.closePath(); c.fill();
-  c.strokeStyle = '#c8322b'; c.lineWidth = 3; c.lineCap = 'round';
-  c.beginPath(); c.moveTo(1, -49); c.quadraticCurveTo(-6, -56, -12, -50); c.stroke();
-  dot(c, 1, -29.5, 4.6, STEEL);
-  const h = arm(c, 1.5, -29, 1.9, 10.5, STEEL, SKIN_E);
-  const top = pole(c, h, -1.2, 3, 15, '#5a4630', 2.2);
-  dot(c, top[0], top[1], 4, '#8f969f');
-  c.fillStyle = '#c9d2de';
-  for (let i = 0; i < 6; i++) {
-    const a = i * TAU / 6;
-    c.beginPath(); c.moveTo(top[0] + Math.cos(a - 0.3) * 3.5, top[1] + Math.sin(a - 0.3) * 3.5);
-    c.lineTo(top[0] + Math.cos(a) * 6.5, top[1] + Math.sin(a) * 6.5);
-    c.lineTo(top[0] + Math.cos(a + 0.3) * 3.5, top[1] + Math.sin(a + 0.3) * 3.5); c.fill();
+function drawKaya(c, body, st, e) {
+  const dk = shade(body, -0.25), lt = shade(body, 0.18);
+  rr(c, -10 - st * 2, -14, 8, 14, 2); c.fillStyle = dk; c.fill();
+  rr(c, -16, -44, 8, 26, 3); c.fillStyle = dk; c.fill();
+  rr(c, 2 + st * 2, -14, 9, 14, 2); c.fillStyle = body; c.fill();
+  c.fillStyle = body;
+  c.beginPath(); c.moveTo(-12, -14); c.lineTo(-14, -38); c.lineTo(-6, -50); c.lineTo(8, -52); c.lineTo(15, -40); c.lineTo(13, -14); c.closePath(); c.fill();
+  c.fillStyle = lt; c.beginPath(); c.moveTo(-6, -50); c.lineTo(8, -52); c.lineTo(4, -44); c.lineTo(-4, -44); c.closePath(); c.fill();
+  c.fillStyle = '#5a7a3a'; c.beginPath(); c.ellipse(0, -51, 6, 2, 0, 0, TAU); c.fill();
+  rr(c, 2, -60, 12, 10, 3); c.fillStyle = body; c.fill();
+  dot(c, 11, -55, 1.4, '#ffcf6a');
+  rr(c, 10, -44, 8, 22, 3); c.fillStyle = body; c.fill();
+  dot(c, 14, -20, 6, lt);
+  if (e && e.crackUntil > G.h) {
+    c.strokeStyle = '#ffcf6a'; c.lineWidth = 1.6;
+    c.beginPath(); c.moveTo(-4, -46); c.lineTo(2, -34); c.lineTo(-3, -24); c.lineTo(3, -16); c.moveTo(2, -34); c.lineTo(9, -30); c.stroke();
   }
 }
-function drawEnemyShape(c, type, body, st) {
-  if (type === 'atli') drawAtli(c, body, st);
-  else if (type === 'kalkanli') drawKalkanli(c, body, st);
-  else if (type === 'okcu') drawOkcu(c, body, st);
-  else if (type === 'boss') drawSerdar(c, body, st);
-  else drawPiyade(c, body, st);
+function drawTepegoz(c, body, st, e) {
+  const dk = shade(body, -0.25), open = e ? e.eyeUntil > G.h : true;
+  legs(c, st, dk, '#3a2a1c', false);
+  const bh = arm(c, -1, -31, 2.6, 11, dk, dk);
+  const tip = pole(c, bh, -1.9, 2, 20, '#6b4a2a', 3.4);
+  dot(c, tip[0], tip[1], 4, '#5a3a1c');
+  legs(c, st, body, '#3a2a1c', true);
+  c.fillStyle = body; c.beginPath(); c.ellipse(1, -24, 11, 12, 0, 0, TAU); c.fill();
+  c.fillStyle = '#6b5236'; c.beginPath(); c.moveTo(-10, -18); c.lineTo(11, -18); c.lineTo(9, -10); c.lineTo(-9, -10); c.closePath(); c.fill();
+  dot(c, 2, -41, 8, body);
+  if (open) { dot(c, 4, -42, 4.2, '#f4efe4'); dot(c, 5, -42, 2.2, '#c8322b'); dot(c, 5.4, -42, 0.9, INK); }
+  else { c.strokeStyle = INK; c.lineWidth = 1.6; c.beginPath(); c.arc(4, -43, 3.6, 0.3, Math.PI - 0.3); c.stroke(); }
+  seg(c, -1, -46.5, 9, -46, dk, 2);
+  c.fillStyle = '#3a2a1c'; c.beginPath(); c.arc(0, -44, 8, Math.PI * 1.05, Math.PI * 1.6); c.lineTo(-2, -44); c.fill();
+  arm(c, 1.5, -31, 0.8, 11, body, body);
 }
+function drawYilan(c, body) {
+  const w = now9() / 150, y = (x) => -3 - Math.sin(x * 0.35 + w) * 2.5;
+  c.strokeStyle = body; c.lineWidth = 4.5; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(-14, y(-14));
+  for (let x = -12; x <= 8; x += 2) c.lineTo(x, y(x));
+  c.quadraticCurveTo(11, -8, 14, -9); c.stroke();
+  c.fillStyle = body; c.beginPath(); c.ellipse(15, -9.5, 3.4, 2.4, 0.2, 0, TAU); c.fill();
+  dot(c, 16, -10.3, 0.8, '#ffe04a');
+  seg(c, 18, -9, 20.5, -9, '#c8322b', 0.8);
+  c.strokeStyle = shade(body, 0.3); c.lineWidth = 1;
+  for (let x = -12; x <= 6; x += 4) { c.beginPath(); c.moveTo(x, y(x) - 1.5); c.lineTo(x, y(x) + 1.5); c.stroke(); }
+}
+function drawKanatli(c, body) {
+  const flap = Math.sin(now9() / 80);
+  c.fillStyle = shade(body, -0.25);
+  c.beginPath(); c.moveTo(-2, -12); c.quadraticCurveTo(-6, -24 - flap * 6, -12, -26 - flap * 7); c.lineTo(-8, -14); c.closePath(); c.fill();
+  c.strokeStyle = body; c.lineWidth = 3.6; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(-16, -8); c.quadraticCurveTo(-8, -16, 0, -11); c.quadraticCurveTo(7, -7, 11, -13); c.stroke();
+  c.fillStyle = body; c.beginPath(); c.ellipse(13, -14, 3.2, 2.3, -0.3, 0, TAU); c.fill();
+  dot(c, 14, -14.8, 0.8, '#ffe04a');
+  c.fillStyle = '#8ac06a';
+  c.beginPath(); c.moveTo(0, -12); c.quadraticCurveTo(2, -26 - flap * 7, 8, -28 - flap * 8); c.lineTo(5, -13); c.closePath(); c.fill();
+}
+function drawAkrep(c, body, st) {
+  const dk = shade(body, -0.3);
+  c.strokeStyle = dk; c.lineWidth = 1.8; c.lineCap = 'round';
+  for (let i = 0; i < 4; i++) {
+    const x = -8 + i * 5, k = (i % 2 ? 1 : -1) * st * 2;
+    c.beginPath(); c.moveTo(x, -8); c.lineTo(x - 3 + k, -13); c.lineTo(x - 5 + k, 0); c.stroke();
+  }
+  for (let i = 0; i < 4; i++) { c.fillStyle = i % 2 ? body : shade(body, 0.1); c.beginPath(); c.ellipse(-6 + i * 5, -9, 5, 4.2, 0, 0, TAU); c.fill(); }
+  c.strokeStyle = body; c.lineWidth = 3.5;
+  c.beginPath(); c.moveTo(-10, -10); c.quadraticCurveTo(-22, -20, -14, -30); c.quadraticCurveTo(-6, -36, 0, -30); c.stroke();
+  c.fillStyle = '#e0c060'; c.beginPath(); c.moveTo(0, -30); c.lineTo(5, -27); c.lineTo(1, -26); c.closePath(); c.fill();
+  for (const [y, s] of [[-12, 1], [-7, -1]]) {
+    seg(c, 10, -9, 16, y, dk, 2.4);
+    c.fillStyle = body; c.beginPath(); c.ellipse(19, y - 1, 4.2, 2.6, 0.3 * s, 0, TAU); c.fill();
+    seg(c, 21, y - 2, 24, y - 4 + s, dk, 1.4);
+  }
+  dot(c, 12, -11, 0.9, '#ffe04a');
+}
+function drawKahin(c, body) {
+  const skin = '#a8b89a';
+  const h = arm(c, -1, -29, 0.9, 10, shade(body, -0.2), skin);
+  seg(c, h[0] + 2, h[1] + 12, h[0] + 2, h[1] - 26, '#5a4630', 2);
+  c.strokeStyle = '#6aa04a'; c.lineWidth = 2; c.beginPath(); c.arc(h[0] + 2, h[1] - 26, 3.5, 0.5, TAU - 0.5); c.stroke();
+  dot(c, h[0] + 5, h[1] - 27, 1.4, '#6aa04a');
+  coat(c, body, -1, '#b48aff');
+  dot(c, -2, -0.5, 2.2, '#2a1f16'); dot(c, 5, -0.5, 2.2, '#2a1f16');
+  c.fillStyle = '#4f7a3a';
+  c.beginPath(); c.moveTo(-6, -33); c.quadraticCurveTo(-9, -46, 2, -50); c.quadraticCurveTo(11, -47, 9, -38); c.lineTo(7, -33); c.closePath(); c.fill();
+  face(c, skin, false);
+  dot(c, 8, -46, 0.9, '#ffe04a'); dot(c, 5, -48, 0.9, '#ffe04a');
+  const fh = arm(c, 1.5, -29, 2.2, 10, body, skin);
+  dot(c, fh[0], fh[1], 3 + Math.sin(now9() / 120), 'rgba(180,138,255,0.8)');
+}
+function drawEvren(c, body) {
+  const w = now9() / 200, dk = shade(body, -0.3);
+  const hump = (i) => -6 - Math.abs(Math.sin(i * 1.3 + w)) * 6;
+  for (let i = 0; i < 4; i++) { c.fillStyle = i % 2 ? body : shade(body, 0.1); c.beginPath(); c.ellipse(-22 + i * 9, hump(i), 7, 6, 0, 0, TAU); c.fill(); }
+  c.fillStyle = '#c9b060';
+  for (let i = 0; i < 4; i++) { const x = -22 + i * 9, y = hump(i) - 5; c.beginPath(); c.moveTo(x - 2, y); c.lineTo(x, y - 5); c.lineTo(x + 2, y); c.fill(); }
+  c.strokeStyle = body; c.lineWidth = 9; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(8, -8); c.quadraticCurveTo(14, -22, 10, -32); c.stroke();
+  c.fillStyle = body; c.beginPath(); c.ellipse(15, -34, 8, 5, 0.2, 0, TAU); c.fill();
+  c.fillStyle = dk; c.beginPath(); c.moveTo(8, -37); c.lineTo(2, -44); c.lineTo(10, -39); c.fill();
+  dot(c, 17, -36, 1.4, '#ffcf4a');
+  seg(c, 20, -32, 23, -31, '#f4efe4', 1.2);
+}
+function drawSahmeran(c, body) {
+  const w = now9() / 220, skin = '#e8c8a0';
+  c.strokeStyle = body; c.lineWidth = 8; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(-24, -4); c.quadraticCurveTo(-14, -10 + Math.sin(w) * 2, -4, -4); c.quadraticCurveTo(4, 0, 2, -14); c.stroke();
+  c.strokeStyle = shade(body, 0.35); c.lineWidth = 1.2;
+  for (let x = -20; x < -4; x += 4) { c.beginPath(); c.moveTo(x, -8); c.lineTo(x + 1, -3); c.stroke(); }
+  arm(c, -1, -29, 0.7, 10, shade(skin, -0.2), skin);
+  c.fillStyle = '#c9a040';
+  c.beginPath(); c.moveTo(-4, -14); c.quadraticCurveTo(-5, -28, -3, -31); c.lineTo(6, -31); c.quadraticCurveTo(7, -24, 6, -14); c.closePath(); c.fill();
+  c.fillStyle = '#2a1a10';
+  c.beginPath(); c.moveTo(-4, -40); c.quadraticCurveTo(-10, -30, -8, -20); c.lineTo(-3, -24); c.quadraticCurveTo(-4, -34, 0, -40); c.fill();
+  face(c, skin, false);
+  c.fillStyle = '#e0c060';
+  c.beginPath(); c.moveTo(-4, -41); c.lineTo(-3, -47); c.lineTo(-0.5, -43); c.lineTo(1.5, -48); c.lineTo(3.5, -43); c.lineTo(6, -47); c.lineTo(6.5, -41); c.closePath(); c.fill();
+  arm(c, 1.5, -29, 2.3, 10, skin, skin);
+}
+function drawHortlak(c, body, st) {
+  const glow = `rgba(255,${Math.round(120 + 60 * Math.sin(now9() / 150))},40,0.9)`;
+  legs(c, st, shade(body, -0.2), '#1a1614', false);
+  arm(c, -1, -29, 1.4 + st * 0.2, 11, shade(body, -0.2), shade(body, -0.1));
+  legs(c, st, body, '#1a1614', true);
+  c.fillStyle = body;
+  c.beginPath(); c.moveTo(-6, -32); c.lineTo(6, -32); c.lineTo(8, -14); c.lineTo(4, -11); c.lineTo(1, -14); c.lineTo(-3, -11); c.lineTo(-7, -14); c.closePath(); c.fill();
+  c.strokeStyle = glow; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(-2, -30); c.lineTo(1, -24); c.lineTo(-1, -18); c.moveTo(3, -28); c.lineTo(5, -22); c.stroke();
+  dot(c, 1, -37, 5.4, shade(body, 0.1));
+  dot(c, 3.5, -38, 1.1, glow); dot(c, 0.5, -38.2, 1, glow);
+  arm(c, 1.5, -29, 1.6 - st * 0.2, 11, body, shade(body, 0.1));
+}
+function drawKorkusu(c, body) {
+  const flap = Math.sin(now9() / 75);
+  c.fillStyle = '#ffb040';
+  c.beginPath(); c.moveTo(-4, -12); c.quadraticCurveTo(-14, -10 + flap * 2, -20, -16); c.quadraticCurveTo(-13, -13, -4, -9); c.fill();
+  c.fillStyle = shade(body, -0.2);
+  c.beginPath(); c.moveTo(0, -13); c.quadraticCurveTo(-4, -24 - flap * 7, -10, -26 - flap * 8); c.lineTo(-4, -12); c.closePath(); c.fill();
+  c.fillStyle = body; c.beginPath(); c.ellipse(1, -12, 7, 4.2, -0.1, 0, TAU); c.fill();
+  dot(c, 8, -15, 3.4, body);
+  c.fillStyle = '#ffd060'; c.beginPath(); c.moveTo(11, -15.5); c.lineTo(15, -14.5); c.lineTo(11, -13.5); c.fill();
+  dot(c, 9, -16, 0.8, '#fff4c0');
+  c.fillStyle = '#ffcf4a';
+  c.beginPath(); c.moveTo(1, -13); c.quadraticCurveTo(4, -26 - flap * 7, 10, -28 - flap * 8); c.lineTo(6, -12); c.closePath(); c.fill();
+}
+function drawYavru(c, body, st) {
+  const dk = shade(body, -0.3);
+  const near = quadLegs(c, st, body, [-7, 7], -11, 11, 3.6);
+  c.strokeStyle = body; c.lineWidth = 3.5; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(-10, -14); c.quadraticCurveTo(-18, -14, -20, -8); c.stroke();
+  c.fillStyle = dk; c.beginPath(); c.moveTo(-3, -19); c.lineTo(-9, -30); c.lineTo(-1, -26); c.lineTo(3, -19); c.fill();
+  c.fillStyle = body; c.beginPath(); c.ellipse(0, -15, 11, 6, 0, 0, TAU); c.fill();
+  c.beginPath(); c.moveTo(7, -17); c.quadraticCurveTo(12, -24, 15, -24); c.lineTo(17, -19); c.lineTo(9, -12); c.fill();
+  c.beginPath(); c.ellipse(17, -22, 5, 3, 0.15, 0, TAU); c.fill();
+  dot(c, 18, -23.2, 0.9, '#ffe04a');
+  seg(c, 14, -25, 11, -29, '#e0c060', 1.4);
+  near();
+  c.fillStyle = '#d0a060'; c.beginPath(); c.ellipse(1, -11.5, 8, 2, 0, 0, TAU); c.fill();
+}
+function drawOdcadi(c, body) {
+  const skin = '#c8a890', f = now9() / 100;
+  const h = arm(c, -1, -29, 0.9, 10, shade(body, -0.2), skin);
+  seg(c, h[0] + 1, h[1] + 12, h[0] + 1, h[1] - 24, '#3a2418', 2);
+  dot(c, h[0] + 1, h[1] - 26, 3 + Math.sin(f), '#ff8a2a'); dot(c, h[0] + 1, h[1] - 27, 1.6, '#ffe07a');
+  coat(c, body, -1, '#e0602a');
+  dot(c, -2, -0.5, 2.2, '#1a1210'); dot(c, 5, -0.5, 2.2, '#1a1210');
+  c.fillStyle = shade(body, -0.15);
+  c.beginPath(); c.moveTo(-6, -33); c.quadraticCurveTo(-7, -44, -4, -52); c.quadraticCurveTo(4, -46, 8, -38); c.lineTo(6, -33); c.closePath(); c.fill();
+  face(c, skin, false);
+  arm(c, 1.5, -29, 1.5, 10, body, skin);
+}
+function drawOddevi(c, body, st) {
+  const lava = `rgb(255,${Math.round(120 + 50 * Math.sin(now9() / 180))},40)`, f = now9() / 90;
+  legs(c, st, shade(body, -0.2), '#1a1210', false);
+  arm(c, -1, -31, 0.6 + st * 0.2, 12, shade(body, -0.2), shade(body, -0.1));
+  legs(c, st, body, '#1a1210', true);
+  c.fillStyle = body;
+  c.beginPath(); c.moveTo(-9, -13); c.lineTo(-11, -33); c.quadraticCurveTo(0, -38, 12, -33); c.lineTo(10, -13); c.closePath(); c.fill();
+  c.strokeStyle = lava; c.lineWidth = 1.2;
+  c.beginPath(); c.moveTo(-5, -30); c.lineTo(-1, -24); c.lineTo(-4, -17); c.moveTo(5, -31); c.lineTo(3, -23); c.lineTo(7, -16); c.stroke();
+  dot(c, 1, -39, 5.5, body);
+  dot(c, 3.8, -40, 1.1, lava);
+  for (let i = 0; i < 4; i++) {
+    c.fillStyle = i % 2 ? '#ff8a2a' : '#ffcf4a';
+    c.beginPath(); c.moveTo(-4 + i * 2.6, -43); c.lineTo(-3 + i * 2.6 + Math.sin(f + i), -51 - (i % 2) * 3); c.lineTo(-1.5 + i * 2.6, -43); c.fill();
+  }
+  const h = arm(c, 1.5, -31, 1.3, 12, body, shade(body, 0.1));
+  const tip = pole(c, h, -0.6, 4, 16, '#3a2418', 3.4);
+  dot(c, tip[0], tip[1], 3.4, '#ff8a2a');
+}
+function drawEjderha(c, body, st, e) {
+  const dk = shade(body, -0.3), flap = Math.sin(now9() / (e && e.airborne ? 90 : 400));
+  c.fillStyle = dk;
+  c.beginPath(); c.moveTo(-2, -26); c.lineTo(-14, -50 - flap * 6); c.lineTo(-6, -44); c.lineTo(-18, -42 - flap * 4); c.lineTo(-8, -36);
+  c.lineTo(-18, -32); c.lineTo(-4, -22); c.closePath(); c.fill();
+  const near = quadLegs(c, st, body, [-9, 9], -14, 14, 4.5);
+  c.strokeStyle = body; c.lineWidth = 5; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(-12, -20); c.quadraticCurveTo(-26, -18, -30, -8); c.stroke();
+  c.fillStyle = dk; c.beginPath(); c.moveTo(-30, -8); c.lineTo(-35, -4); c.lineTo(-28, -3); c.closePath(); c.fill();
+  c.fillStyle = body; c.beginPath(); c.ellipse(0, -21, 15, 8, 0, 0, TAU); c.fill();
+  c.fillStyle = '#d09050'; c.beginPath(); c.ellipse(2, -16, 11, 3, 0, 0, TAU); c.fill();
+  c.fillStyle = body;
+  c.beginPath(); c.moveTo(9, -24); c.quadraticCurveTo(16, -38, 20, -40); c.lineTo(24, -34); c.quadraticCurveTo(18, -28, 14, -16); c.closePath(); c.fill();
+  c.beginPath(); c.ellipse(24, -38, 7, 4, 0.25, 0, TAU); c.fill();
+  c.fillStyle = '#e0c060'; c.beginPath(); c.moveTo(19, -41); c.lineTo(13, -47); c.lineTo(21, -42.5); c.closePath(); c.fill();
+  dot(c, 25, -39.5, 1.2, '#ffe04a');
+  if (e && e.state === 'wind') dot(c, 31, -36, 2.4 + Math.sin(now9() / 60), '#ffb040');
+  near();
+  c.fillStyle = body;
+  c.beginPath(); c.moveTo(0, -26); c.lineTo(-8, -54 - flap * 8); c.lineTo(-1, -47); c.lineTo(-12, -45 - flap * 5); c.lineTo(-3, -38);
+  c.lineTo(-12, -34); c.lineTo(2, -22); c.closePath(); c.fill();
+}
+const ENEMY_ART = {
+  koc: drawKoc, yarasa: drawYarasa, karakoncolos: drawKarakoncolos, sapanci: drawSapanci, kaya: drawKaya, tepegoz: drawTepegoz,
+  yilan: drawYilan, kanatli: drawKanatli, akrep: drawAkrep, kahin: drawKahin, evren: drawEvren, sahmeran: drawSahmeran,
+  hortlak: drawHortlak, korkusu: drawKorkusu, yavru: drawYavru, odcadi: drawOdcadi, oddevi: drawOddevi, ejderha: drawEjderha,
+};
+function drawEnemyShape(c, type, body, st, e) { ENEMY_ART[type](c, body, st, e); }
 // The mehterbaşı: a long red kaftan with a gold edge, a davul in front of the belly and a tall
 // white kavuk with a gold sorguç. The drumstick comes down on each pulse.
 function drawMehterbasi(c, st, pulse, hot) {
@@ -2263,6 +2937,20 @@ function drawSoldier(c, s) {
     c.strokeStyle = `rgba(127,182,255,${G.guardShow / 0.4})`; c.lineWidth = 2.5;
     c.beginPath(); c.ellipse(s.x, s.y + foot, s.r + 6, s.r * 0.6 + 3, 0, 0, TAU); c.stroke();
   }
+  const top = figTop(s);
+  if (s.dazeUntil > G.h) {
+    const t = performance.now() / 160;
+    c.fillStyle = '#ffe07a';
+    for (let i = 0; i < 3; i++) { const a = t + i * TAU / 3; c.beginPath(); c.arc(s.x + Math.cos(a) * 9, top - 10 + Math.sin(a) * 3, 2, 0, TAU); c.fill(); }
+  }
+  if (s.poisonUntil > G.h) {
+    const t = performance.now() / 300;
+    for (let i = 0; i < 2; i++) dot(c, s.x - 5 + i * 9, top + 8 - ((t + i * 0.5) % 1) * 14, 2, 'rgba(143,212,106,0.85)');
+  }
+  if (s.grabbed) {
+    c.strokeStyle = 'rgba(255,90,70,0.9)'; c.lineWidth = 2;
+    c.beginPath(); c.ellipse(s.x, s.y + foot, s.r + 5, s.r * 0.6 + 3, 0, 0, TAU); c.stroke();
+  }
   if (isOut(s)) {
     c.strokeStyle = 'rgba(255,177,74,0.8)'; c.lineWidth = 1.5; c.setLineDash([3, 3]);
     c.beginPath(); c.ellipse(s.x, s.y + foot, s.r + 4, s.r * 0.6 + 2, 0, 0, TAU); c.stroke(); c.setLineDash([]);
@@ -2276,24 +2964,40 @@ function drawSoldier(c, s) {
 function drawEnemy(c, e) {
   const d = ENEMY[e.type];
   const wind = e.state === 'wind', stunned = e.stunUntil >= G.curK;
-  const st = stepPhase(e), dir = facingDir(e, e.face), k = figScale(e.type), foot = e.r * 0.55;
+  // Under the ground only a moving mound of earth shows.
+  if (e.hidden) {
+    const t = performance.now() / 120;
+    c.fillStyle = '#4a3a26';
+    c.beginPath(); c.ellipse(e.x, e.y + 4, e.r + 6 + Math.sin(t) * 2, e.r * 0.5, 0, Math.PI, TAU); c.fill();
+    for (let i = 0; i < 4; i++) dot(c, e.x - e.r + i * e.r * 0.66, e.y + 2 - Math.abs(Math.sin(t + i)) * 5, 2.2, '#6b5a3a');
+    return;
+  }
+  const st = stepPhase(e), dir = facingDir(e, e.face), k = figScale(e.type), foot = e.r * 0.55, alt = e.alt || 0;
   c.save();
   c.globalAlpha = e.state === 'emerge' ? clamp(e.emergeT, 0, 1) : 1;
   c.translate(e.x, e.y);
-  c.fillStyle = 'rgba(0,0,0,0.32)'; c.beginPath(); c.ellipse(0, foot, e.r + 4, e.r * 0.45, 0, 0, TAU); c.fill();
-  c.translate(0, foot); c.scale(k * dir, k);
+  const sh = alt ? 0.6 : 1;
+  c.fillStyle = 'rgba(0,0,0,0.32)'; c.beginPath(); c.ellipse(0, foot, (e.r + 4) * sh, e.r * 0.45 * sh, 0, 0, TAU); c.fill();
+  c.translate(0, foot - alt); c.scale(k * dir, k);
   const body = wind && Math.floor(G.h * 10) % 2 === 0 ? '#c65a4a' : d.color;
   if (e.hitFlash > 0) c.filter = `brightness(${1 + e.hitFlash * 1.2})`;
-  drawEnemyShape(c, e.type, body, st);
+  drawEnemyShape(c, e.type, body, st, e);
   c.restore();
-  const top = figTop(e);
+  const top = figTop(e) - alt;
   if (stunned) {
     const t = performance.now() / 160;
     c.fillStyle = '#ffe07a';
     for (let i = 0; i < 3; i++) { const a = t + i * TAU / 3; c.beginPath(); c.arc(e.x + Math.cos(a) * 12, top - 4 + Math.sin(a) * 4, 2.5, 0, TAU); c.fill(); }
   }
-  if (e.type === 'boss') hpBar(c, e.x, top - 10, 56, e.hp / e.maxHp, '#ff7a5c');
+  if (d.boss) hpBar(c, e.x, top - 10, 64, e.hp / e.maxHp, '#ff7a5c');
+  else if (d.big) hpBar(c, e.x, top - 8, 36, e.hp / e.maxHp, '#ff7a5c');
   else if (e.hp < e.maxHp) hpBar(c, e.x, top - 6, 22, e.hp / e.maxHp, '#ff7a5c');
+  // A shield mark while the armor holds.
+  if (d.armor && !d.boss && G.h > e.crackUntil) {
+    const x = e.x + (d.big ? 24 : 16), y = top - (d.big ? 8 : 6);
+    c.fillStyle = '#9a9486'; c.strokeStyle = '#140f0a'; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(x - 4, y - 4); c.lineTo(x + 4, y - 4); c.lineTo(x + 4, y); c.quadraticCurveTo(x + 3, y + 4, x, y + 5.5); c.quadraticCurveTo(x - 3, y + 4, x - 4, y); c.closePath(); c.fill(); c.stroke();
+  }
 }
 function hpBar(c, x, y, w, f, color) {
   c.fillStyle = 'rgba(10,8,6,0.7)'; c.fillRect(x - w / 2 - 1, y - 1, w + 2, 5);
@@ -2306,13 +3010,14 @@ function drawKarakol(c, e) {
   c.globalAlpha = e.state === 'emerge' ? clamp(e.emergeT, 0, 1) : 1;
   c.translate(e.x, e.y);
   c.fillStyle = 'rgba(0,0,0,0.35)'; c.beginPath(); c.ellipse(4, 8, 40, 26, 0, 0, TAU); c.fill();
-  c.fillStyle = e.hitFlash > 0 ? '#8a6a44' : '#5d4a32'; c.strokeStyle = '#2a1a0c'; c.lineWidth = 2;
+  const th = theme();
+  c.fillStyle = e.hitFlash > 0 ? shade(th.wood, 0.3) : th.wood; c.strokeStyle = '#2a1a0c'; c.lineWidth = 2;
   for (let i = 0; i < 16; i++) {
     const a = i / 16 * TAU;
     c.beginPath(); c.arc(Math.cos(a) * 32, Math.sin(a) * 32, 5, 0, TAU); c.fill(); c.stroke();
   }
-  c.fillStyle = '#6b5236'; rr(c, -14, -14, 28, 28, 4); c.fill(); c.stroke();
-  c.fillStyle = '#c8322b'; c.beginPath(); c.moveTo(0, -14); c.lineTo(0, -40); c.lineTo(16, -34); c.lineTo(0, -28); c.fill();
+  c.fillStyle = shade(th.wood, 0.12); rr(c, -14, -14, 28, 28, 4); c.fill(); c.stroke();
+  c.fillStyle = th.flag; c.beginPath(); c.moveTo(0, -14); c.lineTo(0, -40); c.lineTo(16, -34); c.lineTo(0, -28); c.fill();
   if (f < 0.5) { c.strokeStyle = '#1a120a'; c.beginPath(); c.moveTo(-10, -8); c.lineTo(4, 2); c.lineTo(-2, 10); c.stroke(); }
   c.restore();
   hpBar(c, e.x, e.y - 52, 80, f, '#ff7a5c');
@@ -2327,17 +3032,18 @@ function drawHisar(c, e) {
   c.save();
   c.translate(e.x, e.y);
   c.fillStyle = 'rgba(0,0,0,0.35)'; c.beginPath(); c.ellipse(6, 12, 64, 40, 0, 0, TAU); c.fill();
-  c.fillStyle = e.hitFlash > 0 ? '#8a806e' : '#5d5446'; c.strokeStyle = '#2a251d'; c.lineWidth = 2;
+  const stone = theme().stone;
+  c.fillStyle = e.hitFlash > 0 ? shade(stone, 0.3) : stone; c.strokeStyle = '#2a251d'; c.lineWidth = 2;
   rr(c, -w, -w * 0.8, w * 2, w * 1.6, 3); c.fill(); c.stroke();
-  c.fillStyle = '#6b6152';
+  c.fillStyle = shade(stone, 0.12);
   for (let x = -w; x < w; x += 12) c.fillRect(x + 2, -w * 0.8 - 6, 7, 7);
   for (const [tx, ty] of [[-w, -w * 0.8], [w, -w * 0.8], [-w, w * 0.8], [w, w * 0.8]]) {
-    c.fillStyle = '#51493d'; c.beginPath(); c.arc(tx, ty, 14, 0, TAU); c.fill(); c.stroke();
-    c.fillStyle = '#6b6152'; c.beginPath(); c.arc(tx, ty, 9, 0, TAU); c.fill();
+    c.fillStyle = shade(stone, -0.12); c.beginPath(); c.arc(tx, ty, 14, 0, TAU); c.fill(); c.stroke();
+    c.fillStyle = shade(stone, 0.12); c.beginPath(); c.arc(tx, ty, 9, 0, TAU); c.fill();
   }
   c.fillStyle = e.hitFlash > 0 ? '#a07a4a' : '#6b4a2a'; c.strokeStyle = '#2a1a0c';
   rr(c, -10, w * 0.8 - 22, 20, 22, 8); c.fill(); c.stroke();
-  c.fillStyle = e.awake ? '#c8322b' : '#7a5a50';
+  c.fillStyle = e.awake ? theme().flag : '#7a5a50';
   c.beginPath(); c.moveTo(0, -w * 0.8); c.lineTo(0, -w * 0.8 - 36); c.lineTo(20, -w * 0.8 - 29); c.lineTo(0, -w * 0.8 - 22); c.fill();
   c.strokeStyle = '#1a120a'; c.lineWidth = 2;
   if (f < 0.66) { c.beginPath(); c.moveTo(-20, -20); c.lineTo(-8, 0); c.lineTo(-16, 16); c.stroke(); }
@@ -2356,13 +3062,14 @@ function drawGate(c, e) {
   c.globalAlpha = e.state === 'emerge' ? clamp(e.emergeT, 0, 1) : 1;
   c.translate(e.x, e.y); c.rotate(e.face);
   c.fillStyle = 'rgba(0,0,0,0.35)'; c.fillRect(-12, -226, 36, 452);
-  c.fillStyle = '#5d5446'; c.strokeStyle = '#2a251d'; c.lineWidth = 2;
+  const stone = theme().stone;
+  c.fillStyle = stone; c.strokeStyle = '#2a251d'; c.lineWidth = 2;
   c.fillRect(-16, -220, 30, 440); c.strokeRect(-16, -220, 30, 440);
-  c.fillStyle = '#6b6152';
+  c.fillStyle = shade(stone, 0.12);
   for (let y = -212; y < 212; y += 22) c.fillRect(-24, y, 10, 12);
   for (const ty of [-220, 220]) {
-    c.fillStyle = '#51493d'; c.beginPath(); c.arc(0, ty, 30, 0, TAU); c.fill(); c.stroke();
-    c.fillStyle = '#6b6152'; c.beginPath(); c.arc(0, ty, 20, 0, TAU); c.fill();
+    c.fillStyle = shade(stone, -0.12); c.beginPath(); c.arc(0, ty, 30, 0, TAU); c.fill(); c.stroke();
+    c.fillStyle = shade(stone, 0.12); c.beginPath(); c.arc(0, ty, 20, 0, TAU); c.fill();
   }
   c.fillStyle = e.hitFlash > 0 ? '#a07a4a' : '#6b4a2a'; c.strokeStyle = '#2a1a0c'; c.lineWidth = 3;
   rr(c, -12, -40, 30, 80, 6); c.fill(); c.stroke();
@@ -2516,7 +3223,7 @@ function drawIndicators(c) {
     c.beginPath(); c.moveTo(-9, 8); c.lineTo(-9, -4); c.lineTo(-5, -4); c.lineTo(-5, -9); c.lineTo(-1, -9); c.lineTo(-1, -4);
     c.lineTo(1, -4); c.lineTo(1, -9); c.lineTo(5, -9); c.lineTo(5, -4); c.lineTo(9, -4); c.lineTo(9, 8); c.closePath(); c.stroke(); c.fill();
     c.textAlign = 'center'; c.font = `700 10px ${FB}`; c.fillStyle = '#e6c9a0';
-    c.fillText(`${f.type === 'hisar' ? 'HİSAR' : 'KARAKOL'} ${Math.round(dist(f, G.leader) / 10)}m`, 0, 21);
+    c.fillText(`${upper(unitName(f.type))} ${Math.round(dist(f, G.leader) / 10)}m`, 0, 21);
     c.restore();
   }
   for (const e of G.enemies) {
@@ -2582,7 +3289,7 @@ function drawHUD(c, now) {
   for (let i = 0; i < T.hearts; i++) heart(c, 26 + i * 28, 26, 10, i < L.hearts);
   c.textAlign = 'left';
   c.font = `500 12px ${FB}`; c.fillStyle = '#b8a988';
-  c.fillText(G.tut ? 'EĞİTİM' : `${G.chapter}. BÖLÜM · ${CHAPTER_NAME[G.chapter - 1]} · DALGA ${G.wi}/${T.wavesPerChapter}`, 16, 58);
+  c.fillText(G.tut ? 'EĞİTİM' : `${G.chapter}. BÖLÜM · ${upper(theme().name)} · DALGA ${G.wi}/${T.wavesPerChapter}`, 16, 58);
   c.font = `26px ${FD}`; c.fillStyle = '#f1e6cc';
   const army = String(G.soldiers.length);
   c.fillText(army, 16, 90);
@@ -2596,6 +3303,18 @@ function drawHUD(c, now) {
   c.textAlign = 'right'; c.font = `500 12px ${FB}`; c.fillStyle = '#b8a988';
   c.fillText(`GANİMET ${G.ganimet}/${G.need} · Terfi ${G.level + 1}`, W - 16, gy + 26);
   c.fillText('Esc · duraklat ve ayarlar', W - 16, gy + 44);
+  // under it, the build so far, so the player keeps it in mind
+  const build = buildList();
+  if (build.length && W >= 900 && !G.tut) {
+    const lh = 17, bx = W - 16;
+    let by = gy + 70;
+    c.font = `700 11px ${FB}`;
+    const bw = Math.max(90, ...build.map((b) => { c.font = `600 12px ${FB}`; return c.measureText(b.cd.t + (b.n > 1 ? ` ×${b.n}` : '')).width; }));
+    rr(c, bx - bw - 12, by - 16, bw + 20, 22 + build.length * lh, 8); c.fillStyle = 'rgba(18,14,9,0.6)'; c.fill();
+    c.font = `700 11px ${FB}`; c.fillStyle = '#f0b429'; c.fillText('TERFİLER', bx - 2, by);
+    c.font = `600 12px ${FB}`;
+    for (const b of build) { by += lh; c.fillStyle = RAR[b.cd.r].color; c.fillText(b.cd.t + (b.n > 1 ? ` ×${b.n}` : ''), bx - 2, by); }
+  }
 
   // top-centre: preview or goal, then hint
   let y = compact ? 136 : 14;
@@ -2610,7 +3329,7 @@ function drawHUD(c, now) {
   } else if (G.phase === 'breather') {
     const left = Math.max(0, G.breatherLen - G.breatherBeat);
     const h = pill(c, W / 2, y,
-      [`SIRADAKİ · DALGA ${G.wi}/${T.wavesPerChapter} · ${GOALS[G.goal].name.toUpperCase()}`, enemySummary(G.goal, G.def), `Sancak seç · ${Math.ceil(left / 2)} vuruş · Boşluk: hemen başlat`],
+      [`SIRADAKİ · DALGA ${G.wi}/${T.wavesPerChapter} · ${upper(goalName(G.goal))}`, enemySummary(G.goal, G.def), `Sancak seç · ${Math.ceil(left / 2)} vuruş · Boşluk: hemen başlat`],
       [`700 11px ${FB}`, `20px ${FD}`, `500 12px ${FB}`], ['#f0b429', '#f1e6cc', '#b8a988'], 22, 18);
     y += h + 8;
   } else if (G.phase === 'wave') {
@@ -2618,7 +3337,7 @@ function drawHUD(c, now) {
     rr(c, bx - 12, y, bw + 24, tg ? 44 : 30, 10); c.fillStyle = 'rgba(18,14,9,0.84)'; c.fill();
     c.textAlign = 'center'; c.font = `700 11px ${FB}`; c.fillStyle = '#f0b429';
     const left = G.enemies.filter((e) => !e.side).length + G.groups.filter((g) => !g.done).reduce((s, g) => s + g.list.length, 0);
-    c.fillText(`HEDEF: ${GOALS[G.goal].goal.toUpperCase()}${tg ? '' : ` · kalan ${left}`}`, W / 2, y + 18);
+    c.fillText(`HEDEF: ${upper(goalText(G.goal))}${tg ? '' : ` · kalan ${left}`}`, W / 2, y + 18);
     if (tg && !tg.dead) {
       c.fillStyle = '#3a3223'; rr(c, bx, y + 26, bw, 10, 5); c.fill();
       c.fillStyle = '#ff7a5c'; rr(c, bx, y + 26, bw * clamp(tg.hp / tg.maxHp, 0, 1), 10, 5); c.fill();
@@ -2653,6 +3372,12 @@ function drawHUD(c, now) {
     rr(c, x - cap / 2, yy - cap / 2, cap, cap, 9);
     c.fillStyle = f > 0 ? o.hud : 'rgba(30,25,18,0.9)'; c.globalAlpha = f > 0 ? 0.35 + 0.65 * f : 1; c.fill(); c.globalAlpha = 1;
     c.strokeStyle = o.hud; c.lineWidth = 2; c.stroke();
+    const wait = G.mode === 'play' ? clamp((G.cd[dir] - G.h) / G.cdLen[dir], 0, 1) : 0;
+    if (wait > 0) {
+      c.save(); rr(c, x - cap / 2, yy - cap / 2, cap, cap, 9); c.clip();
+      c.fillStyle = 'rgba(8,6,4,0.72)'; c.fillRect(x - cap / 2, yy - cap / 2, cap, cap * wait);
+      c.restore();
+    }
     c.textAlign = 'center';
     c.font = `700 ${Math.round(17 * cs)}px ${FB}`; c.fillStyle = '#f1e6cc'; c.fillText(o.key, x, yy + 1);
     c.font = `700 ${Math.round(9 * cs)}px ${FB}`; c.fillStyle = '#d8c9a6'; c.fillText(o.name, x, yy + 14 * cs);
@@ -2669,7 +3394,7 @@ function drawHUD(c, now) {
   c.textAlign = 'left'; c.font = `17px ${FD}`; c.fillStyle = ['#8a7d62', '#c9a468', '#f0b429', '#ffcf4a'][lv];
   c.fillText(lv ? LV_NAME[lv] : 'CEZBE', barX + 2, barY - 7);
   c.textAlign = 'right'; c.font = `500 11px ${FB}`; c.fillStyle = lv ? '#d8c9a6' : '#8a7d62';
-  c.fillText(lv ? cezbeLine(lv) : 'zamanında her vuruşta yükselir', barX + barW, barY - 8);
+  c.fillText(lv ? cezbeLine(lv) : 'tempoda çalınca yükselir', barX + barW, barY - 8);
   const sw = Math.min(compact ? 74 : 96, (barW - 18) / 4), sh = 44, sy = barY - 34 - sh;
   G.ultis.forEach((id, i) => {
     const u = ULTI_BY_ID[id], x = barX + i * (sw + 6), ok = lv >= u.cost, f = G.ultFlash[i];
@@ -2705,7 +3430,7 @@ function drawOverlays(c, now) {
 function render(now) {
   const c = cx;
   c.setTransform(DPR, 0, 0, DPR, 0, 0);
-  c.fillStyle = '#231f18'; c.fillRect(0, 0, W, H);
+  c.fillStyle = theme().ground; c.fillRect(0, 0, W, H);
   const sh = G.shake;
   const shx = sh ? rand(-sh, sh) : 0, shy = sh ? rand(-sh, sh) : 0;
   c.save();
@@ -2728,10 +3453,10 @@ function frame(now) {
     G.h = h;
     for (const b of beats) {
       if (!b.done && h >= b.t) { b.done = true; onBeat(b); }
-      if (!b.closed && h >= b.t + T.goodWin) { b.closed = true; onBeatClosed(b); }
     }
     if (G.mode === 'play' && !G.terfi && !G.konak) {
       resolvePending(h);
+      if (G.tut) tutorialUpdate(h);
       let dt = rdt;
       if (G.hitstop > 0) { G.hitstop -= rdt; dt = 0; }
       if (G.slowmo > 0) { G.slowmo -= rdt; dt *= 0.3; }
@@ -2751,7 +3476,7 @@ function start(tutorial) {
   beats.length = 0; beatMap.clear();
   nextBeatT = actx.currentTime + 0.35; nextBeatK = 0;
   for (const id of ['titleOv', 'overOv', 'pauseOv', 'terfiOv', 'konakOv']) $(id).hidden = true;
-  if (tutorial === true || (tutorial !== false && !store.get('mehter2.tutorial', false))) startTutorial();
+  if (tutorial === true || (tutorial !== false && !store.get('mehter3.tutorial', false))) startTutorial();
   else startBreather();
   cv.focus();
 }
@@ -2773,6 +3498,7 @@ function pause() {
     apply.dataset.value = sug;
   } else { $('calib').textContent = 'Öneri için birkaç vuruş daha çal.'; apply.hidden = true; }
   refreshOptions();
+  renderBuild($('pauseBuild'));
   $('pauseOv').hidden = false;
   $('resumeBtn').focus();
 }
@@ -2892,8 +3618,8 @@ $('clickBtn').addEventListener('click', toggleClick);
 for (const k of VOL_KEYS) $(VOL_ID[k]).addEventListener('input', (e) => setVolume(k, (Number(e.target.value) || 0) / 100));
 $('konakGo').addEventListener('click', leaveKonak);
 
-const best = Number(store.get('mehter2.best', 0)) || 0;
-const wins = Number(store.get('mehter2.wins', 0)) || 0;
+const best = Number(store.get('mehter3.best', 0)) || 0;
+const wins = Number(store.get('mehter3.wins', 0)) || 0;
 if (best > 0) {
   $('bestLine').hidden = false;
   $('bestLine').textContent = wins > 0 ? `Seferi ${wins} kez tamamladın.` : `En iyi seferin: ${Math.floor((best - 1) / 5) + 1}. bölüm, ${(best - 1) % 5 + 1}. dalga.`;
