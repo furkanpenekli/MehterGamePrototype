@@ -389,11 +389,22 @@ const ORD = {
   // lands within kosStun s of the press stuns its attacker.
   kosWin: 0.4, kosWinOnBeat: 0.55, kosLate: 0.08, kosStun: 0.2,
 };
+// Difficulty climbs with every wave, from the first (0) to the last (1), so a run starts easy
+// and ends hard. Each knob goes from its easy value to its hard one.
+//   hp, dmg      monster health and damage ×
+//   rest         a monster's rest between attacks ×
+//   leaderWind   seconds a blow at the leader is telegraphed
+//   hucum        time between charges ×
+//   atLeader     most monsters winding up at the leader at once
+//   sally        beats between the groups a goal fort or a serdar sends out
+const DIFF = {
+  hp: [0.8, 2.1], dmg: [0.7, 1.7], rest: [1.5, 0.7], leaderWind: [2, 1.2], hucum: [1.5, 0.75], atLeader: [1, 3], sally: [14, 8],
+};
 // Enemy attacks. Each monster winds up on its own when its target is in reach and it has rested,
 // and its telegraph (a closing ring, a filling disc, a fan, a strip, or a purple spell ring)
 // fills over the wind-up. Now and then they charge together.
 const ATK = {
-  leaderWind: 1.4, rest: [2.2, 3.4], first: [0.6, 1.6], hucumEvery: [16, 24], hucumLead: 3,
+  rest: [2.2, 3.4], first: [0.6, 1.6], hucumEvery: [16, 24], hucumLead: 3,
   poisonDps: 3, dragDps: 5, dragSec: 5, dragSpeed: 80, fireDps: 8, fireSec: 3,
   lowSec: 1.4, crackSec: 2, eyeSec: 3.5, eyeBlocked: 5, burrowSec: 2.6,
 };
@@ -555,12 +566,12 @@ const upper = (s) => s.toLocaleUpperCase('tr');
 // the chapter's swarm first, then its flyer, its middle monster with its caster, and its big one
 // guarding the gate, before the serdar. Big monsters come in the later groups.
 const WAVES = [null,
-  [null, { koc: 18 }, { yarasa: 8, koc: 12 }, { karakoncolos: 4, sapanci: 4, koc: 10 },
+  [null, { koc: 18 }, { yarasa: 8, koc: 12 }, { karakoncolos: 2, sapanci: 2, koc: 12 },
     { kaya: 2, karakoncolos: 2, sapanci: 3, yarasa: 4, koc: 8 }, { sapanci: 3, yarasa: 4 }],
   [null, { yilan: 18 }, { kanatli: 7, yilan: 12 }, { akrep: 3, kahin: 3, yilan: 12 },
     { evren: 2, akrep: 2, kahin: 2, kanatli: 4, yilan: 8 }, { kanatli: 4, akrep: 2 }],
-  [null, { hortlak: 20 }, { korkusu: 7, hortlak: 14 }, { yavru: 4, odcadi: 3, hortlak: 12 },
-    { oddevi: 2, yavru: 3, odcadi: 2, korkusu: 4, hortlak: 10 }, { yavru: 3, korkusu: 3, hortlak: 10 }],
+  [null, { hortlak: 20 }, { korkusu: 7, hortlak: 14 }, { yavru: 4, odcadi: 2, hortlak: 12 },
+    { oddevi: 2, yavru: 3, odcadi: 3, korkusu: 4, hortlak: 10 }, { yavru: 3, korkusu: 3, hortlak: 10 }],
 ];
 const waveDef = (ch, wi) => Object.assign({}, WAVES[ch][wi]);
 const enemySummary = (goal, def) => {
@@ -1105,8 +1116,7 @@ function startBreather() {
 }
 function startWave() {
   G.phase = 'wave'; G.waveBeat = 0; G.banners = [];
-  G.hpScale = 1 + 0.35 * (G.chapter - 1) + 0.05 * (G.wi - 1);
-  G.dmgScale = 1 + 0.2 * (G.chapter - 1);
+  G.hpScale = ramp('hp'); G.dmgScale = ramp('dmg');
   // Small monsters are shuffled; the big ones join the later groups, spread apart.
   const list = [], bigs = [];
   for (const t in G.def) for (let i = 0; i < G.def[t]; i++) (ENEMY[t].big ? bigs : list).push(t);
@@ -1169,10 +1179,11 @@ function onBeat(b) {
     const tg = G.target;
     // A fort sends out its garrison; a serdar without summons of its own brings an escort.
     const th = theme();
-    if (tg && !tg.dead && G.waveBeat % 10 === 0 && G.enemies.length < T.enemyCap) {
+    const every = Math.round(ramp('sally'));
+    if (tg && !tg.dead && G.waveBeat % every === 0 && G.enemies.length < T.enemyCap) {
       if (ENEMY[tg.type].fixed) {
         const list = [0, 1, 2, 3, 4].map(() => pick(th.pool));
-        if (G.goal === 'kale' && G.waveBeat % 20 === 0) list.push(th.lead);
+        if (G.goal === 'kale' && G.waveBeat % (every * 2) === 0) list.push(th.lead);
         spawnGroup(list);
       } else if (th.escort) spawnGroup(th.escort);
     }
@@ -1516,8 +1527,11 @@ function reaches(e, tg, spec, extra) {
   return dd <= d.reach + e.r + (extra ? 40 : 0);
 }
 const leaderAttackers = () => G.pending.filter((p) => !p.done && p.e && !ENEMY[p.e.type].boss && p.e.aimTarget === G.leader).length;
-const maxAtLeader = () => (G.chapter === 1 ? 1 : 2);
-const hucumGap = () => rand(ATK.hucumEvery[0], ATK.hucumEvery[1]) / (1 + 0.15 * (G.chapter - 1));
+// How far the run has come, 0 on the first wave and 1 on the last, and a DIFF knob at that point.
+const progress = () => clamp(((G.chapter - 1) * T.wavesPerChapter + (G.wi || 1) - 1) / (T.chapters * T.wavesPerChapter - 1), 0, 1);
+const ramp = (k) => DIFF[k][0] + (DIFF[k][1] - DIFF[k][0]) * progress();
+const maxAtLeader = () => Math.round(ramp('atLeader'));
+const hucumGap = () => rand(ATK.hucumEvery[0], ATK.hucumEvery[1]) * ramp('hucum');
 const angDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 // Distance from a point to an attack's strip.
 function lineDist(u, a) {
@@ -1539,10 +1553,10 @@ function covers(a, u) {
   return false;
 }
 // A wind-up: the telegraph fills over it, and the blow lands at `at` (by default after the
-// attack's own wind-up, at least ATK.leaderWind when it is aimed at the leader).
+// attack's own wind-up, at least DIFF's leaderWind when it is aimed at the leader).
 function windUp(e, tg, id, at) {
   const spec = ATTACKS[id], L = G.leader;
-  const wind = at != null ? at - G.h : Math.max(spec.wind, tg === L && spec.shape !== 'spell' ? ATK.leaderWind : 0);
+  const wind = at != null ? at - G.h : Math.max(spec.wind, tg === L && spec.shape !== 'spell' ? ramp('leaderWind') : 0);
   const a = Object.assign({ id, target: tg }, spec);
   if (spec.shape === 'cone' || spec.shape === 'line') {
     a.x = e.x; a.y = e.y; a.a = Math.atan2(tg.y - e.y, tg.x - e.x);
@@ -1708,7 +1722,7 @@ function finishAttack(e, blocked) {
   if (e.gallop <= 0) e.airborne = false;
   if (a && a.next) { windUp(e, G.leader, a.next); return; }
   e.state = 'recover'; e.recoverUntil = G.curK + 2;
-  e.atkReady = G.h + (d.boss ? rand(1.6, 2.4) : d.move === 'burrow' ? 4 : rand(ATK.rest[0], ATK.rest[1]) / (1 + 0.15 * (G.chapter - 1)));
+  e.atkReady = G.h + (d.boss ? rand(1.6, 2.4) : d.move === 'burrow' ? 4 : rand(ATK.rest[0], ATK.rest[1]) * ramp('rest'));
   if (e.type === 'tepegoz') {
     e.eyeUntil = G.h + (blocked ? ATK.eyeBlocked : ATK.eyeSec);
     floatText(e.x, e.y - 90, 'GÖZ AÇILDI', '#ffcf4a', 16, true);
@@ -1729,7 +1743,7 @@ function castSpell(e, a) {
   else if (a.spell === 'rain') {
     // Fire falls on the leader and around the army.
     const L = G.leader, R = auraR() * 0.9;
-    hazard(e.type, { shape: 'circle', r: 55, wind: 1.1 }, L.x, L.y);
+    hazard(e.type, { shape: 'circle', r: 55, wind: Math.max(1.1, ramp('leaderWind')) }, L.x, L.y);
     for (let i = 0; i < 4; i++) { const ang = rand(0, TAU), rr = rand(50, R); hazard(e.type, { shape: 'circle', r: 55, wind: 1.1 + i * 0.12 }, L.x + Math.cos(ang) * rr, L.y + Math.sin(ang) * rr); }
     floatText(e.x, e.y - 40, 'ATEŞ YAĞMURU', '#ff9a4a', 16, true);
   }
@@ -1769,7 +1783,7 @@ function releaseGrab(e) {
   const s = e.holding;
   e.holding = null;
   if (s) s.grabbed = null;
-  if (e.state === 'drag') { e.state = 'recover'; e.recoverUntil = G.curK + 2; e.atkReady = G.h + rand(ATK.rest[0], ATK.rest[1]); }
+  if (e.state === 'drag') { e.state = 'recover'; e.recoverUntil = G.curK + 2; e.atkReady = G.h + rand(ATK.rest[0], ATK.rest[1]) * ramp('rest'); }
 }
 function hurtLeader() {
   const L = G.leader;

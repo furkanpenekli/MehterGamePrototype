@@ -293,11 +293,11 @@ has played it. Everything not listed here is as in prototype 2. Its storage keys
   attacker.
 - **Enemies attack on their own clocks** (the user: "düşman bazen topluca hücuma geçer ama
   normalde ilki geçerli").
-  - When its target is in reach and it has rested (2.2-3.4 s after its last blow, less in later
-    chapters), an enemy winds up: 1.0-1.6 s by type, at least 1.4 s at the leader. The red ring
-    closes on its target over the wind-up. Waves 1-5 allow one enemy aiming at the leader at a
-    time, later chapters two.
-  - **Toplu hücum:** every 16-24 s (less in later chapters), every enemy near its target winds
+  - When its target is in reach and it has rested (2.2-3.4 s after its last blow, scaled by the
+    difficulty ramp of decision 24), an enemy winds up: 1.0-1.6 s by type, and at the leader at
+    least 2 s on the first wave down to 1.2 s on the last. The red ring closes on its target over
+    the wind-up. One enemy at a time may aim at the leader early on, up to three at the end.
+  - **Toplu hücum:** every 16-24 s (scaled by the ramp), every enemy near its target winds
     up at once, the foot soldiers lunge in, and all the blows land on the same beat, 3 beats
     later. "TOPLU HÜCUM!" shows and the war drum sounds twice.
   - The aura warms red when a blow closes on the leader or a hücum is coming; otherwise gold.
@@ -313,9 +313,18 @@ has played it. Everything not listed here is as in prototype 2. Its storage keys
   only pressed VUR on every beat. The game is far too easy, and so far nothing forces the other
   instruments. The same was true of prototype 2 after decision 18: a VUR-only bot won there too.
   Difficulty needs a pass.
-- **Next (agreed 2026-09-26):** continue in a new conversation. Proposed first: a difficulty pass
-  on prototype 3 so that VUR alone no longer wins; then publishing prototype 3 and the flowchart
-  as artifacts, and republishing prototype 2's artifact with decision 18.
+- **Bot test after decision 24, 2026-09-26** (`tools/playtest`, see "Testing it without a
+  person"). Per 15 waves, over 10-12 runs each:
+
+  | Bot | Wins | Where it falls |
+  | --- | --- | --- |
+  | good: on time, guards 92% of blows, dodges, raids, uses ultis | 9 of 10 | once at 3-4 |
+  | mid: ±70 ms, skips 12% of beats, guards 60%, dodges half | 5 of 12 | 1-5, 2-4, and five times at 3-4 or 3-5 |
+  | VUR only | 0 of 4 | always at 1-3 |
+
+  The first three waves cost the mid bot 3 hearts in 12 runs; deaths gather at the end.
+- **Next:** publishing prototype 3 and the flowchart as artifacts, and republishing prototype 2's
+  artifact with decision 18.
 
 ## The user's decisions
 
@@ -398,6 +407,18 @@ Build on these; do not re-propose what they rule out.
     vignette. The ground is only looks: nothing on it blocks or slows anyone. The art and the
     150 ms margin are Claude's.
 
+24. **2026-09-26: the game starts easy and grows hard (prototype 3).** The user asked for a
+    playtest and a difficulty curve from easy to hard. A bot test showed the curve was not
+    rising: the mid bot died in chapter 1 (four Karakoncolos in wave 3, the gate wave), while
+    chapter 2 cost the good bot almost nothing. Built as: one difficulty ramp over the 15 waves,
+    `DIFF` in the page, from its easy value on wave 1 to its hard one on wave 15: monster health
+    ×0.8 → ×2.1, damage ×0.7 → ×1.7, rest between attacks ×1.5 → ×0.7, the wind-up of a blow at
+    the leader 2 s → 1.2 s, time between charges ×1.5 → ×0.75, monsters aiming at the leader at
+    once 1 → 3, and a goal fort or serdar sending a group every 14 → 8 beats. It replaces the
+    per-chapter steps. Wave 1-3 has 2 Karakoncolos and 2 Sapancı instead of 4 and 4; wave 3-3
+    has 2 Od Cadısı instead of 3 (wave 3-4 gets the third); the Od Cadısı's fire on the leader
+    is telegraphed as long as any blow at the leader. The numbers are Claude's.
+
 ## Claude's calls the user has not confirmed
 
 - Decision 18's four instruments and their gains and prices: bringing back ATIL and TOPLAN, the
@@ -467,6 +488,15 @@ and plays a whole run in about two minutes.
    The bot presses `drum()` on each call beat and writes its log to `document.title`.
 3. Run `chrome --headless=new --virtual-time-budget=2000000 --dump-dom <file>` and read the
    `<title>` from the output.
+
+`tools/playtest` holds this route ready to run (from Git Bash):
+
+    python tools/playtest/build.py              # writes tools/playtest/out/test.html
+    tools/playtest/many.sh r1 mid 8             # 8 runs of the mid bot in parallel
+    python tools/playtest/sum.py r1 mid         # hearts lost and deaths per wave
+
+The bots are `vur`, `mid` and `good` (see `bot.js`). A run takes a few seconds, because the
+test copy skips drawing. The debug handle only lives in `out/`, which git ignores.
 
 Headless `--screenshot` does not capture the canvas. Look at the game through the browser pane
 instead.
