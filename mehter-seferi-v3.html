@@ -22,6 +22,7 @@
     --ink-dim: #b8a988;
     --gold: #f0b429;
     --crimson: #c8322b;
+    --san: #5fc8c0;
     --display: "Alfa Slab One", Rockwell, "Roboto Slab", Georgia, serif;
     --body: "Rubik", system-ui, "Segoe UI", sans-serif;
     color-scheme: dark;
@@ -187,6 +188,19 @@
   .chip b { color: var(--rar, #cfc3a6); font-weight: 700; }
   .chip span { color: var(--ink-dim); }
   h3.sub { margin: 18px 0 4px; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); }
+  /* Mehterhane Konağı: şan is the one thing kept between runs, in İznik turquoise. */
+  .san { color: var(--san); }
+  .card:disabled { cursor: default; }
+  .card:disabled:hover { transform: none; }
+  .card:disabled:not(.on) { opacity: .55; }
+  .card .pips { letter-spacing: .18em; color: var(--san); }
+  .card .cost { font-size: 13px; font-weight: 700; color: var(--san); }
+  .hist { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; font-size: 13.5px; }
+  .hist li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; background: #211c14; border-radius: 6px; padding: 6px 10px; }
+  .beasts { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 6px; margin-top: 6px; }
+  .beast { background: #211c14; border-left: 3px solid var(--panel-edge); border-radius: 6px; padding: 6px 9px; font-size: 12.5px; line-height: 1.35; }
+  .beast span { color: var(--ink-dim); }
+  .beast.unseen { color: #6b5f4a; }
   @media (prefers-reduced-motion: reduce) { .card, .card:hover { transition: none; transform: none; } }
 </style>
 </head>
@@ -221,8 +235,9 @@
         </div>
       </div>
       <p class="dim"><b>Cezbe</b> tempoya denk gelen her çalgıda yükselir (Zil'de iki kat); uzun süre tempoda çalmazsan ya da lider yara alınca düşer. Her kademe askerlerin canını, hasarını ve hızını %10 artırır. <b>Sefer</b> üç bölümdür: Tepegöz Yurdu, Şahmeran Diyarı, Ejderha Dağı. Her bölüm beş dalga: açık savaş, baskın, kuşatma ve sonunda serdarı. Her bölümün kendi canavarları var; yeni bir canavar gelmeden önce nasıl karşılanacağı yazılır. Bölüm sonunda konakta dinlenir, dört ulti yuvanı seçersin; ordu sınırın da orada büyür (12 → 16 → 20). Ordu doluyken gelen asker ganimet olarak gelir. Kalpler biterse sefer biter.</p>
+      <p class="dim"><b>Mehterhane Konağı</b> seferler arasındaki evin: her sefer oradan başlar, lider düşünce oraya dönülür. Seferde kazandığın <b class="san">şan</b> düşsen de kalır; konakta onu kalıcı gelişmelere harcar, sefere hangi bölükle çıkacağını seçer, talim yaparsın.</p>
       <div class="actions">
-        <button class="btn" id="startBtn" type="button">Sefere çık</button>
+        <button class="btn" id="startBtn" type="button">Konağa gir</button>
         <button class="btn ghost" id="tutBtn" type="button">Eğitimle başla</button>
         <span class="dim">İlk seferde kısa bir eğitim var · ses gerekir · oyun kolu: Y vur, A diren, B atıl, X toplan, LB RB LT RT ulti, sol çubuk yürür · <kbd>Boşluk</kbd> eğitimi ya da nefesi atla · <kbd>Esc</kbd> duraklat, ses ayarı</span>
       </div>
@@ -230,11 +245,17 @@
     </div>
   </div>
 
+  <div class="overlay light" id="hubOv" hidden>
+    <div class="panel wide" id="hubPanel" role="dialog" aria-modal="true"></div>
+  </div>
+
   <div class="overlay" id="pauseOv" hidden>
     <div class="panel">
       <h2>Duraklatıldı</h2>
-      <h3 class="sub">Aldığın terfiler</h3>
-      <div class="build" id="pauseBuild"></div>
+      <div id="pauseBuildBox">
+        <h3 class="sub">Aldığın terfiler</h3>
+        <div class="build" id="pauseBuild"></div>
+      </div>
       <h3 class="sub">Gecikme</h3>
       <p class="dim">Vuruşların hep geç ya da hep erken sayılıyorsa gecikmeyi buradan düzelt.</p>
       <div class="row">
@@ -265,7 +286,7 @@
       <div class="actions">
         <button class="btn" id="resumeBtn" type="button">Devam</button>
         <button class="btn ghost" id="applyBtn" type="button" hidden>Öneriyi uygula</button>
-        <button class="btn ghost" id="restartBtn" type="button">Baştan başla</button>
+        <button class="btn ghost" id="restartBtn" type="button">Seferi bırak, konağa dön</button>
       </div>
     </div>
   </div>
@@ -303,7 +324,8 @@
       <h3 class="sub">Terfiler</h3>
       <div class="build" id="overBuild"></div>
       <div class="actions">
-        <button class="btn" id="againBtn" type="button">Yeniden sefere çık</button>
+        <button class="btn" id="againBtn" type="button">Konağa dön</button>
+        <button class="btn ghost" id="quickBtn" type="button">Hemen yeniden sefere</button>
         <span class="dim"><kbd>Enter</kbd></span>
       </div>
     </div>
@@ -628,6 +650,47 @@ function renderBuild(box) {
   }
 }
 
+// ---------------------------------------------------------------- what the band keeps between runs
+// Mehterhane Konağı is the band's home (decision 25). Every run starts there and ends there,
+// Hades-style, and what the player keeps from run to run lives there: şan, which a run pays and
+// which stays even when the leader falls; the upgrades the Kethüda sells for it; the loadout the
+// Bayraktar keeps (the starting company and the four starting ulti slots); and the Vakanüvis's
+// chronicle of runs and of the monsters met.
+const META_KEY = 'mehter3.meta';
+// Şan a run pays: each wave cleared (by chapter), each fort taken, each serdar beaten, the campaign.
+const SAN = { wave: [3, 4, 5], karakol: 4, hisar: 8, serdar: 15, won: 25 };
+// The Kethüda's book. Each upgrade has ranks, each rank its price; eff(n) says what n ranks give.
+// Two ultis start locked and are bought here.
+const UPGRADES = [
+  { id: 'talim',   name: 'Sıkı Talim',     cost: [15, 30, 50], eff: (n) => `askerlerin canı +%${6 * n}` },
+  { id: 'ganimet', name: 'Ganimet Payı',   cost: [15, 30, 50], eff: (n) => `toplanan ganimet +%${10 * n}` },
+  { id: 'kadro',   name: 'Ocak Kadrosu',   cost: [20, 45],     eff: (n) => `sefere ${2 + n} bölükle çıkarsın` },
+  { id: 'kidem',   name: 'Kıdem',          cost: [20, 40],     eff: (n) => `her terfi ${3 * n} ganimet ucuz` },
+  { id: 'coskun',  name: 'Coşkulu Açılış', cost: [20, 40],     eff: (n) => `her dalga en az ${5 * n} Cezbe ile başlar` },
+  { id: 'nevbet',  name: 'Gür Nevbet',     cost: [25, 50],     eff: (n) => `aura +%${6 * n}` },
+  { id: 'hizir',   name: 'Hızır Duası',    cost: [40, 90],     eff: (n) => `kalpler bitince ${n === 1 ? 'bir' : 'iki'} kez bir kalple kalkarsın` },
+  { id: 'akinci',  name: 'Akıncı Baskını', cost: [30], ulti: 'akinci', eff: () => 'ulti: sancaktaki askerden hemen bir bölük gelir' },
+  { id: 'zil',     name: 'Zil Çınlaması',  cost: [45], ulti: 'zil',    eff: () => 'ulti: bütün düşmanlar 3 vuruş sersemler' },
+];
+const UPG_BY_ID = Object.fromEntries(UPGRADES.map((u) => [u.id, u]));
+function loadMeta() {
+  const m = store.get(META_KEY, null) || {};
+  const num = (v, d) => (Number.isFinite(Number(v)) ? Number(v) : d);
+  return {
+    san: num(m.san, 0), earned: num(m.earned, 0), ranks: Object.assign({}, m.ranks),
+    company: SOLDIER[m.company] ? m.company : 'azap', ultis: Array.isArray(m.ultis) ? m.ultis : [],
+    runs: num(m.runs, 0), wins: num(m.wins, num(store.get('mehter3.wins', 0), 0)), best: num(m.best, num(store.get('mehter3.best', 0), 0)),
+    history: Array.isArray(m.history) ? m.history.slice(0, 10) : [], seen: Array.isArray(m.seen) ? m.seen.filter((t) => ENEMY[t]) : [],
+    last: m.last || null, visits: num(m.visits, 0),
+  };
+}
+const meta = loadMeta();
+const saveMeta = () => store.set(META_KEY, meta);
+const rank = (id) => Math.min(meta.ranks[id] || 0, UPG_BY_ID[id].cost.length);
+const ultiOpen = (id) => { const u = UPGRADES.find((x) => x.ulti === id); return !u || rank(u.id) > 0; };
+const validUltis = (l) => l.length === 4 && new Set(l).size === 4 && l.every((id) => ULTI_BY_ID[id] && ultiOpen(id));
+if (!validUltis(meta.ultis)) meta.ultis = DEFAULT_ULTIS.slice();
+
 // ---------------------------------------------------------------- audio
 let actx = null, master, beatBus, sfxBus, noiseBuf;
 function initAudio() {
@@ -755,9 +818,11 @@ function sfx(name, minGap, fn) {
 }
 
 // No music: the real track comes later. A quiet click on every call stands in for its beat
-// (M toggles it), louder every second call. The beat between two calls is silent.
+// (M toggles it), louder every second call. The beat between two calls is silent. The konak
+// keeps the beat too, so the player can practise there.
+const beatMode = () => G && (G.mode === 'play' || G.mode === 'hub');
 function scheduleBeat(k, t) {
-  if (!G || G.mode !== 'play' || !isCallBeat(k)) return;
+  if (!beatMode() || !isCallBeat(k)) return;
   if (settings.click) S.click(t, 1, beatBus, k % 4 === 0);
 }
 
@@ -806,7 +871,7 @@ function upcomingBeats() {
   if (last) for (let n = 1; n <= 4; n++) out.push({ k: last.k + n, t: last.t + n * bd, bd, claimed: false });
   return out.filter((b) => isCallBeat(b.k));
 }
-const nextCall = () => (G.mode === 'play' ? upcomingBeats().find((b) => b.t > G.h) : null);
+const nextCall = () => (beatMode() ? upcomingBeats().find((b) => b.t > G.h) : null);
 
 // ---------------------------------------------------------------- state
 let G = null;
@@ -836,11 +901,33 @@ function newGame() {
       kDouble: false, kRange: 1, aura: 1, kosHeal: false, steady: false, perfect: 1.25, atil: ORD.atilDmg, zilHeal: 1,
     },
     taken: new Set(), hintsShown: new Set(),
+    san: 0, hizir: 0, lootBonus: 0, lootFrac: 0, terfiOff: 0, minBar: 0, lastHitBy: null, recorded: false,
+    hub: { panel: null, near: null, sel: null, lines: {}, fade: 0, leaving: 0, tutorial: false, kukla: 0, band: 0, hits: [] },
     shake: 0, flash: 0, flashColor: '255,70,50', hitstop: 0, slowmo: 0, beatPulse: 0,
     keyFlash: { up: 0, down: 0, right: 0, left: 0 },
     hint: null, big: [], judge: null, ringFlash: null, cmdFx: null, order: null, q: 0, errs: [],
   };
-  for (let i = 0; i < 2 * SUMMON.azap; i++) spawnSoldier('azap', true);
+  applyMeta();
+}
+// What the konak gives a run: the Kethüda's upgrades, then the Bayraktar's loadout.
+function applyMeta() {
+  const hp = 1 + 0.06 * rank('talim');
+  for (const t of SOLDIER_ORDER) G.up.hp[t] = hp;
+  G.up.aura = 1 + 0.06 * rank('nevbet');
+  G.lootBonus = 0.1 * rank('ganimet');
+  G.terfiOff = 3 * rank('kidem'); G.need = T.terfiBase - G.terfiOff;
+  G.minBar = 5 * rank('coskun');
+  G.hizir = rank('hizir');
+  G.ultis = meta.ultis.slice();
+  muster(true);
+}
+// The starting army: two companies of the chosen type, and one more for each Ocak Kadrosu rank.
+function muster(quiet) {
+  const type = meta.company;
+  G.soldiers = [];
+  for (let i = 0; i < (2 + rank('kadro')) * SUMMON[type]; i++) spawnSoldier(type, quiet);
+  G.banner = type;
+  G.stats = newStats(G.soldiers.length);
 }
 const auraR = () => T.auraR * G.up.aura;
 const inAura = (u) => dist(u, G.leader) <= auraR();
@@ -908,7 +995,8 @@ function spawnSoldier(type, quiet) {
     kind: 'soldier', type, x: L.x + Math.cos(a) * 32, y: L.y + Math.sin(a) * 32, r: def.r,
     hp, maxHp: hp, face: a, cool: rand(0.3, 1.2), lunge: 0, spawnT: quiet ? 1 : 0,
     returning: false, retarget: 0, target: null, hitFlash: 0, dead: false, outUntil: -1, dash: null, rally: 0,
-    kx: 0, ky: 0, dazeUntil: 0, poisonUntil: 0, grabbed: null,
+    // The heard clock starts a little below zero, so "never" has to be further back than 0.
+    kx: 0, ky: 0, dazeUntil: -Infinity, poisonUntil: -Infinity, grabbed: null,
   };
   G.soldiers.push(s);
   G.stats.maxArmy = Math.max(G.stats.maxArmy, G.soldiers.length);
@@ -1005,6 +1093,7 @@ function raidBeat() {
 function raidFell(f) {
   const r = RAID[f.type];
   G.stats.raids++;
+  earnSan(SAN[f.type]);
   addShake(10); G.flash = 0.7; G.flashColor = '255,200,80';
   const type = pick(SOLDIER_ORDER);
   const { n: got, loot } = summonCompany(type, r.companies);
@@ -1132,6 +1221,7 @@ function startWave() {
   G.groups = [];
   for (let i = 0; i < list.length; i += T.groupSize) G.groups.push({ at: 1 + (i / T.groupSize) * T.groupBeats, list: list.slice(i, i + T.groupSize), done: false });
   G.hucum = null; G.nextHucum = G.h + hucumGap() * 0.7; G.lastBeatPress = G.h;
+  if (G.bar < G.minBar) addBar(G.minBar - G.bar);
   bigText(upper(goalName(G.goal)), enemySummary(G.goal, G.def), '#f1e6cc', 1.6);
   const hint = G.fresh.length ? 'Yeni: ' + G.fresh.map((t) => ENEMY[t].tip).join(' ') : {
     1: G.chapter === 1 ? 'Çalgıları istediğin an çal; tempoya denk gelirse güçlenir. Kırmızı işareti Kös ile blokla, Çevgen ile kes ya da önce sen vur.' : null,
@@ -1143,6 +1233,7 @@ function startWave() {
 }
 function victory(title, sub) {
   G.phase = 'victory'; G.victoryBeat = 0; G.hucum = null; G.pending = []; G.zones = [];
+  earnSan(SAN.wave[G.chapter - 1] + (G.goal === 'boss' ? SAN.serdar : 0));
   bigText(title || 'ZAFER!', sub || `${G.chapter}. bölüm · ${G.wi}. dalga temizlendi`, '#ffcf4a', 2);
   const L = G.leader;
   for (let i = 0; i < 6; i++) { const a = rand(0, TAU); G.coins.push({ x: L.x + Math.cos(a) * 140, y: L.y + Math.sin(a) * 140, vx: 0, vy: 0, t: 0.2 }); }
@@ -1153,7 +1244,7 @@ function victory(title, sub) {
 }
 function afterVictory() {
   if (G.wi < T.wavesPerChapter) { startBreather(); return; }
-  if (G.chapter >= T.chapters) { G.phase = 'won'; G.victoryBeat = 0; bigText('SEFER TAMAM!', 'Üç bölüm geçildi', '#ffcf4a', 3); return; }
+  if (G.chapter >= T.chapters) { G.phase = 'won'; G.victoryBeat = 0; earnSan(SAN.won); bigText('SEFER TAMAM!', 'Üç bölüm geçildi', '#ffcf4a', 3); return; }
   openKonak();
 }
 function onBeat(b) {
@@ -1203,17 +1294,40 @@ function onBeat(b) {
   }
 }
 function gameOver() { endRun(false); }
+// A run ends, fallen, won or left: its şan goes into the book and the Vakanüvis writes it down.
+// A run left during the tutorial is not a run.
+function recordRun(won, left) {
+  if (G.recorded || G.wave === 0) return;
+  G.recorded = true;
+  const s = G.stats, presses = s.perfect + s.good + s.miss;
+  const entry = {
+    n: meta.runs + 1, ch: G.chapter, wi: G.wi, won, left, san: G.san, kills: s.kills,
+    by: !won && !left && G.lastHitBy && ENEMY[G.lastHitBy] ? ENEMY[G.lastHitBy].name : null,
+    acc: presses ? Math.round((s.perfect + s.good) / presses * 100) / 100 : 1,
+  };
+  meta.runs++; if (won) meta.wins++;
+  meta.san += G.san; meta.earned += G.san;
+  meta.best = Math.max(meta.best, G.wave);
+  meta.history.unshift(entry); meta.history.length = Math.min(meta.history.length, 10);
+  for (const t of G.seen) if (!meta.seen.includes(t)) meta.seen.push(t);
+  meta.last = entry;
+  saveMeta();
+}
+function earnSan(n) {
+  if (G.tut || !n) return;
+  G.san += n;
+  floatText(G.leader.x, G.leader.y - 104, `+${n} ŞAN`, '#5fc8c0', 17, true);
+}
 function endRun(won) {
   G.mode = 'over';
   if (!won) sfx('over', 0.5, (t) => { S.kos(t, 1, sfxBus); S.kos(t + 0.5, 0.8, sfxBus); });
   $('overEyebrow').textContent = won ? 'Sefer tamam' : 'Lider düştü';
   $('overTitle').textContent = won ? 'Üç bölüm geçildi!' : 'Sefer bitti';
-  const best = Math.max(Number(store.get('mehter3.best', 0)) || 0, G.wave);
-  store.set('mehter3.best', best);
-  if (won) store.set('mehter3.wins', (Number(store.get('mehter3.wins', 0)) || 0) + 1);
+  recordRun(won, false);
   const s = G.stats;
   const rows = [
-    won ? ['Sefer', 'tamam'] : ['Ulaşılan', `${G.chapter}. bölüm · ${G.wi}. dalga`], ['Düşen düşman', s.kills], ['En büyük ordu', s.maxArmy],
+    won ? ['Sefer', 'tamam'] : ['Ulaşılan', `${G.chapter}. bölüm · ${G.wi}. dalga`], ['Kazanılan şan', `+${G.san}`], ['Defterdeki şan', meta.san],
+    ['Düşen düşman', s.kills], ['En büyük ordu', s.maxArmy],
     ['Perfect', s.perfect], ['İyi', s.good], ['Ritim dışı', s.miss],
     ['Çalgılar', Object.keys(ORDERS).map((d) => ORDERS[d].key + s.use[d]).join(' ')], ['En uzun seri', s.bestStreak], ['Atılan ulti', s.ultis], ['Basılan kale', s.raids],
   ];
@@ -1260,15 +1374,35 @@ function drum(dir, stamp) {
   if (!actx) return;
   const t = actx.currentTime;
   // An instrument that is not ready yet only ticks.
-  if (G.mode === 'play' && !G.paused && G.cd[dir] > heardAt(stamp)) { drumNotReady(dir); return; }
+  if (beatMode() && !G.paused && G.cd[dir] > heardAt(stamp)) { drumNotReady(dir); return; }
   if (dir === 'up') S.dum(t, 1, sfxBus);
   else if (dir === 'down') S.kos(t, 0.95, sfxBus);
   else if (dir === 'right') { S.cevgen(t, 1, sfxBus); S.tek(t, 0.8, sfxBus); }
   else S.zil(t, 0.7, sfxBus, false);
   G.keyFlash[dir] = 1;
+  if (G.mode === 'hub') { if (!G.paused && !G.hub.panel && !G.hub.leaving) hubPress(dir, heardAt(stamp)); return; }
   if (G.mode !== 'play' || G.paused || G.terfi || G.konak) return;
-  const h = heardAt(stamp), o = ORDERS[dir];
+  const h = heardAt(stamp);
   G.leader.pulse = 1;
+  const { b, err, grade } = timePress(dir, h);
+  if (G.phase === 'wave') G.stats.use[dir]++;
+  if (grade === 'o') G.stats.miss++;
+  else {
+    G.lastBeatPress = h;
+    if (grade === 'p') G.stats.perfect++; else G.stats.good++;
+    // One Cezbe gain per beat, so a chord of instruments does not pay twice.
+    if (!b.claimed) { b.claimed = true; addBar((grade === 'p' ? T.perfectGain : T.goodGain) * (dir === 'left' ? ORD.zilCezbe : 1)); }
+  }
+  showGrade(dir, grade, err);
+  if (dir === 'up') cmdStrike(grade);
+  else if (dir === 'down') cmdGuard(h, grade);
+  else if (dir === 'right') cmdCharge(grade);
+  else cmdRally(grade);
+  if (G.tut) tutorialPress(dir);
+}
+// Grades a press heard at h against the nearest beat, keeps its error for the latency
+// suggestion, and starts the instrument's cooldown.
+function timePress(dir, h) {
   const b = nearestBeat(h);
   const err = b ? h - b.t : 1, ae = Math.abs(err);
   if (ae <= 0.25) { G.errs.push(err); if (G.errs.length > 24) G.errs.shift(); }
@@ -1276,29 +1410,24 @@ function drum(dir, stamp) {
   const cdSec = ORD.cdBeats[dir] * 60 / BPM;
   const len = grade === 'o' ? cdSec : b.t + cdSec - T.goodWin - h;
   G.cd[dir] = h + len; G.cdLen[dir] = len;
-  if (G.phase === 'wave') G.stats.use[dir]++;
+  return { b, err, grade };
+}
+// The streak, the word over the leader and the order's name under it.
+function showGrade(dir, grade, err) {
+  const o = ORDERS[dir];
   if (grade === 'o') {
-    G.stats.miss++; G.streak = 0;
+    G.streak = 0;
     judge('RİTİM DIŞI', '#b8a988', (err < 0 ? 'erken' : 'geç') + ' · emir zayıf');
   } else {
     const perfect = grade === 'p';
-    G.lastBeatPress = h;
-    if (perfect) G.stats.perfect++; else G.stats.good++;
     G.streak++; G.stats.bestStreak = Math.max(G.stats.bestStreak, G.streak);
     const streakTxt = G.streak >= 5 ? `${G.streak} seri` : '';
     judge(perfect ? 'PERFECT' : 'İYİ', perfect ? '#ffcf4a' : '#f1e6cc',
       perfect ? streakTxt : (err < 0 ? 'erken' : 'geç') + (streakTxt ? ' · ' + streakTxt : ''));
     G.ringFlash = { color: perfect ? '255,207,74' : '241,230,204', life: 0.3 };
-    // One Cezbe gain per beat, so a chord of instruments does not pay twice.
-    if (!b.claimed) { b.claimed = true; addBar((perfect ? T.perfectGain : T.goodGain) * (dir === 'left' ? ORD.zilCezbe : 1)); }
     if (STREAK_MARKS.includes(G.streak) || (G.streak > 200 && G.streak % 50 === 0)) celebrate(G.streak);
   }
   G.cmdFx = { text: o.name + '!', color: o.color, life: 0.5 }; G.order = { color: o.color, life: 0.3 };
-  if (dir === 'up') cmdStrike(grade);
-  else if (dir === 'down') cmdGuard(h, grade);
-  else if (dir === 'right') cmdCharge(grade);
-  else cmdRally(grade);
-  if (G.tut) tutorialPress(dir);
 }
 function drumNotReady(dir) {
   floatText(G.leader.x, G.leader.y - 30, `${ORDERS[dir].inst} hazır değil`, '#8a7d62', 12);
@@ -1391,7 +1520,7 @@ function cmdRally(grade) {
     if (s.spawnT < 1) continue;
     if (s.grabbed) releaseGrab(s.grabbed);
     if (s.poisonUntil > G.h || s.dazeUntil > G.h) { freed++; burst(s.x, s.y, '#bfe8a0', 6, 100); }
-    s.dazeUntil = 0; s.poisonUntil = 0;
+    s.dazeUntil = -Infinity; s.poisonUntil = -Infinity;
     s.outUntil = -1; s.dash = null; s.target = null; s.returning = true; s.rally = 1.5;
     const heal = s.maxHp * ORD.zilHeal * G.up.zilHeal * (grade === 'p' ? 1.5 : grade === 'o' ? ORD.offBeat : 1);
     if (s.hp < s.maxHp) { s.hp = Math.min(s.maxHp, s.hp + heal); burst(s.x, s.y, '#8fd46a', 4, 90); }
@@ -1667,7 +1796,7 @@ function resolveStrike(p, guarded) {
       continue;
     }
     const from = a.shape === 'circle' && !a.self ? a : e || a;
-    if (v === L) { hurtLeader(); if (a.knock) knock(L, from, a.knock * 0.3, 0); continue; }
+    if (v === L) { hurtLeader(p.type); if (a.knock) knock(L, from, a.knock * 0.3, 0); continue; }
     hurtSoldier(v, dmg, p.type);
     if (v.dead) continue;
     if (a.poison) {
@@ -1785,16 +1914,35 @@ function releaseGrab(e) {
   if (s) s.grabbed = null;
   if (e.state === 'drag') { e.state = 'recover'; e.recoverUntil = G.curK + 2; e.atkReady = G.h + rand(ATK.rest[0], ATK.rest[1]) * ramp('rest'); }
 }
-function hurtLeader() {
+function hurtLeader(fromType) {
   const L = G.leader;
   if (L.invuln > 0 || G.mode !== 'play') return;
-  L.hearts--; L.invuln = 2;
+  L.hearts--; L.invuln = 2; G.lastHitBy = fromType;
   dropBar(T.hitDrop); G.streak = 0;
   addShake(12); G.flash = 1; G.flashColor = '255,60,40';
   floatText(L.x, L.y - 34, '−1 KALP', '#ff6a55', 22, true);
   sfx('hurt', 0.1, (t) => S.thud(t, 1, sfxBus));
   if (L.hearts === 1) hintOnce('lastHeart', 'Son kalp! Sana kapanan kırmızı işarette ↓ Kös çal ya da içinden çık.', 6);
-  if (L.hearts <= 0) gameOver();
+  if (L.hearts <= 0 && G.hizir > 0) hizirComes();
+  else if (L.hearts <= 0) gameOver();
+}
+// Hızır Duası (a konak upgrade): the last heart is gone, but Hızır comes in time. The leader gets
+// up with one heart, and the monsters near him are thrown back, stunned and lose their wind-up.
+function hizirComes() {
+  const L = G.leader;
+  G.hizir--; L.hearts = 1; L.invuln = 3;
+  for (const e of G.enemies) {
+    if (e.dead || e.hidden || ENEMY[e.type].fixed || dist(e, L) > 260) continue;
+    const a = Math.atan2(e.y - L.y, e.x - L.x), kb = ENEMY[e.type].boss ? 80 : 420;
+    e.kx += Math.cos(a) * kb; e.ky += Math.sin(a) * kb;
+    if (e.holding) releaseGrab(e);
+    if (e.state === 'wind') { e.state = 'recover'; e.atk = null; e.airborne = false; }
+    e.stunUntil = G.curK + 4; e.recoverUntil = G.curK + 4;
+  }
+  bigText('HIZIR YETİŞTİ!', G.hizir ? `Bir kalple kalktın · ${G.hizir} dua kaldı` : 'Bir kalple kalktın', '#5fc8c0', 2.2);
+  G.flash = 1; G.flashColor = '95,200,192'; G.slowmo = 0.6;
+  burst(L.x, L.y, '#5fc8c0', 44, 380); ring(L.x, L.y, '#bff0ea', 160);
+  sfx('hizir', 0.5, (t) => { S.zil(t, 1, sfxBus, true); S.arp(t, 1, sfxBus, [523.25, 659.25, 783.99, 1046.5], 0.08); });
 }
 function hurtSoldier(s, dmg, fromType) {
   const weak = WEAK[s.type].includes(fromType);
@@ -1897,7 +2045,7 @@ function pickCard(i, fromClick) {
   if (!cd) return;
   cd.apply();
   if (cd.once) G.taken.add(cd.id);
-  G.ganimet -= G.need; G.level++; G.need = T.terfiBase + G.level * T.terfiStep;
+  G.ganimet -= G.need; G.level++; G.need = T.terfiBase + G.level * T.terfiStep - G.terfiOff;
   G.picks.push(cd.id);
   G.terfi = null;
   $('terfiOv').hidden = true;
@@ -1931,11 +2079,11 @@ function renderKonak() {
   const box = $('ultiCards'); box.textContent = '';
   const sel = G.konak.sel;
   ULTIS.forEach((u, i) => {
-    const slot = sel.indexOf(u.id), on = slot >= 0;
+    const slot = sel.indexOf(u.id), on = slot >= 0, open = ultiOpen(u.id);
     const b = document.createElement('button');
-    b.className = 'card ' + (on ? 'on' : 'off'); b.type = 'button';
+    b.className = 'card ' + (on ? 'on' : 'off'); b.type = 'button'; b.disabled = !open;
     b.style.setProperty('--rar', `rgb(${u.color})`);
-    b.innerHTML = `<kbd class="k">${i + 1}</kbd><span class="rar">${on ? `Yuva ${slot + 1}` : 'Seçili değil'} · ${u.cost} kademe</span><span class="t">${u.name}</span><span class="d">${u.d}</span>`;
+    b.innerHTML = `<kbd class="k">${i + 1}</kbd><span class="rar">${!open ? 'Kilitli · konakta Kethüda açar' : on ? `Yuva ${slot + 1}` : 'Seçili değil'} · ${u.cost} kademe</span><span class="t">${u.name}</span><span class="d">${u.d}</span>`;
     b.addEventListener('click', () => toggleUlti(i));
     box.appendChild(b);
   });
@@ -1945,6 +2093,7 @@ function renderKonak() {
 function toggleUlti(i) {
   if (!G.konak || !ULTIS[i]) return;
   const sel = G.konak.sel, id = ULTIS[i].id, at = sel.indexOf(id);
+  if (!ultiOpen(id)) return;
   if (at >= 0) sel.splice(at, 1); else if (sel.length < 4) sel.push(id);
   renderKonak();
 }
@@ -2182,6 +2331,9 @@ function updateWorld(dt, rdt) {
       c.x += Math.cos(a) * sp * dt; c.y += Math.sin(a) * sp * dt;
       if (dist(c, L) < 16) {
         c.got = true; G.ganimet++;
+        // Ganimet Payı: every tenth coin per rank counts twice.
+        G.lootFrac += G.lootBonus;
+        if (G.lootFrac >= 1) { G.lootFrac -= 1; G.ganimet++; }
         const now = performance.now();
         G.coinChain = now - G.lastCoin < 260 ? Math.min(G.coinChain + 1, 14) : 0;
         G.lastCoin = now;
@@ -2226,6 +2378,369 @@ function updateFx(rdt) {
   for (const k in G.keyFlash) G.keyFlash[k] = Math.max(0, G.keyFlash[k] - rdt * 5);
   for (let i = 0; i < 4; i++) G.ultFlash[i] = G.ultFlash[i] > 0 ? Math.max(0, G.ultFlash[i] - rdt * 2) : Math.min(0, G.ultFlash[i] + rdt * 2);
 }
+
+// ---------------------------------------------------------------- Mehterhane Konağı: the hub
+// A walled courtyard the leader walks round between runs, with no enemies. The beat goes on and
+// the instruments can be played for practice; the starting army follows. Walking up to someone
+// and pressing E (A on a gamepad) opens what they offer; the gate in the north wall starts the run.
+const HUB = {
+  walk: { x0: -495, x1: 495, y0: -282, y1: 296 },
+  view: { x0: -600, x1: 600, y0: -520, y1: 380 },
+  spawn: { x: 0, y: 232 },
+  fountain: { x: 0, y: -26, rx: 86, ry: 52 },
+  kukla: { x: 440, y: 50 },
+};
+const SPOTS = [
+  { id: 'kapi', x: 0, y: -262, r: 96, name: 'Sefer kapısı', verb: 'Sefere çık' },
+  { id: 'defter', npc: 'kethuda', x: -412, y: -66, r: 110, name: 'Kethüda', verb: 'Konak defteri' },
+  { id: 'hazirlik', npc: 'bayraktar', x: -292, y: -236, r: 104, name: 'Bayraktar', verb: 'Sefer hazırlığı' },
+  { id: 'kayit', npc: 'vakanuvis', x: 300, y: -236, r: 104, name: 'Vakanüvis', verb: 'Sefer kayıtları' },
+  { id: 'talim', npc: 'talimci', x: 352, y: -62, r: 110, name: 'Talimci', verb: 'Talim ve eğitim' },
+];
+// The band's own musicians play on in the courtyard, a little off the path.
+const MUSICIANS = [{ kind: 'zurna', x: -392, y: 150 }, { kind: 'davul', x: -346, y: 170 }, { kind: 'zil', x: -300, y: 186 }];
+// Where nobody can walk: [x, y, r]. The fountain is an ellipse of its own.
+const HUB_SOLID = [
+  ...SPOTS.filter((s) => s.npc).map((s) => [s.x, s.y, 15]),
+  ...MUSICIANS.map((m) => [m.x, m.y, 13]),
+  [-412, -36, 26], [-470, -58, 20], [300, -206, 22], [350, -254, 16],
+  [-478, -270, 12], [-448, -270, 12], [-418, -270, 12], [-388, -270, 12],
+  [HUB.kukla.x, HUB.kukla.y, 14], [-128, -272, 16], [128, -272, 16], [-470, 262, 18], [470, 262, 18],
+  [-150, 150, 7], [150, 150, 7],
+];
+function hubCollide(u) {
+  const w = HUB.walk, f = HUB.fountain;
+  u.x = clamp(u.x, w.x0, w.x1); u.y = clamp(u.y, w.y0, w.y1);
+  const k = f.rx / f.ry, dx = u.x - f.x, dy = (u.y - f.y) * k, d = Math.hypot(dx, dy), R = f.rx + u.r;
+  if (d < R && d > 0) { u.x = f.x + dx / d * R; u.y = f.y + dy / d * R / k; }
+  for (const [x, y, r] of HUB_SOLID) {
+    const ex = u.x - x, ey = u.y - y, e = Math.hypot(ex, ey), rr = r + u.r;
+    if (e < rr && e > 0) { u.x = x + ex / e * rr; u.y = y + ey / e * rr; }
+  }
+}
+// The camera follows the leader but never shows past the konak's grounds; a screen that holds
+// all of it stays still.
+function hubCamera(k) {
+  const L = G.leader, v = HUB.view, hw = W / 2 / zoom, up = H * 0.44 / zoom, dn = H * 0.56 / zoom;
+  const tx = 2 * hw >= v.x1 - v.x0 ? (v.x0 + v.x1) / 2 : clamp(L.x, v.x0 + hw, v.x1 - hw);
+  const ty = up + dn >= v.y1 - v.y0 ? (v.y0 + v.y1) / 2 + (up - dn) / 2 : clamp(L.y, v.y0 + up, v.y1 - dn);
+  G.cam.x += (tx - G.cam.x) * k; G.cam.y += (ty - G.cam.y) * k;
+}
+// The army stands round the leader.
+function placeArmy() {
+  const L = G.leader;
+  G.soldiers.forEach((s, i) => {
+    const a = i * 2.39996 + 0.5, r = 46 + 13 * Math.sqrt(i);
+    s.x = L.x + Math.cos(a) * r; s.y = L.y + Math.sin(a) * r; s.face = -Math.PI / 2;
+    hubCollide(s);
+  });
+}
+// Puts the leader at the south gate, facing the courtyard, with the army round him.
+function placeInHub() {
+  const L = G.leader;
+  L.x = HUB.spawn.x; L.y = HUB.spawn.y; L.face = -Math.PI / 2;
+  placeArmy();
+  hubCamera(1);
+}
+// What the konak's people say, chosen by how the last run went.
+function npcLines() {
+  const last = meta.last, first = !last;
+  const alt = (...l) => l[meta.visits % l.length];
+  const tips = [
+    "Tepegöz Yurdu'nda Kara Koç'a Azap, Yarasa'ya Kemankeş, Sapancı'ya Deli iyi gelir.",
+    "Şahmeran Diyarı'nda Dev Akrep'e Yeniçeri, Kanatlı Yılan'a Kemankeş, Yılan Kâhini'ne Deli.",
+    "Ejderha Dağı'nda Ejder Yavrusu'na Azap, Kor Kuşu'na Kemankeş, Od Cadısı'na Deli.",
+  ];
+  return {
+    kethuda: first ? 'Hoş geldin Mehterbaşı. Seferde kazandığın şan bu deftere yazılır; karşılığını ben veririm.'
+      : last.won ? `Üç diyar geçildi! Deftere ${last.san} şan yazdım. Konak seninle övünüyor.`
+      : alt(`Bu seferden ${last.san} şan geldi, deftere yazdım. Kaybedilen sefer de boşa gitmez.`,
+        `Defterde ${meta.san} şan var. Bir sonraki sefere ne götüreceğine birlikte bakalım.`),
+    bayraktar: first ? 'Sefere hangi bölükle çıkacağını bana söyle; sancağın ona göre dikilir.'
+      : last.won ? 'Sancağımız üç diyarda dalgalandı. Bu kez hangi bölükle çıkıyoruz?'
+      : tips[clamp(last.ch, 1, 3) - 1],
+    talimci: first ? 'Önce talim! Kuklanın yanına gel, ↑ ile vur. Tempoya denk getirirsen askerler daha sert vurur.'
+      : last.acc < 0.6 ? 'Geçen seferde vuruşların ritimden kaçıyordu. Burada biraz çal; gerekirse gecikmeyi birlikte ayarlarız.'
+      : alt('Kırmızı halka sana kapanırken ↓ Kös çal. Tam anında çalarsan canavar sersemler.',
+        '→ Çevgen kurulan büyüyü keser, ← Zil savrulanları toplar. İkisini de kuklada dene.'),
+    vakanuvis: first ? 'Her seferi yazarım. Gördüğün her canavar da bu deftere geçer.'
+      : last.won ? 'Destanını yazdım: üç diyar, üç serdar. Mürekkebim zor yetti.'
+      : last.left ? 'Seferi yarıda bıraktın. Yazdım, ama kimseye söylemem.'
+      : `${last.ch}. bölüm, ${last.wi}. dalga${last.by ? `, ${last.by}` : ''}... Bunu da yazdım. Bir dahakine daha ileri.`,
+  };
+}
+// Into the konak: from the title, after a run ends, or when a run is left.
+function enterHub(arrival) {
+  if (!actx) initAudio();
+  actx.resume();
+  newGame();
+  G.mode = 'hub';
+  beats.length = 0; beatMap.clear();
+  nextBeatT = actx.currentTime + 0.35; nextBeatK = 0;
+  for (const id of ['titleOv', 'overOv', 'pauseOv', 'terfiOv', 'konakOv', 'hubOv']) $(id).hidden = true;
+  held.clear();
+  meta.visits++; saveMeta();
+  G.hub.lines = npcLines(); G.hub.fade = 1;
+  placeInHub();
+  const affordable = UPGRADES.some((u) => rank(u.id) < u.cost.length && meta.san >= u.cost[rank(u.id)]);
+  if (meta.visits === 1) showHint('Konağı gez: WASD ile yürü, birinin yanına gidip E ile konuş. Çalgıları burada da çalabilirsin. Hazır olunca kuzeydeki kapıdan sefere çık.', 24);
+  else if (affordable) showHint(`Defterde ${meta.san} şan var: Kethüda'dan bir gelişme alabilirsin.`, 10);
+  if (arrival && meta.last) bigText('KONAĞA DÖNDÜN', `+${meta.last.san} şan · defterde ${meta.san}`, '#5fc8c0', 2.4);
+  sfx('konak', 0.3, (t) => S.arp(t, 0.8, sfxBus, [293.66, 440, 554.37, 659.25], 0.11));
+  cv.focus();
+}
+// Out of the gate: the leader walks north as the screen darkens, then the run starts.
+function leaveHub(tutorial) {
+  const hub = G.hub;
+  if (hub.leaving) return;
+  if (hub.panel) closePanel();
+  hub.leaving = 0.8; hub.tutorial = tutorial; held.clear();
+  sfx('gate', 0.3, (t) => { S.kos(t, 0.8, sfxBus); S.zil(t + 0.12, 0.6, sfxBus, true); S.shout(t + 0.2, 0.7, sfxBus, 210); });
+}
+// The run is left from the pause menu: its şan is kept, like a fallen one's.
+function abandonRun() {
+  G.paused = false;
+  $('pauseOv').hidden = true;
+  recordRun(false, true);
+  enterHub(true);
+}
+function hubBeat(b) {
+  G.curK = b.k; G.beatPulse = 1; G.hub.band = 1;
+}
+function updateHub(dt) {
+  const L = G.leader, hub = G.hub;
+  hub.fade = Math.max(0, hub.fade - dt * 1.6);
+  hub.kukla = Math.max(0, hub.kukla - dt * 2.5);
+  hub.band = Math.max(0, hub.band - dt * 5);
+  if (hub.leaving) {
+    hub.leaving = Math.max(0, hub.leaving - dt);
+    moveToward(L, 0, -320, T.leaderSpeed, dt); L.face = -Math.PI / 2;
+    if (hub.leaving === 0) { start(hub.tutorial ? true : undefined); return; }
+  } else if (!hub.panel) {
+    let mx = 0, my = 0;
+    if (held.has('KeyW')) my -= 1;
+    if (held.has('KeyS')) my += 1;
+    if (held.has('KeyA')) mx -= 1;
+    if (held.has('KeyD')) mx += 1;
+    if (G.stick) { mx += G.stick.x; my += G.stick.y; }
+    const m = Math.hypot(mx, my);
+    if (m) { const sp = T.leaderSpeed * Math.min(1, m) * dt; L.x += mx / m * sp; L.y += my / m * sp; L.face = Math.atan2(my, mx); }
+    hubCollide(L);
+  }
+  G.soldiers.forEach((s, i) => { updateSoldier(s, i, dt); hubCollide(s); });
+  separate();
+  // Blows on the dummy land a moment after the order, when the charge arrives.
+  for (const x of hub.hits) if (G.h >= x.at) { x.done = true; hitKukla(x.dmg, x.grade); }
+  hub.hits = hub.hits.filter((x) => !x.done);
+  hub.near = null;
+  let bd = Infinity;
+  if (!hub.leaving) for (const sp of SPOTS) { const d = dist(L, sp); if (d < sp.r && d < bd) { bd = d; hub.near = sp; } }
+  hubCamera(1 - Math.exp(-dt * 6));
+}
+function interact() {
+  const sp = G.hub.near;
+  if (!sp || G.hub.leaving || G.hub.panel) return;
+  if (sp.id === 'kapi') leaveHub(false); else openPanel(sp.id);
+}
+// A practice press: graded like in a run, but it gives no Cezbe and counts for nothing. Near the
+// dummy the soldiers strike it, so the player can feel what a Perfect is worth.
+function hubPress(dir, h) {
+  G.leader.pulse = 1;
+  const { grade, err } = timePress(dir, h);
+  showGrade(dir, grade, err);
+  if (dir === 'up' || dir === 'right') kuklaOrder(dir, grade);
+  else if (dir === 'down') cmdGuard(h, grade);
+  else cmdRally(grade);
+}
+// VUR: every soldier that hears strikes the dummy if it is in reach. ATIL: they dash at it from
+// further out and strike harder, and stay out a moment as in a run.
+function kuklaOrder(dir, grade) {
+  const k = HUB.kukla, atil = dir === 'right';
+  let dmg = 0, n = 0;
+  for (const s of G.soldiers) {
+    if (!hears(s)) continue;
+    n++;
+    const reach = atil ? (SOLDIER[s.type].ranged ? reachOf(s) * ORD.atilRangedReach : ORD.atilReach) : reachOf(s) + 24;
+    if (dist(s, k) - 14 > reach) { s.lunge = 0.6; continue; }
+    s.face = Math.atan2(k.y - s.y, k.x - s.x);
+    dmg += SOLDIER[s.type].dmg * G.up.dmg[s.type] * gradeMult(grade) * (atil ? G.up.atil : 1);
+    if (atil) {
+      const a = rand(0, TAU);
+      if (!SOLDIER[s.type].ranged) s.dash = { x: k.x + Math.cos(a) * 26, y: k.y + Math.sin(a) * 18, grade, t: 0.7 };
+      s.outUntil = G.curK + ORD.atilOutBeats; s.returning = false;
+    } else if (!SOLDIER[s.type].ranged) {
+      s.lunge = 1;
+      slash((s.x + k.x) / 2, (s.y + k.y) / 2 - 10, s.face, grade === 'p' ? '#ffcf4a' : '#f1e6cc', grade === 'p' ? 22 : 16);
+    }
+  }
+  if (n) sfx('hah', 0.08, (t) => S.shout(t, Math.min(0.9, 0.3 + n * 0.05), sfxBus, (atil ? 190 : 150) + Math.random() * 20));
+  if (dmg) G.hub.hits.push({ at: G.h + (atil ? 0.3 : 0.06), dmg, grade });
+}
+function hitKukla(dmg, grade) {
+  const k = HUB.kukla;
+  G.hub.kukla = 1;
+  floatText(k.x + rand(-6, 6), k.y - 70, String(Math.round(dmg)), grade === 'p' ? '#ffcf4a' : grade === 'g' ? '#f1e6cc' : '#b8a988', clamp(14 + dmg * 0.08, 14, 34), true);
+  sparks(k.x, k.y - 30, -Math.PI / 2, '#e8d9a0', 8);
+  for (let i = 0; i < 5; i++) part({ type: 'dot', x: k.x + rand(-8, 8), y: k.y - 30 + rand(-10, 10), vx: rand(-90, 90), vy: rand(-120, -20), life: 0.5, max: 0.5, color: '#d9b860', size: 2 });
+  sfx('impact', 0.035, (t) => S.impact(t, 0.9, sfxBus));
+  if (grade === 'p') addShake(4);
+}
+
+// ---------------------------------------------------------------- the konak's panels
+// Each station opens a panel over the courtyard; the beat goes on behind it. Arrow keys (the
+// d-pad) move between its buttons, Enter (A) presses one, Esc (B) closes it.
+function openPanel(id) {
+  const hub = G.hub;
+  hub.panel = id; held.clear();
+  if (id === 'hazirlik') hub.sel = meta.ultis.slice();
+  renderPanel(false);
+  $('hubOv').hidden = false;
+  const first = $('hubPanel').querySelector('button:not([disabled])');
+  if (first) first.focus();
+  sfx('panel', 0.2, (t) => S.arp(t, 0.6, sfxBus, [440, 659.25], 0.07));
+}
+function closePanel() {
+  const hub = G.hub;
+  if (!hub.panel) return;
+  // The ulti slots change only when four are chosen.
+  if (hub.panel === 'hazirlik' && validUltis(hub.sel)) { meta.ultis = hub.sel.slice(); G.ultis = meta.ultis.slice(); saveMeta(); }
+  hub.panel = null;
+  $('hubOv').hidden = true;
+  cv.focus();
+}
+// Redraws the open panel; with keepFocus the same button keeps the focus.
+function renderPanel(keepFocus) {
+  if (!G.hub.panel) return;
+  const box = $('hubPanel'), was = document.activeElement;
+  const key = keepFocus && was && was.dataset ? `${was.dataset.act}|${was.dataset.arg}` : null;
+  box.innerHTML = PANELS[G.hub.panel]();
+  if (!keepFocus) return;
+  const buttons = [...box.querySelectorAll('button:not([disabled])')];
+  const again = buttons.find((b) => `${b.dataset.act}|${b.dataset.arg}` === key) || buttons[0];
+  if (again) again.focus();
+}
+function moveFocus(step) {
+  const list = [...$('hubPanel').querySelectorAll('button:not([disabled])')];
+  if (!list.length) return;
+  const i = list.indexOf(document.activeElement);
+  const j = i < 0 ? (step > 0 ? 0 : list.length - 1) : (i + step + list.length) % list.length;
+  list[j].focus();
+}
+const bestText = (w) => (w ? `${Math.floor((w - 1) / 5) + 1}. bölüm, ${(w - 1) % 5 + 1}. dalga` : '-');
+// The monsters of each chapter, in the order they come, for the Vakanüvis's book.
+const BESTIARY = [
+  ['koc', 'yarasa', 'karakoncolos', 'sapanci', 'kaya', 'tepegoz'],
+  ['yilan', 'kanatli', 'akrep', 'kahin', 'evren', 'sahmeran'],
+  ['hortlak', 'korkusu', 'yavru', 'odcadi', 'oddevi', 'ejderha'],
+];
+const actions = (inner) => `<div class="actions">${inner}</div>`;
+const closeBtn = (label, off) => `<button class="btn" type="button" data-act="close"${off ? ' disabled' : ''}>${label}</button>`;
+const PANELS = {
+  // The Kethüda sells what lasts: a rank of an upgrade for şan.
+  defter() {
+    const cards = UPGRADES.map((u) => {
+      const n = rank(u.id), max = u.cost.length, done = n >= max, cost = done ? 0 : u.cost[n], can = !done && meta.san >= cost;
+      const col = u.ulti ? `rgb(${ULTI_BY_ID[u.ulti].color})` : '#5fc8c0';
+      const now = n && !u.ulti ? `Şimdi: ${u.eff(n)}.` : '';
+      const next = done ? (u.ulti ? `${u.eff(n)}.` : '') : `${n ? ' Sonra: ' : ''}${u.eff(n + 1)}.`;
+      return `<button class="card${done ? ' on' : ''}" type="button" data-act="buy" data-arg="${u.id}"${can ? '' : ' disabled'} style="--rar:${col}">
+        <span class="rar">${u.ulti ? (done ? 'Ulti · açık' : 'Ulti · kilitli') : 'Kalıcı'}${max > 1 ? ` · <span class="pips">${'●'.repeat(n)}${'○'.repeat(max - n)}</span>` : ''}</span>
+        <span class="t">${u.name}</span><span class="d">${now}${next}</span>
+        <span class="cost">${done ? (u.ulti ? "Açıldı: Bayraktar'da seç" : 'Tamamlandı') : `${cost} şan${can ? '' : ' · şan yetmiyor'}`}</span></button>`;
+    }).join('');
+    return `<p class="eyebrow">Kethüda · Konak defteri</p><h2>Şan: <span class="san">${meta.san}</span></h2>
+      <p class="dim">Seferde kazandığın şan burada harcanır; lider düşse de şan kalır. Aldığın her gelişme bütün seferlerde geçerlidir.</p>
+      <div class="cards">${cards}</div>${actions(`${closeBtn('Tamam')}<span class="dim"><kbd>Esc</kbd> kapat</span>`)}`;
+  },
+  // The Bayraktar keeps the loadout: the company the run starts with and the four ulti slots.
+  hazirlik() {
+    const n = 2 + rank('kadro'), sel = G.hub.sel;
+    const comp = SOLDIER_ORDER.map((t) => {
+      const d = SOLDIER[t], on = t === meta.company;
+      const prey = STRONG[t].map((m) => (meta.seen.includes(m) ? ENEMY[m].name : '???')).join(', ');
+      return `<button class="card ${on ? 'on' : 'off'}" type="button" data-act="company" data-arg="${t}" style="--rar:${d.color}">
+        <span class="rar">${on ? 'Seçili' : 'Bölük'} · ${n} bölük</span><span class="t">${d.name} ×${n * SUMMON[t]}</span>
+        <span class="d">${d.role}. Güçlü olduğu: ${prey}.</span></button>`;
+    }).join('');
+    const ult = ULTIS.map((u) => {
+      const open = ultiOpen(u.id), slot = sel.indexOf(u.id), on = slot >= 0;
+      return `<button class="card ${on ? 'on' : 'off'}" type="button" data-act="ulti" data-arg="${u.id}"${open ? '' : ' disabled'} style="--rar:rgb(${u.color})">
+        <span class="rar">${!open ? 'Kilitli · Kethüda açar' : on ? `Yuva ${slot + 1}` : 'Seçili değil'} · ${u.cost} kademe</span>
+        <span class="t">${u.name}</span><span class="d">${u.d}</span></button>`;
+    }).join('');
+    const ok = sel.length === 4;
+    return `<p class="eyebrow">Bayraktar · Sefer hazırlığı</p><h2>Hangi bölükle çıkıyorsun?</h2>
+      <p class="dim">Sefere bu askerlerle başlarsın; sonrası her nefes arasında seçtiğin sancaktan gelir. Konakta seni izleyenler de onlar.</p>
+      <div class="cards">${comp}</div>
+      <h3 class="sub">Ulti yuvaları · ${sel.length}/4</h3>
+      <p class="dim">Seferin ilk bölümünde bu dördü olur; bölüm sonundaki konakta yeniden seçersin.</p>
+      <div class="cards">${ult}</div>
+      ${actions(`${closeBtn('Tamam', !ok)}<span class="dim">${ok ? '<kbd>Esc</kbd> kapat' : 'Dört ulti seç; seçmezsen eskisi kalır.'}</span>`)}`;
+  },
+  // The Talimci: what the dummy is for, the latency suggestion from the presses made here, and the tutorial.
+  talim() {
+    const cal = calibration();
+    return `<p class="eyebrow">Talimci · Talimhane</p><h2>Talim</h2>
+      <p>Kuklanın yanında çal: auradaki askerlerin ona vurur. <kbd>↑</kbd> vur, <kbd>→</kbd> atıl, <kbd>←</kbd> topla, <kbd>↓</kbd> diren. Tempoya denk gelen emir daha sert iner; sayılar kuklanın üstünde çıkar.</p>
+      <h3 class="sub">Gecikme</h3>
+      <p class="dim mono">Şu anki düzeltme: ${settings.offsetMs} ms. ${cal.text}</p>
+      ${actions(`${cal.sug != null ? `<button class="btn ghost" type="button" data-act="offset" data-arg="${cal.sug}">Öneriyi uygula: ${cal.sug} ms</button>` : ''}
+        <button class="btn ghost" type="button" data-act="click">Tık sesi: ${settings.click ? 'açık' : 'kapalı'}</button>`)}
+      <h3 class="sub">Eğitim</h3>
+      <p class="dim">Dört çalgıyı adım adım gösteren kısa eğitim; bitince sefer başlar.</p>
+      ${actions(`<button class="btn ghost" type="button" data-act="tutorial">Eğitimle sefere çık</button>${closeBtn('Tamam')}`)}`;
+  },
+  // The Vakanüvis: the runs so far and every monster met, with how to meet it.
+  kayit() {
+    const stats = [['Sefer', meta.runs], ['Zafer', meta.wins], ['En uzak', bestText(meta.best)], ['Kazanılan şan', meta.earned]]
+      .map(([l, v]) => `<div class="stat"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+    const hist = meta.history.length ? meta.history.map((h) => `<li><span>${h.n}. sefer · ${h.won ? '<b>Zafer</b>' : `${h.ch}. bölüm, ${h.wi}. dalga`}${h.by ? ` · ${h.by} yendi` : h.left ? ' · bırakıldı' : ''}</span><span class="san">+${h.san} şan</span></li>`).join('')
+      : '<li><span class="dim">Henüz sefer yok.</span></li>';
+    const seen = new Set(meta.seen);
+    const book = BESTIARY.map((list, i) => `<h3 class="sub">${THEMES[i].name} · ${list.filter((t) => seen.has(t)).length}/${list.length}</h3>
+      <div class="beasts">${list.map((t) => (seen.has(t)
+        ? `<div class="beast"><b>${ENEMY[t].name}</b> <span>${ENEMY[t].tip.replace(ENEMY[t].name + ' ', '')}</span></div>`
+        : '<div class="beast unseen"><b>???</b> henüz görülmedi</div>')).join('')}</div>`).join('');
+    return `<p class="eyebrow">Vakanüvis · Sefer defteri</p><h2>Kayıtlar</h2>
+      <div class="stats">${stats}</div>
+      <h3 class="sub">Son seferler</h3><ul class="hist">${hist}</ul>
+      ${book}${actions(closeBtn('Tamam'))}`;
+  },
+};
+function panelAct(act, arg) {
+  const L = G.leader;
+  if (act === 'close') { closePanel(); return; }
+  if (act === 'tutorial') { leaveHub(true); return; }
+  if (act === 'buy') {
+    const u = UPG_BY_ID[arg], n = rank(arg);
+    if (!u || n >= u.cost.length || meta.san < u.cost[n]) return;
+    meta.san -= u.cost[n]; meta.ranks[arg] = n + 1; saveMeta();
+    floatText(L.x, L.y - 90, upper(u.name) + (u.cost.length > 1 ? ` ${n + 1}` : ''), '#5fc8c0', 18, true);
+    burst(L.x, L.y, '#5fc8c0', 26, 260); ring(L.x, L.y, '#bff0ea', 60);
+    sfx('buy', 0.1, (t) => { S.zil(t, 0.6, sfxBus, true); S.arp(t, 0.9, sfxBus, [523.25, 659.25, 783.99, 1046.5], 0.06); });
+    // What shows in the konak changes at once: the army, its health, the aura, Hızır.
+    applyMeta(); placeArmy();
+  } else if (act === 'company') {
+    if (meta.company === arg) return;
+    meta.company = arg; saveMeta();
+    muster(false); placeArmy();
+    floatText(L.x, L.y - 90, `${SOLDIER[arg].name} bölükleri`, SOLDIER[arg].color, 18, true);
+    sfx('banner', 0.1, (t) => { S.kos(t, 0.5, sfxBus); S.cevgen(t, 0.8, sfxBus); });
+  } else if (act === 'ulti') {
+    const sel = G.hub.sel, at = sel.indexOf(arg);
+    if (!ultiOpen(arg)) return;
+    if (at >= 0) sel.splice(at, 1); else if (sel.length < 4) sel.push(arg);
+  } else if (act === 'offset') {
+    setOffset(Number(arg) || 0); G.errs = [];
+  } else if (act === 'click') {
+    toggleClick();
+  }
+  renderPanel(true);
+}
+$('hubPanel').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-act]');
+  if (b && !b.disabled) panelAct(b.dataset.act, b.dataset.arg);
+});
 
 // ---------------------------------------------------------------- rendering
 const cv = $('game'), cx = cv.getContext('2d');
@@ -3690,12 +4205,56 @@ function pill(c, cxp, y, lines, fonts, colors, lineH, padX) {
   lines.forEach((l, i) => { c.font = fonts[i]; c.fillStyle = colors[i]; c.fillText(l, cxp, y + 7 + lineH * (i + 0.78)); });
   return h;
 }
+function drawHint(c, y) {
+  if (!G.hint) return;
+  c.font = `500 15px ${FB}`;
+  const lines = wrapLines(c, G.hint.text, Math.min(560, W - 60));
+  c.globalAlpha = clamp(G.hint.life / 0.4, 0, 1);
+  pill(c, W / 2, y, lines, lines.map(() => `500 15px ${FB}`), lines.map(() => '#f1e6cc'), 20, 16);
+  c.globalAlpha = 1;
+}
+// The big words in the middle of the screen.
+function drawBig(c, compact) {
+  for (const b of G.big) {
+    const a = clamp(b.life / 0.35, 0, 1), age = b.max - b.life, pop = age < 0.15 ? 1 + (0.15 - age) * 2.2 : 1;
+    c.save(); c.globalAlpha = a; c.translate(W / 2, H * 0.3); c.scale(pop, pop);
+    c.textAlign = 'center';
+    c.font = `${compact ? 38 : 58}px ${FD}`; c.lineWidth = 7; c.strokeStyle = '#140f0a';
+    c.strokeText(b.text, 0, 0); c.fillStyle = b.color; c.fillText(b.text, 0, 0);
+    if (b.sub) { c.font = `500 ${compact ? 13 : 16}px ${FB}`; c.lineWidth = 4; c.strokeText(b.sub, 0, 28); c.fillStyle = '#f1e6cc'; c.fillText(b.sub, 0, 28); }
+    c.restore();
+  }
+}
+// Bottom-right: the four instruments, laid out like the arrow keys, darkened from the top while
+// they recharge. Returns where it sits, so the Cezbe bar can stop short of it.
+function drawPad(c, compact) {
+  const cs = compact ? 0.74 : 1, cap = 46 * cs, step = cap + 5 * cs;
+  const ccx = W - 20 - cap / 2 - step, ccy = H - 20 - cap / 2 - step;
+  const DIAMOND = { up: [0, -1], down: [0, 1], right: [1, 0], left: [-1, 0] };
+  for (const dir in DIAMOND) {
+    const o = ORDERS[dir], x = ccx + DIAMOND[dir][0] * step, yy = ccy + DIAMOND[dir][1] * step, f = G.keyFlash[dir];
+    rr(c, x - cap / 2, yy - cap / 2, cap, cap, 9);
+    c.fillStyle = f > 0 ? o.hud : 'rgba(30,25,18,0.9)'; c.globalAlpha = f > 0 ? 0.35 + 0.65 * f : 1; c.fill(); c.globalAlpha = 1;
+    c.strokeStyle = o.hud; c.lineWidth = 2; c.stroke();
+    const wait = beatMode() ? clamp((G.cd[dir] - G.h) / G.cdLen[dir], 0, 1) : 0;
+    if (wait > 0) {
+      c.save(); rr(c, x - cap / 2, yy - cap / 2, cap, cap, 9); c.clip();
+      c.fillStyle = 'rgba(8,6,4,0.72)'; c.fillRect(x - cap / 2, yy - cap / 2, cap, cap * wait);
+      c.restore();
+    }
+    c.textAlign = 'center';
+    c.font = `700 ${Math.round(17 * cs)}px ${FB}`; c.fillStyle = '#f1e6cc'; c.fillText(o.key, x, yy + 1);
+    c.font = `700 ${Math.round(9 * cs)}px ${FB}`; c.fillStyle = '#d8c9a6'; c.fillText(o.name, x, yy + 14 * cs);
+  }
+  return { ccx, step, cap };
+}
 function drawHUD(c, now) {
   const L = G.leader, compact = W < 640;
   c.textBaseline = 'alphabetic';
   // top-left: hearts, chapter and wave, army, banner
   for (let i = 0; i < T.hearts; i++) heart(c, 26 + i * 28, 26, 10, i < L.hearts);
   c.textAlign = 'left';
+  if (G.hizir) { c.font = `700 11px ${FB}`; c.fillStyle = '#5fc8c0'; c.fillText(`HIZIR ×${G.hizir}`, 20 + T.hearts * 28, 31); }
   c.font = `500 12px ${FB}`; c.fillStyle = '#b8a988';
   c.fillText(G.tut ? 'EĞİTİM' : `${G.chapter}. BÖLÜM · ${upper(theme().name)} · DALGA ${G.wi}/${T.wavesPerChapter}`, 16, 58);
   c.font = `26px ${FD}`; c.fillStyle = '#f1e6cc';
@@ -3703,6 +4262,7 @@ function drawHUD(c, now) {
   c.fillText(army, 16, 90);
   const aw = c.measureText(army).width;
   c.font = `500 13px ${FB}`; c.fillStyle = '#b8a988'; c.fillText('asker', 22 + aw, 90);
+  if (!G.tut) { c.font = `700 12px ${FB}`; c.fillStyle = '#5fc8c0'; c.fillText(`ŞAN ${G.san}`, 16, 110); }
 
   // top-right: loot
   const gw = Math.min(240, W * 0.3), gx = W - 16 - gw, gy = 18;
@@ -3752,44 +4312,9 @@ function drawHUD(c, now) {
     }
     y += (tg ? 44 : 30) + 8;
   }
-  if (G.hint) {
-    c.font = `500 15px ${FB}`;
-    const lines = wrapLines(c, G.hint.text, Math.min(560, W - 60));
-    c.globalAlpha = clamp(G.hint.life / 0.4, 0, 1);
-    pill(c, W / 2, y, lines, lines.map(() => `500 15px ${FB}`), lines.map(() => '#f1e6cc'), 20, 16);
-    c.globalAlpha = 1;
-  }
-
-  // big centre words
-  for (const b of G.big) {
-    const a = clamp(b.life / 0.35, 0, 1), age = b.max - b.life, pop = age < 0.15 ? 1 + (0.15 - age) * 2.2 : 1;
-    c.save(); c.globalAlpha = a; c.translate(W / 2, H * 0.3); c.scale(pop, pop);
-    c.textAlign = 'center';
-    c.font = `${compact ? 38 : 58}px ${FD}`; c.lineWidth = 7; c.strokeStyle = '#140f0a';
-    c.strokeText(b.text, 0, 0); c.fillStyle = b.color; c.fillText(b.text, 0, 0);
-    if (b.sub) { c.font = `500 ${compact ? 13 : 16}px ${FB}`; c.lineWidth = 4; c.strokeText(b.sub, 0, 28); c.fillStyle = '#f1e6cc'; c.fillText(b.sub, 0, 28); }
-    c.restore();
-  }
-
-  // bottom-right: the four instruments, laid out like the arrow keys
-  const cs = compact ? 0.74 : 1, cap = 46 * cs, step = cap + 5 * cs;
-  const ccx = W - 20 - cap / 2 - step, ccy = H - 20 - cap / 2 - step;
-  const DIAMOND = { up: [0, -1], down: [0, 1], right: [1, 0], left: [-1, 0] };
-  for (const dir in DIAMOND) {
-    const o = ORDERS[dir], x = ccx + DIAMOND[dir][0] * step, yy = ccy + DIAMOND[dir][1] * step, f = G.keyFlash[dir];
-    rr(c, x - cap / 2, yy - cap / 2, cap, cap, 9);
-    c.fillStyle = f > 0 ? o.hud : 'rgba(30,25,18,0.9)'; c.globalAlpha = f > 0 ? 0.35 + 0.65 * f : 1; c.fill(); c.globalAlpha = 1;
-    c.strokeStyle = o.hud; c.lineWidth = 2; c.stroke();
-    const wait = G.mode === 'play' ? clamp((G.cd[dir] - G.h) / G.cdLen[dir], 0, 1) : 0;
-    if (wait > 0) {
-      c.save(); rr(c, x - cap / 2, yy - cap / 2, cap, cap, 9); c.clip();
-      c.fillStyle = 'rgba(8,6,4,0.72)'; c.fillRect(x - cap / 2, yy - cap / 2, cap, cap * wait);
-      c.restore();
-    }
-    c.textAlign = 'center';
-    c.font = `700 ${Math.round(17 * cs)}px ${FB}`; c.fillStyle = '#f1e6cc'; c.fillText(o.key, x, yy + 1);
-    c.font = `700 ${Math.round(9 * cs)}px ${FB}`; c.fillStyle = '#d8c9a6'; c.fillText(o.name, x, yy + 14 * cs);
-  }
+  drawHint(c, y);
+  drawBig(c, compact);
+  const { ccx, step, cap } = drawPad(c, compact);
 
   // bottom-left: the Cezbe bar and what its level gives, and the four ulti slots above it.
   const barX = 16, barW = Math.max(160, Math.min(380, ccx - step - cap / 2 - 40)), barH = 12, barY = H - 32;
@@ -3877,6 +4402,7 @@ function drawOverlays(c, now) {
 function render(now) {
   const c = cx;
   c.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (G.mode === 'hub' || G.mode === 'title') { renderHub(c, now); return; }
   c.fillStyle = theme().ground; c.fillRect(0, 0, W, H);
   const sh = G.shake;
   const shx = sh ? rand(-sh, sh) : 0, shy = sh ? rand(-sh, sh) : 0;
@@ -3887,6 +4413,536 @@ function render(now) {
   drawAmbient(c, now);
   drawOverlays(c, now);
   if (G.mode !== 'title') { drawIndicators(c); drawHUD(c, now); }
+}
+
+// ---------------------------------------------------------------- Mehterhane Konağı: the art
+// A konak courtyard at dusk in the same three-quarter view as the land: stone paving, a şadırvan
+// in the middle, the two-storey house along the north with the gate to the road in it, low walls
+// round the rest. What never moves is painted once into a canvas of its own.
+const HUB_ART = { x0: -600, y0: -520, w: 1200, h: 900 };
+let hubArt = null;
+function paintHub(scale) {
+  const A = HUB_ART, cv = document.createElement('canvas');
+  cv.width = Math.ceil(A.w * scale); cv.height = Math.ceil(A.h * scale);
+  const c = cv.getContext('2d');
+  c.setTransform(scale, 0, 0, scale, -A.x0 * scale, -A.y0 * scale);
+  c.lineCap = 'round'; c.lineJoin = 'round';
+  const rnd = seeded(3, 5, 9), tone = () => [-0.12, -0.06, 0, 0.05, 0.1][Math.floor(rnd() * 5)];
+  const line = (x1, y1, x2, y2) => { c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); };
+  // Beyond the walls: the konak's dark garden.
+  c.fillStyle = '#16140e'; c.fillRect(A.x0, A.y0, A.w, A.h);
+  for (let i = 0; i < 220; i++) {
+    const x = A.x0 + rnd() * A.w, y = A.y0 + rnd() * A.h;
+    if (Math.abs(x) < 565 && y > -310 && y < 330) continue;
+    gTuft(c, x, y, rnd() < 0.5 ? '#232b1c' : '#2c3522', 1 + rnd() * 0.6);
+  }
+  // The paving: rows of stone slabs of slightly different tones, dark joints between them.
+  const X0 = -520, X1 = 520, Y0 = -300, Y1 = 322;
+  c.fillStyle = '#2b261f'; c.fillRect(X0, Y0, X1 - X0, Y1 - Y0);
+  for (let y = Y0, row = 0; y < Y1; y += 34, row++) {
+    for (let x = X0 - (row % 2 ? 26 : 0); x < X1; x += 52) {
+      const a = Math.max(X0, x), b = Math.min(X1, x + 52);
+      c.fillStyle = shade('#51483b', tone());
+      c.fillRect(a + 1.5, y + 1.5, b - a - 3, Math.min(34, Y1 - y) - 3);
+      if (rnd() < 0.07) { c.strokeStyle = 'rgba(20,16,12,0.6)'; c.lineWidth = 1; line(a + 8, y + 6, a + 20 + rnd() * 14, y + 20); }
+    }
+  }
+  // The walk from the south gate to the north gate, in larger, paler slabs.
+  for (let y = Y0; y < Y1; y += 44) for (const x of [-66, 0]) { c.fillStyle = shade('#665a49', tone()); c.fillRect(x + 2, y + 2, 62, Math.min(40, Y1 - y - 2)); }
+  // The fountain's plaza: rings of slabs round it.
+  c.save(); c.translate(HUB.fountain.x, HUB.fountain.y + 6); c.scale(1, 0.62);
+  for (let r = 172, i = 0; r > 96; r -= 26, i++) {
+    c.fillStyle = shade('#5e5344', i % 2 ? 0.06 : -0.04);
+    c.beginPath(); c.arc(0, 0, r, 0, TAU); c.fill();
+    c.strokeStyle = '#2b261f'; c.lineWidth = 3; c.stroke();
+    for (let k = 0; k < 28; k++) { const a = (k + i * 0.5) / 28 * TAU; line(Math.cos(a) * (r - 26), Math.sin(a) * (r - 26), Math.cos(a) * r, Math.sin(a) * r); }
+  }
+  c.restore();
+  // Flower beds along the south wall.
+  for (const [a, b] of [[-500, -80], [80, 500]]) {
+    c.fillStyle = '#261d14'; rr(c, a, 298, b - a, 22, 4); c.fill();
+    for (let x = a + 12; x < b - 8; x += 26) {
+      if (rnd() < 0.35) gBush(c, x, 310, 0.75, '#2a4128');
+      else gFlowers(c, x, 310, ['#d65a4a', '#e8d9a0', '#b7a6d8', '#e08a4a'][Math.floor(rnd() * 4)], rnd);
+    }
+  }
+  // Kilims where the Kethüda and the Vakanüvis sit.
+  const kilim = (x, y, w, h) => {
+    c.strokeStyle = '#d8c9a6'; c.lineWidth = 1;
+    for (let i = -w / 2 + 4; i < w / 2 - 2; i += 5) { line(x + i, y - h / 2, x + i, y - h / 2 - 4); line(x + i, y + h / 2, x + i, y + h / 2 + 4); }
+    rr(c, x - w / 2, y - h / 2, w, h, 3); c.fillStyle = '#7a2622'; c.fill();
+    rr(c, x - w / 2 + 5, y - h / 2 + 5, w - 10, h - 10, 2); c.strokeStyle = '#2a3552'; c.lineWidth = 6; c.stroke();
+    rr(c, x - w / 2 + 11, y - h / 2 + 11, w - 22, h - 22, 2); c.strokeStyle = '#c9a050'; c.lineWidth = 1.5; c.stroke();
+    const dia = (s, col) => { c.fillStyle = col; c.beginPath(); c.moveTo(x - w * s, y); c.lineTo(x, y - h * s); c.lineTo(x + w * s, y); c.lineTo(x, y + h * s); c.closePath(); c.fill(); };
+    dia(0.2, '#2a3552'); dia(0.12, '#c9a050'); dia(0.05, '#7a2622');
+  };
+  kilim(-412, -50, 136, 80); kilim(300, -222, 124, 72);
+  // The Talimhane: trodden earth and loose straw round the dummy.
+  gClearing(c, HUB.kukla.x - 20, HUB.kukla.y - 10, 130, 88, '#5c4a30', 0.9);
+  c.strokeStyle = '#b89a58'; c.lineWidth = 1.2;
+  for (let i = 0; i < 40; i++) { const x = HUB.kukla.x - 20 + (rnd() - 0.5) * 200, y = HUB.kukla.y - 10 + (rnd() - 0.5) * 120, a = rnd() * TAU; line(x, y, x + Math.cos(a) * 6, y + Math.sin(a) * 3); }
+  // The east and west walls, seen from above.
+  for (const x of [-560, 520]) {
+    c.fillStyle = '#3f392f'; c.fillRect(x, -300, 40, 622);
+    c.fillStyle = '#5e564a'; c.fillRect(x + 4, -300, 32, 622);
+    c.strokeStyle = '#3a342c'; c.lineWidth = 1.5;
+    for (let y = -300; y < 322; y += 26) line(x + 4, y, x + 36, y);
+    c.fillStyle = 'rgba(0,0,0,0.28)'; c.fillRect(x < 0 ? -520 : 508, -300, 12, 622);
+  }
+  // The house along the north: a stone ground floor, a plastered upper floor between dark timbers
+  // that juts out over brackets, lit lattice windows, a tiled roof.
+  const F0 = -300, F1 = -372, F2 = -458;
+  c.fillStyle = '#5b5247'; c.fillRect(-560, F1, 1120, F0 - F1);
+  c.strokeStyle = '#3f382f'; c.lineWidth = 1.5;
+  for (let y = F1, i = 0; y < F0; y += 18, i++) {
+    line(-560, y, 560, y);
+    for (let x = -560 + (i % 2 ? 23 : 0); x < 560; x += 46) line(x, y, x, Math.min(F0, y + 18));
+  }
+  for (const x of [-420, -230, 230, 420]) {
+    c.fillStyle = '#6e6456'; c.fillRect(x - 18, -360, 36, 38);
+    c.fillStyle = '#1a140e'; c.fillRect(x - 13, -355, 26, 30);
+    c.fillStyle = 'rgba(200,120,50,0.35)'; c.fillRect(x - 13, -345, 26, 20);
+    c.strokeStyle = '#2a2018'; c.lineWidth = 2;
+    for (const bx of [-6, 0, 6]) line(x + bx, -355, x + bx, -325);
+  }
+  // The roof: rows of curved tiles over dark eaves.
+  c.fillStyle = '#6e3524'; c.fillRect(-580, -520, 1160, 50);
+  c.strokeStyle = '#4a2218'; c.lineWidth = 1.5;
+  for (let y = -516, i = 0; y < -472; y += 8, i++) for (let x = -580 + (i % 2 ? 8 : 0); x < 580; x += 16) { c.beginPath(); c.arc(x, y, 8, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke(); }
+  c.fillStyle = '#2a1c14'; c.fillRect(-580, -472, 1160, 14);
+  c.fillStyle = 'rgba(0,0,0,0.5)'; c.fillRect(-560, F1, 1120, 9);
+  c.fillStyle = '#a3937a'; c.fillRect(-570, F2, 1140, F1 - F2 - 6);
+  c.fillStyle = '#4a3220';
+  c.fillRect(-570, F2, 1140, 5); c.fillRect(-570, F1 - 11, 1140, 5);
+  for (let x = -560; x <= 560; x += 70) c.fillRect(x - 2.5, F2, 5, F1 - F2 - 6);
+  const lattice = (x, y, w, h, lit) => {
+    c.fillStyle = '#4a3220'; c.fillRect(x - w / 2 - 3, y - 3, w + 6, h + 6);
+    c.fillStyle = lit ? '#e2a04c' : '#2a2018'; c.fillRect(x - w / 2, y, w, h);
+    if (lit) { c.fillStyle = 'rgba(255,220,150,0.5)'; c.fillRect(x - w / 2, y + h * 0.55, w, h * 0.45); }
+    c.save(); c.beginPath(); c.rect(x - w / 2, y, w, h); c.clip();
+    c.strokeStyle = lit ? 'rgba(74,50,32,0.85)' : 'rgba(74,50,32,0.6)'; c.lineWidth = 1.3;
+    for (let d = -h; d < w + h; d += 7) { line(x - w / 2 + d, y, x - w / 2 + d - h, y + h); line(x - w / 2 + d - h, y, x - w / 2 + d, y + h); }
+    c.restore();
+  };
+  for (let x = -525; x <= 525; x += 70) if (Math.abs(x) > 140) lattice(x, -446, 26, 48, rnd() < 0.7);
+  for (let x = -525; x <= 525; x += 70) { c.strokeStyle = '#3a2616'; c.lineWidth = 4; line(x - 10, F1 + 18, x + 4, F1 - 4); }
+  // The cumba over the gate: a bay that juts further, with its own windows and brackets.
+  c.fillStyle = 'rgba(0,0,0,0.45)'; c.fillRect(-136, F1 + 2, 272, 10);
+  c.fillStyle = '#2a1c14'; c.fillRect(-146, -482, 292, 9);
+  c.fillStyle = '#ad9d83'; c.fillRect(-136, -474, 272, 104);
+  c.fillStyle = '#4a3220';
+  for (const x of [-136, -46, 46, 131]) c.fillRect(x, -474, 5, 104);
+  c.fillRect(-136, -474, 272, 5); c.fillRect(-136, -375, 272, 5);
+  for (const x of [-91, 0, 91]) lattice(x, -460, 30, 58, true);
+  for (const x of [-120, -60, 60, 120]) { c.strokeStyle = '#3a2616'; c.lineWidth = 4.5; line(x, F1 + 22, x + (x < 0 ? -12 : 12), F1 - 2); }
+  // The gate: a pointed arch through the ground floor, its doors open onto the road.
+  const gw = 58, gTop = -398;
+  const arch = (w, top) => {
+    c.beginPath(); c.moveTo(-w, F0); c.lineTo(-w, top + 44);
+    c.quadraticCurveTo(-w, top + 4, 0, top); c.quadraticCurveTo(w, top + 4, w, top + 44); c.lineTo(w, F0); c.closePath();
+  };
+  arch(gw + 18, gTop - 16); c.fillStyle = '#7a6f5e'; c.fill();
+  c.strokeStyle = '#4a4236'; c.lineWidth = 2;
+  for (let i = 0; i < 9; i++) { const a = Math.PI + (i + 0.5) / 9 * Math.PI; line(Math.cos(a) * (gw + 2), gTop + 40 + Math.sin(a) * 42, Math.cos(a) * (gw + 18), gTop + 40 + Math.sin(a) * 58); }
+  arch(gw, gTop);
+  const sky = c.createLinearGradient(0, gTop, 0, F0);
+  sky.addColorStop(0, '#46506a'); sky.addColorStop(0.55, '#2c2c36'); sky.addColorStop(1, '#1e1a16');
+  c.fillStyle = sky; c.fill();
+  c.save(); arch(gw, gTop); c.clip();
+  c.fillStyle = '#1d2130';
+  c.beginPath(); c.moveTo(-gw, -334); c.quadraticCurveTo(-24, -352, 0, -340); c.quadraticCurveTo(26, -330, gw, -346); c.lineTo(gw, F0); c.lineTo(-gw, F0); c.closePath(); c.fill();
+  c.fillStyle = '#3a352c';
+  c.beginPath(); c.moveTo(-34, F0); c.lineTo(-5, -334); c.lineTo(5, -334); c.lineTo(34, F0); c.closePath(); c.fill();
+  c.fillStyle = 'rgba(255,240,200,0.8)';
+  for (let i = 0; i < 6; i++) dot(c, -gw + 8 + rnd() * (gw * 2 - 16), gTop + 16 + rnd() * 26, 0.9, 'rgba(255,240,200,0.8)');
+  c.restore();
+  for (const s of [-1, 1]) {
+    c.fillStyle = '#5a3a22';
+    c.beginPath(); c.moveTo(s * gw, F0); c.lineTo(s * gw, -350); c.lineTo(s * (gw - 20), -344); c.lineTo(s * (gw - 20), F0 - 5); c.closePath(); c.fill();
+    c.strokeStyle = '#3a2414'; c.lineWidth = 1.5; line(s * (gw - 10), -347, s * (gw - 10), F0 - 3);
+    for (const y of [-336, -318]) dot(c, s * (gw - 5), y, 1.4, '#2a2622');
+  }
+  rr(c, -36, gTop - 44, 72, 20, 3); c.fillStyle = '#2a3552'; c.fill();
+  c.strokeStyle = '#d9a441'; c.lineWidth = 1.6;
+  c.beginPath(); c.moveTo(-24, gTop - 28); c.quadraticCurveTo(-18, gTop - 42, -10, gTop - 30); c.quadraticCurveTo(-4, gTop - 40, 2, gTop - 29);
+  c.quadraticCurveTo(10, gTop - 42, 14, gTop - 30); c.lineTo(26, gTop - 31); c.stroke();
+  // Lanterns hang either side of the gate.
+  for (const x of [-92, 92]) {
+    c.strokeStyle = '#2a2018'; c.lineWidth = 1.5; line(x, -346, x, -334);
+    rr(c, x - 5, -334, 10, 14, 2); c.fillStyle = '#f0b860'; c.fill(); c.strokeStyle = '#3a2a18'; c.lineWidth = 1.2; c.stroke();
+  }
+  return cv;
+}
+// A low wall with a small gate closes the south; it stands in front of whoever walks behind it.
+function drawSouthWall(c) {
+  const y = 322, h = 24;
+  for (const [a, b] of [[-560, -62], [62, 560]]) {
+    c.fillStyle = '#4a4238'; c.fillRect(a, y - h, b - a, h);
+    c.fillStyle = '#6a6153'; c.fillRect(a, y - h - 8, b - a, 8);
+    c.strokeStyle = '#342e26'; c.lineWidth = 1.2;
+    c.beginPath(); c.moveTo(a, y - h / 2); c.lineTo(b, y - h / 2);
+    for (let x = a + 15; x < b; x += 30) { c.moveTo(x, y - h); c.lineTo(x, y - h / 2); c.moveTo(x + 15, y - h / 2); c.lineTo(x + 15, y); }
+    c.stroke();
+  }
+  for (const x of [-62, 62]) {
+    c.fillStyle = '#5b5247'; c.fillRect(x - 10, y - h - 30, 20, h + 30);
+    rr(c, x - 13, y - h - 37, 26, 8, 2); c.fillStyle = '#6e6456'; c.fill();
+    dot(c, x, y - h - 41, 3.5, '#c9a050');
+  }
+}
+// Lantern and window light, added over everything.
+const HUB_LIGHTS = [[-150, 88], [150, 88], [-92, -327], [92, -327]];
+function drawHubLights(c, t) {
+  c.save(); c.globalCompositeOperation = 'lighter';
+  for (const [x, y] of HUB_LIGHTS) {
+    const f = 0.88 + 0.12 * Math.sin(t * 7 + x) * Math.sin(t * 3.1 + y);
+    gGlow(c, x, y, 130 * f, '255,160,70', 0.13);
+    gGlow(c, x, y, 22, '255,214,150', 0.55 * f);
+  }
+  c.restore();
+}
+function drawFountain(c, t) {
+  const f = HUB.fountain;
+  const oct = (rx, ry, dy) => {
+    c.beginPath();
+    for (let i = 0; i < 8; i++) { const a = (i + 0.5) / 8 * TAU, px = f.x + Math.cos(a) * rx, py = f.y + dy + Math.sin(a) * ry; if (i) c.lineTo(px, py); else c.moveTo(px, py); }
+    c.closePath();
+  };
+  gBlob(c, f.x + 8, f.y + 24, f.rx + 10, f.ry * 0.7, 'rgba(0,0,0,0.3)');
+  for (let k = 16; k > 0; k -= 4) { c.fillStyle = k > 8 ? '#3d362d' : '#4f473c'; oct(f.rx, f.ry, k); c.fill(); }
+  c.fillStyle = '#8a7f6c'; oct(f.rx, f.ry, 0); c.fill();
+  c.strokeStyle = '#ab9f88'; c.lineWidth = 1.5; oct(f.rx, f.ry, 0); c.stroke();
+  c.fillStyle = '#23484f'; oct(f.rx * 0.84, f.ry * 0.8, 1); c.fill();
+  c.save(); oct(f.rx * 0.84, f.ry * 0.8, 1); c.clip();
+  for (let i = 0; i < 3; i++) {
+    const p = (t * 0.45 + i / 3) % 1, r = 12 + p * 64;
+    c.strokeStyle = `rgba(170,220,220,${0.32 * (1 - p)})`; c.lineWidth = 1.4;
+    c.beginPath(); c.ellipse(f.x, f.y + 3, r, r * 0.6, 0, 0, TAU); c.stroke();
+  }
+  c.fillStyle = 'rgba(240,180,90,0.14)'; c.beginPath(); c.ellipse(f.x - 34, f.y - 12, 22, 5, 0, 0, TAU); c.fill();
+  c.restore();
+  c.fillStyle = '#7a705e'; c.fillRect(f.x - 5, f.y - 36, 10, 38);
+  c.fillStyle = '#5f5648'; c.fillRect(f.x - 5, f.y - 36, 3, 38);
+  c.fillStyle = '#8a7f6c'; c.beginPath(); c.ellipse(f.x, f.y - 36, 18, 6, 0, 0, TAU); c.fill();
+  c.fillStyle = '#2f5a62'; c.beginPath(); c.ellipse(f.x, f.y - 37, 14, 4, 0, 0, TAU); c.fill();
+  // Water spills from the bowl in six arcs; drops run down them.
+  c.strokeStyle = 'rgba(190,230,235,0.45)'; c.lineWidth = 1.4;
+  for (let i = 0; i < 6; i++) {
+    const a = i / 6 * TAU + 0.3, sx = f.x + Math.cos(a) * 15, sy = f.y - 36 + Math.sin(a) * 4, ex = f.x + Math.cos(a) * 36, ey = f.y + 3 + Math.sin(a) * 22;
+    c.beginPath(); c.moveTo(sx, sy); c.quadraticCurveTo(f.x + Math.cos(a) * 32, f.y - 38 + Math.sin(a) * 8, ex, ey); c.stroke();
+    for (let j = 0; j < 2; j++) {
+      const p = (t * 1.2 + i * 0.29 + j * 0.5) % 1, q = 1 - p;
+      const px = q * q * sx + 2 * q * p * (f.x + Math.cos(a) * 32) + p * p * ex, py = q * q * sy + 2 * q * p * (f.y - 38 + Math.sin(a) * 8) + p * p * ey;
+      dot(c, px, py, 1.3, 'rgba(215,242,245,0.75)');
+    }
+  }
+  c.strokeStyle = 'rgba(200,236,240,0.7)'; c.lineWidth = 2;
+  c.beginPath(); c.moveTo(f.x, f.y - 38); c.lineTo(f.x, f.y - 50 - Math.sin(t * 9) * 1.5); c.stroke();
+}
+function drawCypress(c, x, y, h) {
+  gBlob(c, x + 8, y + 2, 20, 7, 'rgba(0,0,0,0.35)');
+  c.fillStyle = '#3a2a1a'; c.fillRect(x - 2.5, y - 10, 5, 10);
+  c.fillStyle = '#1b2c20';
+  c.beginPath(); c.moveTo(x, y - h); c.quadraticCurveTo(x + 18, y - h * 0.45, x + 12, y - 8);
+  c.quadraticCurveTo(x, y - 2, x - 12, y - 8); c.quadraticCurveTo(x - 18, y - h * 0.45, x, y - h); c.fill();
+  c.fillStyle = '#2a4330';
+  c.beginPath(); c.moveTo(x, y - h); c.quadraticCurveTo(x - 18, y - h * 0.45, x - 12, y - 8);
+  c.quadraticCurveTo(x - 6, y - 5, x - 2, y - 9); c.quadraticCurveTo(x - 7, y - h * 0.5, x, y - h); c.fill();
+}
+function drawLanternPost(c, x, y) {
+  gBlob(c, x + 4, y + 2, 9, 3.5, 'rgba(0,0,0,0.35)');
+  seg(c, x, y, x, y - 56, '#2a2018', 3);
+  seg(c, x, y - 56, x + 7, y - 60, '#2a2018', 2);
+  rr(c, x - 5, y - 70, 10, 14, 2); c.fillStyle = '#f0b860'; c.fill();
+  c.strokeStyle = '#3a2a18'; c.lineWidth = 1.2; c.stroke();
+  c.fillStyle = '#2a2018'; c.beginPath(); c.moveTo(x - 7, y - 70); c.lineTo(x, y - 76); c.lineTo(x + 7, y - 70); c.closePath(); c.fill();
+}
+function drawChest(c, x, y) {
+  gBlob(c, x + 4, y + 2, 24, 6, 'rgba(0,0,0,0.35)');
+  rr(c, x - 18, y - 20, 36, 20, 2); c.fillStyle = '#5a3a1e'; c.fill();
+  rr(c, x - 19, y - 28, 38, 10, 4); c.fillStyle = '#6b4a2a'; c.fill();
+  c.fillStyle = '#2a2622'; c.fillRect(x - 11, y - 28, 3, 28); c.fillRect(x + 8, y - 28, 3, 28);
+  dot(c, x, y - 14, 2.4, '#d9a441');
+  for (const [dx, dy] of [[-8, -30], [-2, -31], [5, -30], [1, -33]]) { c.fillStyle = '#f0b429'; c.beginPath(); c.ellipse(x + dx, y + dy, 3, 1.4, 0, 0, TAU); c.fill(); }
+}
+function drawLowDesk(c, x, y) {
+  gBlob(c, x + 4, y + 3, 28, 6, 'rgba(0,0,0,0.35)');
+  c.fillStyle = '#4a3220'; c.fillRect(x - 22, y - 8, 4, 8); c.fillRect(x + 18, y - 8, 4, 8);
+  rr(c, x - 26, y - 16, 52, 9, 2); c.fillStyle = '#6b4a2a'; c.fill();
+  c.fillStyle = '#efe6d0';
+  c.beginPath(); c.moveTo(x - 14, y - 15); c.lineTo(x, y - 18); c.lineTo(x, y - 12); c.lineTo(x - 14, y - 10); c.closePath(); c.fill();
+  c.beginPath(); c.moveTo(x, y - 18); c.lineTo(x + 14, y - 15); c.lineTo(x + 14, y - 10); c.lineTo(x, y - 12); c.closePath(); c.fill();
+  c.strokeStyle = 'rgba(60,40,20,0.5)'; c.lineWidth = 0.8;
+  for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(x - 11, y - 14 + i * 1.3); c.lineTo(x - 3, y - 15.5 + i * 1.3); c.stroke(); }
+  dot(c, x + 19, y - 17, 2.6, '#1a1410');
+}
+function drawRahle(c, x, y) {
+  gBlob(c, x + 4, y + 2, 18, 5, 'rgba(0,0,0,0.35)');
+  seg(c, x - 12, y, x + 10, y - 20, '#6b4a2a', 4); seg(c, x + 12, y, x - 10, y - 20, '#5a3a1e', 4);
+  c.fillStyle = '#efe6d0';
+  c.beginPath(); c.moveTo(x - 16, y - 20); c.lineTo(x, y - 25); c.lineTo(x, y - 17); c.lineTo(x - 15, y - 14); c.closePath(); c.fill();
+  c.beginPath(); c.moveTo(x, y - 25); c.lineTo(x + 16, y - 20); c.lineTo(x + 15, y - 14); c.lineTo(x, y - 17); c.closePath(); c.fill();
+  c.fillStyle = '#7a2622'; c.fillRect(x - 1, y - 25, 2, 8);
+}
+function drawBooks(c, x, y) {
+  gBlob(c, x + 3, y + 2, 16, 4, 'rgba(0,0,0,0.35)');
+  [['#7a2622', 0], ['#2a3552', -1.5], ['#3f5a2c', 1], ['#6b4a2a', -0.5]].forEach(([col, dx], i) => {
+    rr(c, x - 12 + dx, y - 6 - i * 6, 24, 6, 1.5); c.fillStyle = col; c.fill();
+    c.fillStyle = '#e8dcc0'; c.fillRect(x + 10 + dx, y - 5 - i * 6, 1.5, 4);
+  });
+}
+// The four company banners on the Bayraktar's rack; the chosen one stands tall and flies.
+function drawBannerRack(c, t) {
+  SOLDIER_ORDER.forEach((type, i) => {
+    const x = -478 + i * 30, y = -270, on = type === meta.company, h = on ? 90 : 64, d = SOLDIER[type];
+    gBlob(c, x + 3, y + 2, 6, 2.5, 'rgba(0,0,0,0.35)');
+    seg(c, x, y, x, y - h, '#8a6a3a', 2.6);
+    dot(c, x, y - h - 2, 2.6, '#f0b429');
+    const w = on ? 30 : 20, wave = Math.sin(t * 3 + i) * (on ? 4 : 1.5);
+    c.fillStyle = d.color; c.strokeStyle = d.rim; c.lineWidth = 1.2;
+    c.beginPath(); c.moveTo(x, y - h); c.quadraticCurveTo(x + w / 2, y - h + 2 + wave, x + w, y - h + 8 + wave);
+    c.quadraticCurveTo(x + w / 2, y - h + 14 + wave, x, y - h + 20); c.closePath(); c.fill(); c.stroke();
+  });
+}
+// The practice dummy: a post, a crossbar, a straw body with a target on it, an old helmet. It
+// rocks when it is struck.
+function drawKukla(c, t) {
+  const k = HUB.kukla, rock = Math.sin(t * 26) * 0.26 * G.hub.kukla;
+  gBlob(c, k.x + 5, k.y + 3, 16, 5, 'rgba(0,0,0,0.35)');
+  c.save(); c.translate(k.x, k.y); c.rotate(rock);
+  seg(c, 0, 0, 0, -60, '#6b4a2a', 4);
+  seg(c, -21, -42, 21, -42, '#6b4a2a', 3.5);
+  c.fillStyle = '#c9a860'; c.beginPath(); c.ellipse(0, -34, 11.5, 15, 0, 0, TAU); c.fill();
+  c.strokeStyle = '#9a7c3a'; c.lineWidth = 1;
+  for (const y of [-44, -38, -30, -24]) { c.beginPath(); c.moveTo(-9, y); c.lineTo(9, y + 1); c.stroke(); }
+  c.strokeStyle = '#c8322b'; c.lineWidth = 2; c.beginPath(); c.arc(0, -34, 5, 0, TAU); c.stroke();
+  dot(c, 0, -34, 1.8, '#c8322b');
+  dot(c, 0, -58, 8, '#d9c08a');
+  dot(c, -2.5, -58, 1.1, '#2a1a10'); dot(c, 2.5, -58, 1.1, '#2a1a10');
+  seg(c, -2.5, -54.5, 2.5, -55.5, '#2a1a10', 1);
+  c.fillStyle = '#7a7a72'; c.beginPath(); c.arc(0, -60, 8.6, Math.PI, TAU); c.closePath(); c.fill();
+  dot(c, 0, -69, 1.8, '#7a7a72');
+  c.restore();
+}
+function beard(c, col) {
+  c.fillStyle = col;
+  c.beginPath(); c.moveTo(-2.5, -34); c.quadraticCurveTo(-1, -24.5, 4.5, -25.5);
+  c.quadraticCurveTo(8, -28, 7, -32.5); c.quadraticCurveTo(3, -31, -2.5, -34); c.closePath(); c.fill();
+}
+// The konak's people, drawn like the soldiers: facing right, feet at the origin.
+function drawNpcShape(c, kind, t) {
+  if (kind === 'kethuda') {
+    // The steward: a long green robe, a grey beard, a round sarık, his ledger under his arm.
+    const robe = '#2f5a46';
+    legs(c, 0, '#3a2a1a', '#2a1a10', false);
+    arm(c, -1, -29, 0.3, 10.5, shade(robe, -0.2), SKIN);
+    legs(c, 0, '#3a2a1a', '#2a1a10', true);
+    coat(c, robe, -3, '#d9a441'); sash(c, '#c8322b');
+    face(c, SKIN, true); beard(c, '#d9d2c2');
+    rr(c, -3, -54, 8, 7, 3); c.fillStyle = '#9a2a22'; c.fill();
+    c.fillStyle = '#f3ecdc'; c.beginPath(); c.ellipse(1, -44.5, 8.5, 6.4, 0, 0, TAU); c.fill();
+    c.strokeStyle = '#d9cfb8'; c.lineWidth = 0.9;
+    for (const y of [-46, -42.5]) { c.beginPath(); c.moveTo(-7, y + 1); c.quadraticCurveTo(1, y - 2.5, 9, y + 1); c.stroke(); }
+    const h = arm(c, 1.5, -29, 1.15, 10, robe, SKIN);
+    c.save(); c.translate(h[0] + 1, h[1] - 4); c.rotate(-0.25);
+    rr(c, -5, -7, 11, 13, 1.5); c.fillStyle = '#7a3a22'; c.fill();
+    c.fillStyle = '#efe6d0'; c.fillRect(-4, -6, 1.5, 11);
+    c.restore();
+  } else if (kind === 'bayraktar') {
+    // The standard-bearer, with the band's red sancak.
+    const coatC = '#8a2a22';
+    legs(c, 0, '#2f4f86', '#3b2c1c', false);
+    arm(c, -1, -29, 0.5, 10.5, shade(coatC, -0.2), SKIN);
+    legs(c, 0, '#2f4f86', '#3b2c1c', true);
+    coat(c, coatC, -10, '#e0b040'); sash(c, '#e0b040');
+    face(c, SKIN, true);
+    rr(c, -4.6, -52, 11, 12, 3.5); c.fillStyle = '#b8322b'; c.fill();
+    rr(c, -5.2, -43, 12.4, 3, 1.5); c.fillStyle = '#e0b040'; c.fill();
+    const h = arm(c, 1.5, -29, 0.25, 10, coatC, SKIN), px = h[0] + 1, w = Math.sin(t * 2.6) * 3.5;
+    seg(c, px, h[1] + 16, px, -104, '#8a6a3a', 2.4);
+    dot(c, px, -106, 2.8, '#f0b429');
+    c.fillStyle = '#c8322b';
+    c.beginPath(); c.moveTo(px, -102); c.quadraticCurveTo(px + 22, -100 + w, px + 44, -96 + w);
+    c.lineTo(px + 44, -70 + w); c.quadraticCurveTo(px + 22, -74 + w, px, -74); c.closePath(); c.fill();
+    c.fillStyle = '#f4efe4'; c.beginPath(); c.arc(px + 20, -87 + w * 0.6, 6.5, 0, TAU); c.fill();
+    c.fillStyle = '#c8322b'; c.beginPath(); c.arc(px + 22.5, -87 + w * 0.6, 5.4, 0, TAU); c.fill();
+  } else if (kind === 'vakanuvis') {
+    // The chronicler: a blue robe, a tall white kavuk, a reed pen.
+    const robe = '#34466a';
+    legs(c, 0, '#2a2a3a', '#2a1a10', false);
+    arm(c, -1, -29, 0.3, 10.5, shade(robe, -0.2), SKIN);
+    legs(c, 0, '#2a2a3a', '#2a1a10', true);
+    coat(c, robe, -3, '#d8c9a6'); sash(c, '#8a6a3a');
+    face(c, SKIN, false); beard(c, '#b9b0a0');
+    c.fillStyle = '#f3ecdc'; rr(c, -5, -61, 12, 19, 5); c.fill();
+    c.fillStyle = '#e2d7bd'; c.beginPath(); c.ellipse(1, -43, 7.5, 3.4, 0, 0, TAU); c.fill();
+    const h = arm(c, 1.5, -29, 1.4, 10, robe, SKIN);
+    seg(c, h[0], h[1], h[0] + 6, h[1] - 12, '#f4efe4', 1.4);
+    c.fillStyle = '#f4efe4'; c.beginPath(); c.ellipse(h[0] + 5, h[1] - 10, 1.8, 5, 0.45, 0, TAU); c.fill();
+  } else {
+    // The drill master: a Yeniçeri çorbacı with a tall plume and a stick.
+    const coatC = '#7a2a1f', felt = '#f2ead8';
+    legs(c, 0, '#2f4f86', '#d4a53a', false);
+    c.fillStyle = shade(felt, -0.12);
+    c.beginPath(); c.moveTo(-1, -50); c.quadraticCurveTo(-10, -50, -10.5, -40); c.lineTo(-9.5, -28.5);
+    c.lineTo(-6, -30); c.quadraticCurveTo(-6.5, -43, -1, -45); c.closePath(); c.fill();
+    arm(c, -1, -29, 0.4, 10.5, shade(coatC, -0.2), SKIN);
+    legs(c, 0, '#2f4f86', '#d4a53a', true);
+    coat(c, coatC, -9, '#e0b040'); sash(c, '#2f4f86');
+    face(c, SKIN, true);
+    c.fillStyle = felt;
+    c.beginPath(); c.moveTo(-4.8, -40); c.lineTo(-3.6, -50.5); c.quadraticCurveTo(0.5, -53, 4.2, -50.2); c.lineTo(6.3, -40); c.closePath(); c.fill();
+    rr(c, -5.6, -42.2, 12.6, 3, 1.5); c.fillStyle = '#d9a441'; c.fill();
+    for (let i = 0; i < 5; i++) {
+      c.save(); c.translate(3, -50); c.rotate(-1.95 + i * 0.2);
+      c.fillStyle = i % 2 ? '#f4efe4' : '#ddd2bb'; c.beginPath(); c.ellipse(10, 0, 10, 1.9, 0, 0, TAU); c.fill();
+      c.restore();
+    }
+    const h = arm(c, 1.5, -29, 1.0, 10.5, coatC, SKIN);
+    seg(c, h[0] - 3, h[1] + 10, h[0] + 7, h[1] - 17, '#5a3a1e', 2);
+  }
+}
+// A person faces the leader while he is near, and the courtyard otherwise.
+function drawNpc(c, sp, t) {
+  const L = G.leader, near = G.mode === 'hub' && dist(L, sp) < sp.r * 1.3;
+  const dir = near ? (L.x >= sp.x ? 1 : -1) : sp.x > 0 ? -1 : 1;
+  c.save(); c.translate(sp.x, sp.y);
+  c.fillStyle = 'rgba(0,0,0,0.35)'; c.beginPath(); c.ellipse(0, 8, 15, 5.5, 0, 0, TAU); c.fill();
+  c.translate(0, 8 + Math.sin(t * 1.6 + sp.x) * 0.6); c.scale(0.85 * dir, 0.85);
+  drawNpcShape(c, sp.npc, t);
+  c.restore();
+}
+// The band's musicians play on the beat: the davul's stick comes down, the zils clash.
+function drawMusician(c, m) {
+  const p = G.hub.band, kaf = { zurna: '#2f6a4a', davul: '#34466a', zil: '#7a2a5a' }[m.kind];
+  c.save(); c.translate(m.x, m.y);
+  c.fillStyle = 'rgba(0,0,0,0.35)'; c.beginPath(); c.ellipse(0, 8, 14, 5, 0, 0, TAU); c.fill();
+  c.translate(0, 8 - 2 * p); c.scale(0.8, 0.8);
+  legs(c, 0, '#2f4f86', '#d4a53a', false);
+  arm(c, -1, -29, 0.35, 10.5, shade(kaf, -0.2), SKIN);
+  legs(c, 0, '#2f4f86', '#d4a53a', true);
+  coat(c, kaf, -5, '#f0b429'); sash(c, '#f0b429');
+  face(c, SKIN, true);
+  rr(c, -2.5, -52, 7, 7, 3); c.fillStyle = '#c8322b'; c.fill();
+  c.fillStyle = '#f7f1e3'; c.beginPath(); c.ellipse(1, -43.5, 7, 5.2, 0, 0, TAU); c.fill();
+  if (m.kind === 'davul') {
+    dot(c, 10, -18.5, 8.6, '#a0692e'); dot(c, 10, -18.5, 7, '#f3e7c8');
+    const h = arm(c, 1.5, -29, 0.95 + (1 - p) * 1.1, 10, kaf, SKIN), a = 1.2 - (1 - p) * 1.8;
+    seg(c, h[0], h[1], h[0] + Math.cos(a) * 8, h[1] + Math.sin(a) * 8, '#6b3a12', 1.6);
+  } else if (m.kind === 'zurna') {
+    arm(c, 1.5, -29, 1.9, 9, kaf, SKIN);
+    c.save(); c.translate(6.5, -34); c.rotate(0.55 - p * 0.08);
+    c.fillStyle = '#7a4a22';
+    c.beginPath(); c.moveTo(0, -1.2); c.lineTo(17, -2.2); c.lineTo(22, -5); c.lineTo(22, 5); c.lineTo(17, 2.2); c.lineTo(0, 1.2); c.closePath(); c.fill();
+    c.restore();
+  } else {
+    const gap = 2 + (1 - p) * 6, h = arm(c, 1.5, -29, 1.3, 10, kaf, SKIN);
+    c.fillStyle = '#e0b040';
+    c.beginPath(); c.ellipse(h[0] + 2, h[1] - gap / 2 - 2, 6, 2.2, 0, 0, TAU); c.fill();
+    c.beginPath(); c.ellipse(h[0] + 2, h[1] + gap / 2 - 2, 6, 2.2, 0, 0, TAU); c.fill();
+  }
+  c.restore();
+}
+function drawHubWorld(c, now) {
+  const t = reduceMotion ? 0 : now / 1000, scale = Math.min(2, DPR * zoom);
+  G.q = beatPhase();
+  if (!hubArt || hubArt.scale !== scale) hubArt = { scale, cv: paintHub(scale) };
+  c.drawImage(hubArt.cv, HUB_ART.x0, HUB_ART.y0, HUB_ART.w, HUB_ART.h);
+  if (G.mode === 'hub') drawAura(c, now);
+  // Everything that stands up is drawn back to front.
+  const items = [
+    { y: HUB.fountain.y, f: () => drawFountain(c, t) },
+    { y: HUB.kukla.y, f: () => drawKukla(c, t) },
+    { y: -270, f: () => drawBannerRack(c, t) },
+    { y: -58, f: () => drawChest(c, -470, -58) },
+    { y: -36, f: () => drawLowDesk(c, -412, -36) },
+    { y: -206, f: () => drawRahle(c, 300, -206) },
+    { y: -254, f: () => drawBooks(c, 350, -254) },
+    { y: G.leader.y, f: () => drawLeader(c) },
+  ];
+  for (const [x, y] of [[-128, -272], [128, -272], [-470, 262], [470, 262]]) items.push({ y, f: () => drawCypress(c, x, y, y < 0 ? 132 : 112) });
+  for (const x of [-150, 150]) items.push({ y: 150, f: () => drawLanternPost(c, x, 150) });
+  for (const sp of SPOTS) if (sp.npc) items.push({ y: sp.y, f: () => drawNpc(c, sp, t) });
+  for (const m of MUSICIANS) items.push({ y: m.y, f: () => drawMusician(c, m) });
+  for (const s of G.soldiers) items.push({ y: s.y, f: () => drawSoldier(c, s) });
+  items.sort((a, b) => a.y - b.y);
+  for (const it of items) it.f();
+  drawSouthWall(c);
+  drawHubLights(c, t);
+  drawParts(c);
+  drawTexts(c);
+}
+const toScreen = (x, y) => [(x - G.cam.x) * zoom + W / 2, (y - G.cam.y) * zoom + H * 0.44];
+// What someone says, in a paper-coloured bubble over their head, and what E does with them.
+function speech(c, x, y, name, text, prompt) {
+  c.font = `500 13px ${FB}`;
+  const lines = wrapLines(c, text, Math.min(290, W - 48));
+  const w = Math.max(...lines.map((l) => c.measureText(l).width), 90) + 24, h = 50 + lines.length * 17;
+  const bx = clamp(x - w / 2, 10, W - 10 - w), by = Math.max(10, y - h - 12);
+  rr(c, bx, by, w, h, 10); c.fillStyle = 'rgba(241,230,204,0.96)'; c.fill();
+  c.beginPath(); c.moveTo(clamp(x, bx + 14, bx + w - 14) - 7, by + h - 1); c.lineTo(clamp(x, bx + 14, bx + w - 14) + 7, by + h - 1); c.lineTo(x, by + h + 9); c.closePath(); c.fill();
+  c.textAlign = 'left';
+  c.font = `700 11px ${FB}`; c.fillStyle = '#8a3a1a'; c.fillText(upper(name), bx + 12, by + 18);
+  c.font = `500 13px ${FB}`; c.fillStyle = '#2a1a10';
+  lines.forEach((l, i) => c.fillText(l, bx + 12, by + 36 + i * 17));
+  c.font = `700 12px ${FB}`; c.fillStyle = '#a0521a';
+  c.fillText(prompt, bx + 12, by + h - 10);
+}
+function drawHubHUD(c, now) {
+  const hub = G.hub, compact = W < 640;
+  c.textBaseline = 'alphabetic';
+  // top-left: the konak, the runs so far and the şan in the book
+  c.textAlign = 'left';
+  c.font = `${compact ? 17 : 20}px ${FD}`; c.fillStyle = '#f0b429'; c.fillText('Mehterhane Konağı', 16, 32);
+  c.font = `500 12px ${FB}`; c.fillStyle = '#b8a988';
+  c.fillText(meta.runs ? `${meta.runs} sefer · ${meta.wins} zafer · en uzak: ${bestText(meta.best)}` : 'Seferler arasındaki evin', 16, 52);
+  c.font = `26px ${FD}`; c.fillStyle = '#5fc8c0';
+  const sanTxt = String(meta.san);
+  c.fillText(sanTxt, 16, 86);
+  const sw = c.measureText(sanTxt).width;
+  c.font = `500 13px ${FB}`; c.fillStyle = '#9fd8d0'; c.fillText('şan', 22 + sw, 86);
+  if (!compact) {
+    c.textAlign = 'right'; c.font = `500 12px ${FB}`; c.fillStyle = '#b8a988';
+    c.fillText('Esc · duraklat ve ayarlar', W - 16, 26);
+    c.fillText('WASD yürü · E konuş · oklar çalar', W - 16, 44);
+  }
+  // Under the konak's name where the screen is too narrow for both on one line.
+  drawHint(c, W < 1100 ? 100 : 14);
+  // Whoever the leader stands by: what they say, and what E does there.
+  if (hub.near && !hub.panel && !hub.leaving) {
+    const sp = hub.near, [sx, sy] = toScreen(sp.x, sp.y);
+    if (sp.npc) speech(c, sx, sy - 72 * zoom, sp.name, hub.lines[sp.npc], `E · ${sp.verb}`);
+    else {
+      const load = `${G.soldiers.length} ${SOLDIER[meta.company].name} · ${meta.ultis.map((id) => ULTI_BY_ID[id].name).join(', ')}`;
+      pill(c, sx, sy + 24 * zoom, [`E · ${sp.verb}`, load], [`700 14px ${FB}`, `500 12px ${FB}`], ['#ffcf4a', '#b8a988'], 20, 16);
+    }
+  }
+  // bottom-left: what the next run starts with
+  const lx = 16, ly = H - 20;
+  c.textAlign = 'left';
+  c.font = `700 11px ${FB}`; c.fillStyle = '#f0b429'; c.fillText('SEFER HAZIRLIĞI', lx, ly - (compact ? 18 : 36));
+  c.font = `600 13px ${FB}`; c.fillStyle = SOLDIER[meta.company].color;
+  c.fillText(`${G.soldiers.length} ${SOLDIER[meta.company].name}${G.hizir ? ` · Hızır Duası ×${G.hizir}` : ''}`, lx, ly - (compact ? 0 : 18));
+  if (!compact) {
+    c.font = `500 12px ${FB}`; c.fillStyle = '#b8a988';
+    c.fillText(meta.ultis.map((id, i) => `${i + 1} ${ULTI_BY_ID[id].name}`).join(' · '), lx, ly);
+  }
+  drawPad(c, compact);
+  // Arriving and leaving fade through dark; the big words show over it.
+  const fade = Math.max(hub.fade, hub.leaving ? 1 - hub.leaving / 0.8 : 0);
+  if (fade > 0) { c.fillStyle = `rgba(8,6,4,${clamp(fade, 0, 1)})`; c.fillRect(0, 0, W, H); }
+  drawBig(c, compact);
+}
+function renderHub(c, now) {
+  if (G.mode === 'title') hubCamera(1);
+  c.fillStyle = '#16140e'; c.fillRect(0, 0, W, H);
+  const sh = G.shake, shx = sh ? rand(-sh, sh) : 0, shy = sh ? rand(-sh, sh) : 0;
+  c.save();
+  c.translate(W / 2 + shx, H * 0.44 + shy); c.scale(zoom, zoom); c.translate(-G.cam.x, -G.cam.y);
+  drawHubWorld(c, now);
+  c.restore();
+  drawOverlays(c, now);
+  if (G.mode === 'hub') drawHubHUD(c, now);
 }
 
 // ---------------------------------------------------------------- main loop
@@ -3911,6 +4967,12 @@ function frame(now) {
       updateWorld(dt, rdt);
     }
     updateFx(rdt);
+  } else if (G.mode === 'hub' && !G.paused && actx) {
+    const h = heardNow();
+    G.h = h;
+    for (const b of beats) if (!b.done && h >= b.t) { b.done = true; hubBeat(b); }
+    updateHub(rdt);
+    updateFx(rdt);
   } else if (!G.paused) updateFx(rdt);
   render(now);
 }
@@ -3923,29 +4985,36 @@ function start(tutorial) {
   G.mode = 'play';
   beats.length = 0; beatMap.clear();
   nextBeatT = actx.currentTime + 0.35; nextBeatK = 0;
-  for (const id of ['titleOv', 'overOv', 'pauseOv', 'terfiOv', 'konakOv']) $(id).hidden = true;
+  for (const id of ['titleOv', 'overOv', 'pauseOv', 'terfiOv', 'konakOv', 'hubOv']) $(id).hidden = true;
+  held.clear();
   if (tutorial === true || (tutorial !== false && !store.get('mehter3.tutorial', false))) startTutorial();
   else startBreather();
   cv.focus();
 }
+// What the last presses say about the latency offset: a line to show, and a suggested offset when
+// the presses are off by 15 ms or more on average.
+function calibration() {
+  const errs = G.errs;
+  if (errs.length < 8) return { text: 'Öneri için birkaç vuruş daha çal.', sug: null };
+  const avg = errs.reduce((a, b) => a + b, 0) / errs.length * 1000;
+  const sug = clamp(Math.round((settings.offsetMs + avg) / 5) * 5, -150, 150);
+  const text = `Son ${errs.length} vuruşun ortalaması: ${avg >= 0 ? '+' : ''}${Math.round(avg)} ms (${Math.abs(avg) < 15 ? 'tam yerinde' : avg > 0 ? 'geç basıyorsun' : 'erken basıyorsun'}).`;
+  return { text, sug: Math.abs(avg) < 15 ? null : sug };
+}
 function pause() {
-  if (!G || G.mode !== 'play' || G.paused || G.konak) return;
+  if (!beatMode() || G.paused || G.konak) return;
   G.paused = true;
   held.clear();
   if (actx) actx.suspend();
   $('offset').value = settings.offsetMs;
   $('offsetVal').textContent = `${settings.offsetMs} ms`;
-  const errs = G.errs;
-  const apply = $('applyBtn');
-  if (errs.length >= 8) {
-    const avg = errs.reduce((a, b) => a + b, 0) / errs.length * 1000;
-    const sug = clamp(Math.round((settings.offsetMs + avg) / 5) * 5, -150, 150);
-    $('calib').textContent = `Son ${errs.length} vuruşun ortalaması: ${avg >= 0 ? '+' : ''}${Math.round(avg)} ms (${Math.abs(avg) < 15 ? 'tam yerinde' : avg > 0 ? 'geç basıyorsun' : 'erken basıyorsun'}).`;
-    apply.hidden = Math.abs(avg) < 15;
-    apply.textContent = `Öneriyi uygula: ${sug} ms`;
-    apply.dataset.value = sug;
-  } else { $('calib').textContent = 'Öneri için birkaç vuruş daha çal.'; apply.hidden = true; }
+  const cal = calibration(), apply = $('applyBtn');
+  $('calib').textContent = cal.text;
+  apply.hidden = cal.sug == null;
+  if (cal.sug != null) { apply.textContent = `Öneriyi uygula: ${cal.sug} ms`; apply.dataset.value = cal.sug; }
   refreshOptions();
+  // In the konak there is no run to show or to leave.
+  $('pauseBuildBox').hidden = $('restartBtn').hidden = G.mode === 'hub';
   renderBuild($('pauseBuild'));
   $('pauseOv').hidden = false;
   $('resumeBtn').focus();
@@ -3955,7 +5024,8 @@ function resume() {
   G.paused = false;
   $('pauseOv').hidden = true;
   if (actx) actx.resume();
-  cv.focus();
+  const back = G.mode === 'hub' && G.hub.panel && $('hubPanel').querySelector('button:not([disabled])');
+  if (back) back.focus(); else cv.focus();
 }
 const VOL_ID = { master: 'volMaster', sfx: 'volSfx', beat: 'volBeat' };
 function refreshOptions() {
@@ -3973,13 +5043,15 @@ function setVolume(k, v) {
 }
 function toggleClick() {
   settings.click = !settings.click; store.set('mehter.click', settings.click);
-  if (G && G.mode === 'play') floatText(G.leader.x, G.leader.y - 80, settings.click ? 'tık sesi açık' : 'tık sesi kapalı', '#f1e6cc', 14);
+  if (beatMode()) floatText(G.leader.x, G.leader.y - 80, settings.click ? 'tık sesi açık' : 'tık sesi kapalı', '#f1e6cc', 14);
   refreshOptions();
 }
 
 // Gamepad: the face buttons play the instruments where the arrow keys sit: Y VUR, A DİREN,
 // B ATIL, X TOPLAN. LB RB LT RT fire ulti slots 1-4, the left stick walks, Start pauses and Back skips the
-// breather. Terfi cards take X, Y, B; at the konak A or Start leaves with the current slots.
+// breather. Terfi cards take X, Y, B; at the konak A or Start leaves with the current slots. In
+// Mehterhane Konağı A talks to whoever the leader stands by (elsewhere it is still the Kös), and
+// in a panel the d-pad moves, A presses and B or Start closes.
 const PAD_DRUM = { 3: 'up', 0: 'down', 1: 'right', 2: 'left' };
 const PAD_ULTI = { 4: 0, 5: 1, 6: 2, 7: 3 };
 const PAD_CARD = { 2: 0, 3: 1, 1: 2, 14: 0, 12: 1, 15: 2 };
@@ -3994,7 +5066,8 @@ function pollPad() {
   padPrev = pressed;
   const now = performance.now();
   const stamp = pad.timestamp > 0 && pad.timestamp <= now ? pad.timestamp : now;
-  if (G.mode === 'over') { if (!$('overOv').hidden && (edge(0) || edge(9))) start(false); return; }
+  if (G.mode === 'over') { if (!$('overOv').hidden && (edge(0) || edge(9))) enterHub(true); return; }
+  if (G.mode === 'hub') { hubPad(edge, pad, stamp); return; }
   if (G.mode !== 'play') return;
   if (G.konak) { if (edge(0) || edge(9)) leaveKonak(); return; }
   if (edge(9)) { if (G.paused) resume(); else pause(); return; }
@@ -4003,6 +5076,21 @@ function pollPad() {
   for (const i in PAD_DRUM) if (edge(+i)) drum(PAD_DRUM[i], stamp);
   for (const i in PAD_ULTI) if (edge(+i)) fireUlti(PAD_ULTI[i]);
   if (edge(8)) { if (G.tut) endTutorial(true); else if (G.phase === 'breather') startWave(); }
+  const ax = pad.axes[0] || 0, ay = pad.axes[1] || 0;
+  if (Math.hypot(ax, ay) > 0.25) G.stick = { x: ax, y: ay };
+}
+function hubPad(edge, pad, stamp) {
+  const hub = G.hub;
+  if (hub.panel && !G.paused) {
+    if (edge(1) || edge(9)) closePanel();
+    else if (edge(12) || edge(14)) moveFocus(-1);
+    else if (edge(13) || edge(15)) moveFocus(1);
+    else if (edge(0) && $('hubPanel').contains(document.activeElement)) document.activeElement.click();
+    return;
+  }
+  if (edge(9)) { if (G.paused) resume(); else pause(); return; }
+  if (G.paused || hub.leaving) return;
+  for (const i in PAD_DRUM) if (edge(+i)) { if (+i === 0 && hub.near) interact(); else drum(PAD_DRUM[i], stamp); }
   const ax = pad.axes[0] || 0, ay = pad.axes[1] || 0;
   if (Math.hypot(ax, ay) > 0.25) G.stick = { x: ax, y: ay };
 }
@@ -4016,7 +5104,7 @@ function setOffset(v) {
 // Some keyboards and synthetic events leave `code` empty; fall back to `key`.
 const KEY_CODE = {
   arrowup: 'ArrowUp', arrowdown: 'ArrowDown', arrowleft: 'ArrowLeft', arrowright: 'ArrowRight',
-  ' ': 'Space', enter: 'Enter', escape: 'Escape', w: 'KeyW', a: 'KeyA', s: 'KeyS', d: 'KeyD', p: 'KeyP', m: 'KeyM',
+  ' ': 'Space', enter: 'Enter', escape: 'Escape', w: 'KeyW', a: 'KeyA', s: 'KeyS', d: 'KeyD', p: 'KeyP', m: 'KeyM', e: 'KeyE',
   1: 'Digit1', 2: 'Digit2', 3: 'Digit3', 4: 'Digit4', 5: 'Digit5', 6: 'Digit6',
 };
 const codeOf = (e) => e.code || KEY_CODE[String(e.key || '').toLowerCase()] || '';
@@ -4025,12 +5113,18 @@ const DIGIT = { Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3, Digit5: 4, Digit6: 5
 window.addEventListener('keydown', (e) => {
   const code = codeOf(e);
   if (e.target && e.target.tagName === 'INPUT') return;
-  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(code)) e.preventDefault();
+  // A konak panel is a page of buttons: arrows move between them, Enter and Space press, Esc closes.
+  if (G.mode === 'hub' && G.hub.panel && !G.paused) { panelKey(e, code); return; }
+  // On the title and the end screen a focused button answers Enter and Space itself.
+  const onButton = !!document.activeElement && document.activeElement.tagName === 'BUTTON';
+  const menu = G.mode === 'title' || (G.mode === 'over' && !$('overOv').hidden);
+  if (!(menu && onButton) && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(code)) e.preventDefault();
   if (e.repeat) return;
-  if (G.mode === 'title' || (G.mode === 'over' && !$('overOv').hidden)) {
-    if (code === 'Enter' || code === 'Space') { e.preventDefault(); start(G.mode === 'over' ? false : undefined); }
+  if (menu) {
+    if ((code === 'Enter' || code === 'Space') && !onButton) { e.preventDefault(); enterHub(G.mode === 'over'); }
     return;
   }
+  if (G.mode === 'hub') { hubKey(e, code); return; }
   if (G.mode !== 'play') return;
   if (G.konak) {
     if (DIGIT[code] != null) toggleUlti(DIGIT[code]);
@@ -4051,29 +5145,44 @@ window.addEventListener('keydown', (e) => {
   if (code === 'Space') { if (G.tut) endTutorial(true); else if (G.phase === 'breather') startWave(); return; }
   if (['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(code)) held.add(code);
 });
+function panelKey(e, code) {
+  if (code === 'Escape') { e.preventDefault(); closePanel(); return; }
+  const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[code];
+  if (step) { e.preventDefault(); moveFocus(step); }
+}
+function hubKey(e, code) {
+  if (code === 'Escape' || code === 'KeyP') { if (G.paused) resume(); else pause(); return; }
+  if (code === 'KeyM') { toggleClick(); return; }
+  if (G.paused || G.hub.leaving) return;
+  const dir = { ArrowUp: 'up', ArrowDown: 'down', ArrowRight: 'right', ArrowLeft: 'left' }[code];
+  if (dir) { drum(dir, e.timeStamp); return; }
+  if (code === 'KeyE' || code === 'Enter' || code === 'Space') { e.preventDefault(); interact(); return; }
+  if (['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(code)) held.add(code);
+}
 window.addEventListener('keyup', (e) => held.delete(codeOf(e)));
 window.addEventListener('blur', () => { held.clear(); pause(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
 
-$('startBtn').addEventListener('click', () => start());
+$('startBtn').addEventListener('click', () => enterHub(false));
 $('tutBtn').addEventListener('click', () => start(true));
-$('againBtn').addEventListener('click', () => start(false));
+$('againBtn').addEventListener('click', () => enterHub(true));
+$('quickBtn').addEventListener('click', () => start(false));
 $('resumeBtn').addEventListener('click', resume);
-$('restartBtn').addEventListener('click', () => { G.paused = false; start(false); });
+$('restartBtn').addEventListener('click', abandonRun);
 $('applyBtn').addEventListener('click', () => { setOffset(Number($('applyBtn').dataset.value) || 0); G.errs = []; $('applyBtn').hidden = true; $('calib').textContent = 'Uygulandı. Birkaç vuruş sonra tekrar bakabilirsin.'; });
 $('offset').addEventListener('input', (e) => setOffset(Number(e.target.value) || 0));
 $('clickBtn').addEventListener('click', toggleClick);
 for (const k of VOL_KEYS) $(VOL_ID[k]).addEventListener('input', (e) => setVolume(k, (Number(e.target.value) || 0) / 100));
 $('konakGo').addEventListener('click', leaveKonak);
 
-const best = Number(store.get('mehter3.best', 0)) || 0;
-const wins = Number(store.get('mehter3.wins', 0)) || 0;
-if (best > 0) {
+if (meta.best > 0) {
   $('bestLine').hidden = false;
-  $('bestLine').textContent = wins > 0 ? `Seferi ${wins} kez tamamladın.` : `En iyi seferin: ${Math.floor((best - 1) / 5) + 1}. bölüm, ${(best - 1) % 5 + 1}. dalga.`;
+  $('bestLine').textContent = (meta.wins > 0 ? `Seferi ${meta.wins} kez tamamladın.` : `En iyi seferin: ${bestText(meta.best)}.`) + ` Defterde ${meta.san} şan var.`;
 }
 
+// The title is shown over the konak.
 newGame();
+placeInHub();
 requestAnimationFrame(frame);
 })();
 </script>
