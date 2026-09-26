@@ -275,13 +275,16 @@ has played it. Everything not listed here is as in prototype 2. Its storage keys
 `mehter3.*`. `game-loop-flowchart.html` and its PDF draw this prototype.
 
 - **Play any time, on the beat is better.** The four instruments of decision 18 can be played at
-  any moment they are ready. Each has a cooldown: VUR 0.9 s, DİREN 1.2 s, ATIL 3.5 s,
-  TOPLAN 5 s. The beat keeps ticking at 80 bpm, and every beat (0.75 s) is a chance to be on
-  time:
-  - on the beat (Perfect ±60 ms, Good ±150 ms): the order is ×1.25 on Perfect, the cooldown is
-    30% shorter, Cezbe rises (once per beat, so a chord does not pay twice), and the streak grows;
-  - off the beat: the order still goes out at ×0.75, the full cooldown applies, no Cezbe, and the
-    streak breaks. There is no miss penalty.
+  any moment they are ready. Each has a cooldown counted in beats (decision 23): VUR and DİREN
+  one beat, ATIL and TOPLAN two. The beat keeps ticking at 80 bpm, and every beat (0.75 s) is a
+  chance to be on time:
+  - on the beat (Perfect ±60 ms, Good ±150 ms): the order is ×1.25 on Perfect, the instrument is
+    ready again 150 ms before the beat its cooldown ends on (so VUR and DİREN can be played on
+    every beat, ATIL and TOPLAN on every second one), Cezbe rises (once per beat, so a chord does
+    not pay twice), and the streak grows;
+  - off the beat: the order still goes out at ×0.75, the cooldown runs its full beats from the
+    press (so the next beat is usually missed), no Cezbe, and the streak breaks. There is no miss
+    penalty.
   - An instrument that is not ready only ticks; the HUD buttons darken from the top while they
     recharge.
   - Cezbe drops 3 every 1.5 s after 3 s without a press on the beat.
@@ -381,6 +384,19 @@ Build on these; do not re-propose what they rule out.
     left the wave behind. Built as: when the goal is 700 px or more from the leader, its groups
     and its garrison come at the band from the goal's side, and a monster more than 650 px from
     the leader moves 3 times faster until it is back. The numbers are Claude's.
+
+23. **2026-09-26: shorter cooldowns, and a land that looks better (prototype 3).** The old
+    cooldowns were too demanding: DİREN could not be played on every beat. VUR and DİREN now
+    recharge just before the next beat, ATIL and TOPLAN just before the beat after it, so the
+    player can play them every beat and every second beat. The ground was a flat colour with
+    grass tufts; the user asked for the level to look nicer. Built as: each chapter's land is
+    painted with light and shade swells, small things of its own (Tepegöz Yurdu: grass, stones,
+    flowers, bushes; Şahmeran Diyarı: reeds, puddles, ferns, mushrooms; Ejderha Dağı: glowing
+    cracks, embers, black glass), a landmark every thousand steps or so (a stone ring, a boulder
+    field, an old sheep fold; a pond, a ruined shrine; a lava pool, dragon ribs, a glass field),
+    trodden earth round the forts, drifting pollen, fireflies or embers in the air, and a dark
+    vignette. The ground is only looks: nothing on it blocks or slows anyone. The art and the
+    150 ms margin are Claude's.
 
 ## Claude's calls the user has not confirmed
 
