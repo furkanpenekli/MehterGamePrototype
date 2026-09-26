@@ -22,7 +22,7 @@ plan" and "Prototype 2" below.
 |---|---|
 | `mehter-seferi.html` | Prototype 1, the old version: plays version 6. Open it in a desktop browser with sound on. |
 | `mehter-seferi-v2.html` | Prototype 2: plays the version 7 plan. Kept as a separate file so prototype 1 stays playable. |
-| `mehter-seferi-v3.html` | Prototype 3: prototype 2 made real-time (decision 19). Not published as an artifact yet. |
+| `mehter-seferi-v3.html` | Prototype 3: prototype 2 made real-time (decision 19), with Mehterhane Konağı, the hub between runs (decision 25). Not published as an artifact yet. |
 | `game-loop-flowchart.html` | Four linked flowcharts: the run, every instrument press, the fight, the ulti. Since 2026-09-26 they draw prototype 3; the published artifact still shows the older prototype 2 loop. |
 | `dusman-plani.md` | The enemy plan for prototype 3, in Turkish: monsters instead of armies, three themed chapters, one boss each. A plan only, not built yet. |
 | `mehter-sefer-akisi.pdf` | The flowchart printed to A4, one chart per page. Re-print it from the HTML with headless Chrome after each change. |
@@ -52,6 +52,8 @@ code and comments are English.
 | TOPLAN / seal a combo (zil) | ← | X |
 | Walk; walk under a banner to pick it | W A S D | Left stick |
 | Pick a promotion card | A W D (left, middle, right) | X Y B |
+| Konak (prototype 3): talk to someone, go through the gate | E, Enter or Space | A |
+| Konak panel: move between buttons, press, close | Arrows, Enter, Esc | D-pad, A, B |
 | Skip the breather | Space | Back |
 | Pause, latency calibration, settings | Esc | Start |
 | Tempo: call-and-response / every beat | T | - |
@@ -323,6 +325,53 @@ has played it. Everything not listed here is as in prototype 2. Its storage keys
   | VUR only | 0 of 4 | always at 1-3 |
 
   The first three waves cost the mid bot 3 hearts in 12 runs; deaths gather at the end.
+- **Mehterhane Konağı (decision 25, 2026-09-26).** A Hades-style hub: every run starts in it and
+  every run ends in it, and it keeps what lasts from run to run. It is a walled courtyard at dusk,
+  drawn in the same three-quarter view as the land, and the title screen sits over it.
+  - **Walking round.** The leader walks it with WASD, and the army of the loadout follows. The beat
+    goes on and the instruments can be played anywhere, graded as in a run but with no Cezbe.
+    Walking up to someone shows what they say (it depends on how the last run went) and what E
+    does there. There are no enemies.
+  - **Şan** is the one thing kept between runs. A run pays it as it goes, and keeps it even when
+    the leader falls or the run is left from the pause menu: each wave cleared 3, 4 or 5 by chapter,
+    each outpost 4, each castle 8, each serdar 15 more, and the whole campaign 25 more (`SAN`).
+    A won campaign pays about 180, a fall in chapter 1 about 10-20. The HUD shows it under the
+    army, and the end screen shows what the run paid and what the book holds.
+  - **The Kethüda** (west) sells permanent upgrades for şan, rank by rank (`UPGRADES`):
+
+    | Upgrade | Ranks · price | Gives |
+    | --- | --- | --- |
+    | Sıkı Talim | 15 · 30 · 50 | soldiers' health +6% a rank |
+    | Ganimet Payı | 15 · 30 · 50 | loot +10% a rank |
+    | Ocak Kadrosu | 20 · 45 | one more starting company a rank |
+    | Kıdem | 20 · 40 | every terfi 3 loot cheaper a rank |
+    | Coşkulu Açılış | 20 · 40 | every wave starts with at least 5 Cezbe a rank |
+    | Gür Nevbet | 25 · 50 | aura +6% a rank |
+    | Hızır Duası | 40 · 90 | when the last heart goes, get up with one heart, once a rank; the monsters near the leader are thrown back and stunned |
+    | Akıncı Baskını | 30 | unlocks this ulti |
+    | Zil Çınlaması | 45 | unlocks this ulti |
+
+    Everything costs 655 şan. Akıncı Baskını and Zil Çınlaması are now locked until bought, at
+    the konak and at the chapter konak alike.
+  - **The Bayraktar** (north-west) keeps the loadout: the starting company (two companies of
+    Azap, Yeniçeri, Kemankeş or Deli, and one more per Ocak Kadrosu rank) and the four starting
+    ulti slots. The chosen company's banner stands tall on his rack. Each company card names the
+    monsters it is strong against, once they have been met.
+  - **The Talimci** (east) stands by a practice dummy. VUR and ATIL near it make the soldiers
+    strike it, and the damage shows over it, so a Perfect's worth can be felt. His panel shows the
+    latency suggestion from the presses made in the konak, the click, and "Eğitimle sefere çık".
+  - **The Vakanüvis** (north-east) keeps the chronicle: runs, wins, the furthest wave, all şan
+    earned, the last ten runs with what ended them, and every monster met, by chapter, with its
+    tip (unmet ones show as ???).
+  - **The gate** (north) starts the run: the leader walks out as the screen darkens. The first run
+    still starts with the tutorial.
+  - **Three musicians** of the band play on the beat by the south wall.
+  - The end screen's "Konağa dön" (Enter) goes back; "Hemen yeniden sefere" skips the konak. The
+    pause menu's "Seferi bırak, konağa dön" leaves a run and keeps its şan.
+  - Storage: `mehter3.meta` holds şan, ranks, the loadout, the chronicle and the monsters met. It
+    took over `mehter3.best` and `mehter3.wins`, which it reads once.
+  - The bots start runs straight away with an empty book, so their numbers are unchanged: after the
+    konak the good bot won 6 of 6, and the mid bot lost 8 of 8, as it did on the commit before.
 - **Next:** publishing prototype 3 and the flowchart as artifacts, and republishing prototype 2's
   artifact with decision 18.
 
@@ -419,6 +468,11 @@ Build on these; do not re-propose what they rule out.
     has 2 Od Cadısı instead of 3 (wave 3-4 gets the third); the Od Cadısı's fire on the leader
     is telegraphed as long as any blow at the leader. The numbers are Claude's.
 
+25. **2026-09-26: a konak at the start of the game, a Hades-style home base (prototype 3).** The
+    user: "oyunun başına da bir konak eklemeliyiz. hades usulu bir bekleme yeri ... ana base
+    olarak". Built as Mehterhane Konağı, a courtyard to walk round between runs (see "Prototype
+    3"). Everything in it beyond "a Hades-style hub" is Claude's proposal (listed below).
+
 ## Claude's calls the user has not confirmed
 
 - Decision 18's four instruments and their gains and prices: bringing back ATIL and TOPLAN, the
@@ -431,6 +485,13 @@ Build on these; do not re-propose what they rule out.
 - The siege as wave 6, the gate's 7000 health, and the run ending there. The v7 chapters replace it.
 - All of Cezbe's numbers: thresholds 10/20/30, the level table, −6 per miss.
 - Gamepad support and its button map.
+- Decision 25's content: şan as the one currency kept between runs, and what pays it; every
+  upgrade and price in `UPGRADES`; locking Akıncı Baskını and Zil Çınlaması behind şan; Hızır Duası;
+  the four people (Kethüda, Bayraktar, Talimci, Vakanüvis) and their lines; the starting company
+  and starting ulti slots as a loadout; the dummy; the musicians; the name Mehterhane Konağı; the
+  "Hemen yeniden sefere" shortcut. The upgrades make every later run easier, which the `DIFF` ramp
+  was not tuned for. A Hades-style answer would be a heat system (the Pact of Punishment) once
+  the upgrades are bought, and keepsakes for the loadout; neither is built.
 - One banner per breather, bringing two companies, and waves 1.5 times as large (decision 16
   only asked for soldiers on pick and a little longer waves).
 
@@ -442,7 +503,8 @@ Build on these; do not re-propose what they rule out.
   - boon stacks;
   - the military school;
   - the four scripted patterns.
-- Meta progression across runs, or a full reset on defeat as today.
+- How strong the konak's upgrades may be. Decision 25 answered "meta progression or a full
+  reset" with Claude's upgrades; whether the game should get harder again as they add up is open.
 - Army size: the prototype allows 30, against the Unity build's 4 slots.
 - Balance past wave 4 has only been bot-tested.
 
@@ -460,7 +522,15 @@ Every tuning value is at the top of the script in `mehter-seferi.html` (prototyp
 | `waveDef` · `waveBpm` | The run |
 | `CARDS` | Promotions |
 
+Prototype 3's konak keeps its own: `SAN` (what a run pays), `UPGRADES` (the Kethüda's book),
+`HUB` and `SPOTS` (the courtyard's layout and its people).
+
 ## Testing it without a person
+
+To look at the konak by hand in the desktop app's browser pane, `python tools/playtest/debugpage.py`
+writes `tools/playtest/out/hubdbg.html`: the page with frames on a timer, so it keeps running while
+the pane is hidden, and a `window.__dbg` handle (`enterHub`, `openPanel`, `panelAct`, `start`,
+`hurtLeader`, `meta`, `G`, ...). Serve the folder and open it from `out/`.
 
 The page runs off `requestAnimationFrame`, which stops while the desktop app's browser pane is
 hidden, and synthetic key events carry an empty `code` (the page falls back to `key`). What
