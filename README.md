@@ -372,6 +372,15 @@ has played it. Everything not listed here is as in prototype 2. Its storage keys
     took over `mehter3.best` and `mehter3.wins`, which it reads once.
   - The bots start runs straight away with an empty book, so their numbers are unchanged: after the
     konak the good bot won 6 of 6, and the mid bot lost 8 of 8, as it did on the commit before.
+- **Background music** (decision 26). A quiet track plays on the beat clock under everything, a
+  different one in each land and a much calmer one in the konak (the hub and the chapter konak
+  alike). It is procedural Web Audio, each track a makam: Tepegöz Yurdu a ney in Hüseyni, Şahmeran
+  Diyarı a kanun-like pluck in Hicaz, Ejderha Dağı a low horn in Saba with a soft heartbeat every
+  other beat, the konak a sparse ud (and now and then a ney) in Rast at about half the level. Each
+  has a low drone, 16-beat phrases and a whole phrase of rest in its loop; none has drums, so the
+  player's davul stays alone. A new track starts on the next bar and crossfades in. It is not
+  adaptive (decision 3). It has its own bus, softened by a lowpass and a dark echo, and its own
+  slider, "Fon müziği", in the pause menu (`mehter.volume.music`).
 - **Next:** publishing prototype 3 and the flowchart as artifacts, and republishing prototype 2's
   artifact with decision 18.
 
@@ -472,6 +481,10 @@ Build on these; do not re-propose what they rule out.
     user: "oyunun başına da bir konak eklemeliyiz. hades usulu bir bekleme yeri ... ana base
     olarak". Built as Mehterhane Konağı, a courtyard to walk round between runs (see "Prototype
     3"). Everything in it beyond "a Hades-style hub" is Claude's proposal (listed below).
+26. **2026-09-26: light background music, one per land, a calmer one in the konak (prototype
+    3).** The user: "oyuna güzel bir arka fon ekle her temada değişsin ama çok hafif olsun
+    konaklarda da çok daha sakin bir konak müziği olacak". It is quiet and does not follow the
+    fight, so decision 3 still holds; the music itself is Claude's (listed below).
 
 ## Claude's calls the user has not confirmed
 
@@ -492,6 +505,8 @@ Build on these; do not re-propose what they rule out.
   "Hemen yeniden sefere" shortcut. The upgrades make every later run easier, which the `DIFF` ramp
   was not tuned for. A Hades-style answer would be a heat system (the Pact of Punishment) once
   the upgrades are bought, and keepsakes for the loadout; neither is built.
+- Decision 26's music: the makams, the voices, every phrase, the levels, the echo, and the
+  chapter konak playing the konak's track.
 - One banner per breather, bringing two companies, and waves 1.5 times as large (decision 16
   only asked for soldiers on pick and a little longer waves).
 

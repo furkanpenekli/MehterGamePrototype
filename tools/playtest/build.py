@@ -22,7 +22,7 @@ prelude = r'''<script>
     resume() { return Promise.resolve(); } suspend() { return Promise.resolve(); }
     createBuffer() { return { getChannelData: () => new Float32Array(8) }; }
   }
-  for (const m of ['createGain', 'createOscillator', 'createBufferSource', 'createBiquadFilter', 'createDynamicsCompressor']) FakeAC.prototype[m] = function () { return P(); };
+  for (const m of ['createGain', 'createOscillator', 'createBufferSource', 'createBiquadFilter', 'createDynamicsCompressor', 'createDelay']) FakeAC.prototype[m] = function () { return P(); };
   window.AudioContext = FakeAC;
   window.requestAnimationFrame = (f) => setTimeout(() => f(performance.now()), 16);
 })();

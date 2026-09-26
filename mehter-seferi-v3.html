@@ -280,6 +280,11 @@
         <input type="range" id="volBeat" min="0" max="100" step="5">
         <span class="mono vol" id="volBeatVal"></span>
       </div>
+      <div class="row">
+        <label for="volMusic">Fon müziği</label>
+        <input type="range" id="volMusic" min="0" max="100" step="5">
+        <span class="mono vol" id="volMusicVal"></span>
+      </div>
       <div class="opts">
         <div class="opt"><span>Tık sesi <kbd>M</kbd></span><button class="btn ghost" id="clickBtn" type="button"></button></div>
       </div>
@@ -353,7 +358,7 @@ const store = {
 };
 // The latency offset, the click and the volumes are shared between the prototypes: they belong
 // to the device. Volumes are 0-1 and scale each bus's own level.
-const VOL_KEYS = ['master', 'sfx', 'beat'];
+const VOL_KEYS = ['master', 'sfx', 'beat', 'music'];
 const volStored = store.get('mehter.volume', {}) || {};
 const settings = {
   offsetMs: Number(store.get('mehter.offsetMs', 0)) || 0,
@@ -692,7 +697,7 @@ const validUltis = (l) => l.length === 4 && new Set(l).size === 4 && l.every((id
 if (!validUltis(meta.ultis)) meta.ultis = DEFAULT_ULTIS.slice();
 
 // ---------------------------------------------------------------- audio
-let actx = null, master, beatBus, sfxBus, noiseBuf;
+let actx = null, master, beatBus, sfxBus, musicBus, noiseBuf;
 function initAudio() {
   const AC = window.AudioContext || window.webkitAudioContext;
   actx = new AC({ latencyHint: 'interactive' });
@@ -702,16 +707,22 @@ function initAudio() {
   master.connect(comp); comp.connect(actx.destination);
   beatBus = actx.createGain(); beatBus.connect(master);
   sfxBus = actx.createGain(); sfxBus.connect(master);
+  // The music is softened and given a little room: a dark echo three quarters of a beat long.
+  musicBus = actx.createGain();
+  const mlp = filt('lowpass', 3800, 0.5), echo = actx.createDelay(1), fb = actx.createGain(), wet = actx.createGain(), elp = filt('lowpass', 1800);
+  echo.delayTime.value = 0.75 * 60 / BPM; fb.gain.value = 0.3; wet.gain.value = 0.35;
+  musicBus.connect(mlp); mlp.connect(master);
+  mlp.connect(echo); echo.connect(elp); elp.connect(fb); fb.connect(echo); elp.connect(wet); wet.connect(master);
   applyVolume();
   noiseBuf = actx.createBuffer(1, actx.sampleRate, actx.sampleRate);
   const d = noiseBuf.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
 }
 // Each bus's own level times the player's setting.
-const BUS_LEVEL = { master: 0.9, sfx: 0.8, beat: 0.55 };
+const BUS_LEVEL = { master: 0.9, sfx: 0.8, beat: 0.55, music: 0.4 };
 function applyVolume() {
   if (!actx) return;
-  const bus = { master, sfx: sfxBus, beat: beatBus };
+  const bus = { master, sfx: sfxBus, beat: beatBus, music: musicBus };
   for (const k of VOL_KEYS) bus[k].gain.setTargetAtTime(BUS_LEVEL[k] * settings.vol[k], actx.currentTime, 0.02);
 }
 function env(g, t, a, peak, decay) {
@@ -817,13 +828,164 @@ function sfx(name, minGap, fn) {
   sfxClock[name] = now; fn(now);
 }
 
-// No music: the real track comes later. A quiet click on every call stands in for its beat
-// (M toggles it), louder every second call. The beat between two calls is silent. The konak
-// keeps the beat too, so the player can practise there.
+// A quiet click on every call marks the beat (M toggles it), louder every second call; the
+// background music below plays under it. The konak keeps the beat too, so the player can
+// practise there.
 const beatMode = () => G && (G.mode === 'play' || G.mode === 'hub');
 function scheduleBeat(k, t) {
+  scheduleMusic(k, t);
   if (!beatMode() || !isCallBeat(k)) return;
   if (settings.click) S.click(t, 1, beatBus, k % 4 === 0);
+}
+
+// ---------------------------------------------------------------- fon müziği
+// A quiet background track, a different one in each land and a much calmer one in the konak
+// (decision 26). It is not adaptive: it plays on the beat clock whatever happens in the fight,
+// sits far under the instruments, and has no drums of its own, so it never competes with the
+// player's davul. Each track is a makam: a drone, a ney or a plucked string, and phrases of 16
+// beats that loop with rests between them.
+const MAKAM = {
+  husseyni: [0, 1.5, 3, 5, 7, 8.5, 10],
+  hicaz: [0, 1, 4, 5, 7, 8, 10],
+  saba: [0, 1.5, 3, 4, 7, 8, 10],
+  rast: [0, 2, 3.5, 5, 7, 9, 10.5],
+};
+// A phrase is a list of [beat, degree, beats long]; null is a phrase of drone alone.
+const TRACKS = {
+  highland: {
+    makam: 'husseyni', root: 293.66, drone: [73.42, 110], voice: 'ney', level: 1,
+    phrases: [
+      [[0, 4, 1.5], [1.5, 3, 0.5], [2, 2, 2], [4, 3, 1], [5, 2, 1], [6, 1, 2], [8, 2, 1.5], [9.5, 1, 0.5], [10, 0, 4]],
+      [[0, 4, 2], [2, 5, 1], [3, 4, 1], [4, 3, 2], [6, 4, 2], [8, 2, 1], [9, 3, 1], [10, 1, 2], [12, 0, 3]],
+      null,
+      [[0, 0, 1], [1, 2, 1], [2, 4, 2], [4, 7, 3], [7, 5, 1], [8, 4, 2], [10, 2, 1], [11, 1, 1], [12, 0, 4]],
+    ],
+  },
+  swamp: {
+    makam: 'hicaz', root: 293.66, drone: [73.42, 110], voice: 'pluck', level: 1,
+    phrases: [
+      [[0, 0], [0.5, 1], [1, 2], [2, 1], [3, 0], [4, 3], [4.5, 2], [5, 1], [6, 2], [8, 4], [9, 3], [9.5, 2], [10, 1], [12, 0], [14, -1], [15, 0]],
+      [[0, 4], [1, 5], [1.5, 4], [2, 3], [4, 2], [5, 3], [6, 1], [8, 2], [8.5, 1], [9, 0], [12, -3], [13, -2], [14, 0]],
+      null,
+      [[0, 4], [0.5, 5], [1, 6], [2, 5], [3, 4], [4, 3], [6, 2], [8, 3], [9, 2], [10, 1], [11, 0], [12, 1], [14, 0]],
+    ],
+  },
+  volcano: {
+    makam: 'saba', root: 220, drone: [55, 82.41], voice: 'horn', level: 1, pulse: true,
+    phrases: [
+      [[0, 0, 2], [2, 1, 1], [3, 2, 1], [4, 3, 3], [7, 2, 1], [8, 1, 2], [10, 0, 4]],
+      [[0, 4, 2], [2, 3, 1], [3, 2, 1], [4, 3, 2], [6, 2, 2], [8, 1, 1], [9, 2, 1], [10, 0, 4]],
+      null,
+      [[0, 2, 1], [1, 3, 1], [2, 4, 2], [4, 5, 1], [5, 4, 1], [6, 3, 2], [8, 2, 2], [10, 1, 1], [11, 0, 3]],
+    ],
+  },
+  // The konak's is slower and sparser: an ud now and then, a ney once in a while, a low drone.
+  konak: {
+    makam: 'rast', root: 196, drone: [49, 73.42], voice: 'ud', level: 0.55,
+    phrases: [
+      [[0, 0], [2, 2], [3, 4], [6, 3], [8, 2], [10, 1], [12, 0]],
+      null,
+      [[0, 4], [2, 5], [3, 4], [6, 3], [8, 4], [10, 2], [11, 1], [12, 0]],
+      [[0, 4, 4, 'ney'], [4, 5, 2, 'ney'], [6, 4, 2, 'ney'], [8, 2, 6, 'ney']],
+      null,
+    ],
+  },
+};
+const PHRASE = 16;
+const trackKey = () => {
+  if (!G || !beatMode()) return null;
+  if (G.mode === 'hub' || G.konak) return 'konak';
+  return THEMES[clamp(G.chapter, 1, THEMES.length) - 1].deco;
+};
+const mus = { key: null, startK: 0, lastK: -1, gains: {} };
+function degHz(tr, d) {
+  const steps = MAKAM[tr.makam], o = Math.floor(d / steps.length), i = d - o * steps.length;
+  return tr.root * Math.pow(2, (steps[i] + 12 * o) / 12);
+}
+// Each track plays into a gain of its own, so a change of land or a konak crossfades.
+function trackGain(key) {
+  if (!mus.gains[key]) { const g = actx.createGain(); g.gain.value = 0; g.connect(musicBus); mus.gains[key] = g; }
+  return mus.gains[key];
+}
+function fadeTracks(key, t) {
+  if (key) trackGain(key);
+  for (const k in mus.gains) {
+    const g = mus.gains[k].gain, to = k === key ? TRACKS[k].level : 0;
+    g.cancelScheduledValues(t); g.setTargetAtTime(to, t, k === key ? 1.2 : 0.8);
+  }
+}
+const M = {
+  // A ney: a breathy sine that swells in and wavers a little.
+  ney(t, f, dur, v, bus) {
+    const g = gainTo(bus), end = t + dur;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(v, t + Math.min(0.18, dur * 0.3));
+    g.gain.setValueAtTime(v, Math.max(t + 0.18, end - 0.25));
+    g.gain.linearRampToValueAtTime(0.0001, end + 0.3);
+    const o = osc('sine', f, t, dur + 0.35), o2 = osc('triangle', f * 2, t, dur + 0.35), g2 = actx.createGain();
+    g2.gain.value = 0.12; o2.connect(g2); g2.connect(g); o.connect(g);
+    const lfo = osc('sine', 4.6, t, dur + 0.35), ld = actx.createGain();
+    ld.gain.setValueAtTime(0, t); ld.gain.linearRampToValueAtTime(f * 0.006, t + 0.5);
+    lfo.connect(ld); ld.connect(o.frequency); ld.connect(o2.frequency);
+    const n = noise(t, dur + 0.3), bp = filt('bandpass', f * 2, 2.5), gn = actx.createGain();
+    gn.gain.value = 0.25; n.connect(bp); bp.connect(gn); gn.connect(g);
+  },
+  // A low, reedy horn for the dragon's mountain.
+  horn(t, f, dur, v, bus) {
+    const g = gainTo(bus), end = t + dur;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(v, t + 0.25);
+    g.gain.setValueAtTime(v, Math.max(t + 0.25, end - 0.3));
+    g.gain.linearRampToValueAtTime(0.0001, end + 0.4);
+    const lp = filt('lowpass', 900, 0.7); lp.connect(g);
+    for (const d of [-4, 4]) { const o = osc('sawtooth', f, t, dur + 0.45); o.detune.value = d; o.connect(lp); }
+  },
+  // A kanun-like pluck: bright, then dark as it dies.
+  pluck(t, f, v, bus, decay = 0.9) {
+    const g = gainTo(bus); env(g, t, 0.004, v, decay);
+    const lp = filt('lowpass', f * 6, 1.2); lp.frequency.exponentialRampToValueAtTime(f * 1.5, t + decay * 0.6); lp.connect(g);
+    osc('triangle', f, t, decay).connect(lp);
+    const o = osc('sawtooth', f, t, decay), og = actx.createGain(); og.gain.value = 0.35; o.connect(og); og.connect(lp);
+  },
+  // Two soft saws a few cents apart under a slowly breathing filter.
+  drone(t, freqs, dur, v, bus) {
+    const g = gainTo(bus), end = t + dur;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(v, t + 2);
+    g.gain.setValueAtTime(v, end - 2);
+    g.gain.linearRampToValueAtTime(0.0001, end + 1.5);
+    const lp = filt('lowpass', 320, 0.5); lp.connect(g);
+    const lfo = osc('sine', 0.08, t, dur + 1.6), ld = actx.createGain(); ld.gain.value = 120; lfo.connect(ld); ld.connect(lp.frequency);
+    for (const f of freqs) for (const d of [-6, 6]) { const o = osc('sawtooth', f, t, dur + 1.6); o.detune.value = d; o.connect(lp); }
+  },
+  // The mountain's slow heartbeat: a deep, soft swell every other beat.
+  pulse(t, v, bus) {
+    const g = gainTo(bus); env(g, t, 0.05, v, 0.6);
+    osc('sine', 44, t, 0.7).connect(g);
+  },
+};
+function scheduleMusic(k, t) {
+  const key = trackKey();
+  if (key !== mus.key || k <= mus.lastK) {
+    // A new track starts on the next bar, so its phrases line up with the accented beat.
+    mus.key = key; mus.startK = Math.ceil(k / 4) * 4;
+    fadeTracks(key, t);
+  }
+  mus.lastK = k;
+  if (!key || k < mus.startK) return;
+  const tr = TRACKS[key], bus = trackGain(key), bd = 60 / BPM;
+  const pos = k - mus.startK, at = pos % PHRASE, phrase = tr.phrases[Math.floor(pos / PHRASE) % tr.phrases.length];
+  if (at === 0) M.drone(t, tr.drone, PHRASE * bd + 1.5, 0.05, bus);
+  if (tr.pulse && at % 2 === 0) M.pulse(t, 0.12, bus);
+  if (!phrase) return;
+  for (const [b, d, len = 1, voice = tr.voice] of phrase) {
+    if (b < at || b >= at + 1) continue;
+    const tt = t + (b - at) * bd, f = degHz(tr, d);
+    if (voice === 'ney') M.ney(tt, f, len * bd, 0.09, bus);
+    else if (voice === 'horn') M.horn(tt, f, len * bd, 0.045, bus);
+    else if (voice === 'ud') M.pluck(tt, f, 0.13, bus, 1.6);
+    else M.pluck(tt, f, 0.11, bus);
+  }
 }
 
 // ---------------------------------------------------------------- the beat clock
@@ -5053,7 +5215,7 @@ function resume() {
   const back = G.mode === 'hub' && G.hub.panel && $('hubPanel').querySelector('button:not([disabled])');
   if (back) back.focus(); else cv.focus();
 }
-const VOL_ID = { master: 'volMaster', sfx: 'volSfx', beat: 'volBeat' };
+const VOL_ID = { master: 'volMaster', sfx: 'volSfx', beat: 'volBeat', music: 'volMusic' };
 function refreshOptions() {
   $('clickBtn').textContent = settings.click ? 'Açık' : 'Kapalı';
   for (const k of VOL_KEYS) {
