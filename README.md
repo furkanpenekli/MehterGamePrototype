@@ -23,7 +23,7 @@ plan" and "Prototype 2" below.
 | `mehter-seferi.html` | Prototype 1, the old version: plays version 6. Open it in a desktop browser with sound on. |
 | `mehter-seferi-v2.html` | Prototype 2: plays the version 7 plan. Kept as a separate file so prototype 1 stays playable. |
 | `mehter-seferi-v3.html` | Prototype 3: prototype 2 made real-time (decision 19), with Mehterhane Konağı, the hub between runs (decision 25). Not published as an artifact yet. |
-| `game-loop-flowchart.html` | Four linked flowcharts: the run, every instrument press, the fight, the ulti. Since 2026-09-26 they draw prototype 3; the published artifact still shows the older prototype 2 loop. |
+| `game-loop-flowchart.html` | Five linked flowcharts: the konak between runs (0), the run, every instrument press, the fight, the ulti. Since 2026-09-26 they draw prototype 3; the published artifact still shows the older prototype 2 loop. |
 | `dusman-plani.md` | The enemy plan for prototype 3, in Turkish: monsters instead of armies, three themed chapters, one boss each. A plan only, not built yet. |
 | `mehter-sefer-akisi.pdf` | The flowchart printed to A4, one chart per page. Re-print it from the HTML with headless Chrome after each change. |
 | `README.md` | This file: the design, the user's decisions, what is still open. |
