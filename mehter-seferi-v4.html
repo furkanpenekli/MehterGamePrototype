@@ -239,7 +239,7 @@
       <div class="actions">
         <button class="btn" id="startBtn" type="button">Konağa gir</button>
         <button class="btn ghost" id="tutBtn" type="button">Eğitimle başla</button>
-        <span class="dim">İlk seferde kısa bir eğitim var · ses gerekir · oyun kolu: Y vur, A diren, B atıl, X toplan, LB RB LT RT kartlar, sol çubuk yürür · <kbd>Boşluk</kbd> eğitimi ya da nefesi atla · <kbd>Esc</kbd> duraklat, ses ayarı</span>
+        <span class="dim">İlk seferde adım adım bir eğitim var · ses gerekir · oyun kolu: Y vur, A diren, B atıl, X toplan, LB RB LT RT kartlar, sol çubuk yürür · <kbd>Enter</kbd> eğitimde adımı geç · <kbd>Boşluk</kbd> eğitimi ya da nefesi atla · <kbd>Esc</kbd> duraklat, ses ayarı</span>
       </div>
       <p class="dim" id="bestLine" hidden></p>
     </div>
@@ -1138,7 +1138,7 @@ function growHp(type, f) {
 // True when a blow is about to land on the leader, or a mass charge is on its way: the aura
 // warms red then. It is information; the player decides what to play.
 const dangerSoon = () => {
-  if (G.tut) return !!G.tut.fake;
+  if (G.tut && G.tut.fake) return true;
   if (G.hucum) return true;
   return G.pending.some((p) => !p.done && p.at - G.h < 0.9 && p.atk.shape !== 'spell' && (p.atk.shape === 'roar' || covers(p.atk, G.leader)));
 };
@@ -1150,7 +1150,7 @@ const gradeMult = (g) => (g === 'p' ? G.up.perfect : g === 'g' ? 1 : ORD.offBeat
 function addShake(v) { if (!reduceMotion) G.shake = Math.max(G.shake, v); }
 function bigText(text, sub, color, dur) { dur = dur || 1.2; G.big = [{ text, sub, color, life: dur, max: dur }]; }
 function showHint(text, beatsLong) { G.hint = { text, life: beatsLong * 60 / BPM, max: beatsLong * 60 / BPM }; }
-function hintOnce(id, text, beatsLong) { if (G.hintsShown.has(id)) return; G.hintsShown.add(id); showHint(text, beatsLong || 6); }
+function hintOnce(id, text, beatsLong) { if (G.tut || G.hintsShown.has(id)) return; G.hintsShown.add(id); showHint(text, beatsLong || 6); }
 function judge(text, color, sub) { G.judge = { text, color, sub, life: 0.6 }; }
 const STREAK_MARKS = [10, 25, 50, 75, 100, 150, 200];
 const CHEERS = ['AFERİN!', 'MAŞALLAH!', 'HELAL OLSUN!', 'YAŞA!', 'EFSANE!'];
@@ -1306,38 +1306,142 @@ function raidFell(f) {
 }
 
 // ---------------------------------------------------------------- tutorial
-// A short drill before the first wave: one step per instrument, no enemies and nothing to lose.
-// Each step shows what the instrument gives and what it costs; in the run the choice is free.
+// A guided drill before the first run, in four parts: walking and the beat, the four instruments,
+// Cezbe and the deck, and the fight. Most steps bring weakened chapter-1 monsters to practise on,
+// and it ends with a small practice wave. The leader loses no heart and no soldier falls here.
+//   key     the instrument the step is about (its name shows under the leader), or label instead
+//   need    how many times the step's goal must be met; count(kind, info) says what counts,
+//           poll() measures a goal that is a state (distance walked, Cezbe) instead
+//   spawn   monsters that come in near the band; refill brings them back when all are down
+//   group   monsters announced at the edge of the screen as in a wave, coming on beat groupAt
+//   groups  the practice wave's groups
+//   fight   the monsters attack; without it they only come close
+//   hucum   'every': a mass charge every few beats, and a Kös on its beat counts; 'auto': as in a wave
+//   bar     presses fill Cezbe; regen: it fills by itself too; cards: cards can be played
+//   hp      monster health ×; keep: the last step's monsters stay
+const TUT_UNIT = (kind, info) => kind === 'card' && !!info.k.unit;
 const TUT_STEPS = [null,
-  { key: 'up', need: 3, text: 'İstediğin an çal. Tempoya denk gelirse daha sert vurur, daha çabuk hazır olur, Cezbe dolar.' },
-  { key: 'down', need: 2, red: true, text: 'Kırmızı halka sana kapanıyor. Kapandığı an ↓ çal: darbe bloklanır. Ama kimse vurmaz.' },
-  { key: 'right', need: 2, text: 'Askerler uzağa atılır, sert vurur, kurulan saldırıyı keser. Ama birkaç saniye emir duymazlar.' },
-  { key: 'left', need: 2, text: 'Ordu sana koşar, can ve iki kat Cezbe kazanır. Ama ne vurur ne korur.' },
-  { key: 'card', need: 2, text: 'Sol altta elindeki dört kart. 1-4 ile oyna: Cezbe harcar, bölük çağırır ya da ulti atar. Oynanan kartın yerine sıradaki gelir.' },
+  { id: 'walk', sec: 'HAREKET', title: 'WASD · YÜRÜ', label: 'W A S D', color: '240,180,41', need: 5,
+    text: 'W A S D ile yürü (oyun kolunda sol çubuk). Ordu seni izler. Çevrendeki halka auradır: emirlerin yalnızca onun içindeki askerlere ulaşır.',
+    poll: (tu) => Math.floor(tu.walked / 60) },
+  { id: 'beat', sec: 'RİTİM', title: 'TEMPOYU YAKALA', label: '↑ ↓ → ← tempoda', color: '240,180,41', need: 4,
+    text: 'Aura altın rengine döndüğü an herhangi bir çalgıya bas. Tempoda basış PERFECT ya da İYİ sayılır: emir güçlenir, çalgı çabuk hazırlanır. Ritim dışı basış zayıf kalır.',
+    count: (kind, i) => kind === 'press' && i.grade !== 'o' },
+  { id: 'vur', sec: 'ÇALGILAR', key: 'up', need: 3, spawn: ['koc', 'koc', 'koc'], refill: true, hp: 1.5,
+    text: 'Davul auradaki bütün askerlere aynı anda vurdurur. Koçlar yaklaşınca tempoda ↑ çal. Askerler kendi kendilerine de vurur, ama yarım güçle.',
+    count: (kind, i) => kind === 'vur' && i.grade !== 'o' && i.hits > 0 },
+  { id: 'kos', sec: 'ÇALGILAR', key: 'down', need: 2, red: true,
+    text: 'Kırmızı halka sana kapanıyor: bu bir darbe. Kapandığı an ↓ çal, darbe bloklanır. Kös korur, ama o an kimse vurmaz.' },
+  { id: 'kos2', sec: 'ÇALGILAR', key: 'down', need: 3, spawn: ['koc', 'koc'], refill: true, fight: true, hp: 3,
+    text: 'Canavar da kırmızı işaretle saldırır, sana ya da bir askerine. İşaret kapanırken ↓ çal: auradaki herkes korunur. Tam anında basarsan saldıran sersemler.',
+    count: (kind) => kind === 'block' },
+  { id: 'atil', sec: 'ÇALGILAR', key: 'right', need: 2, spawn: ['sapanci', 'sapanci'], far: 300, refill: true, fight: true, hp: 2,
+    text: 'Sapancı uzakta durup taş atar. → çal: askerler uzağa atılır, bir buçuk kat sert vurur, kurulan saldırıyı keser. Ama 3 vuruş auranın dışında kalırlar: emir duymaz, Kös onları korumaz.',
+    count: (kind, i) => kind === 'atil' && i.grade !== 'o' && i.n > 0 },
+  { id: 'toplan', sec: 'ÇALGILAR', key: 'left', need: 2, keep: true, fight: true, hp: 2,
+    text: 'Zil dışarıdaki, savrulan, sersemleyen ya da zehirlenen askerleri koşturup geri getirir, biraz da can verir. Ne vurur ne korur; tempoda çalarsan Cezbe iki kat dolar.',
+    count: (kind, i) => kind === 'press' && i.dir === 'left' && i.grade !== 'o' },
+  { id: 'cezbe', sec: 'CEZBE VE DESTE', title: 'CEZBE', label: 'tempoda çal', color: '240,180,41', need: 4, bar: true, regen: true,
+    text: 'Sol alttaki Cezbe kartların bedelidir. Her 8 vuruşta bir kendiliğinden dolar, tempoda her vuruş biraz daha katar (Zil iki kat). Darbe yersen 2 düşer. 4 Cezbe biriktir.',
+    poll: () => Math.floor(G.bar + 1e-6) },
+  { id: 'kart', sec: 'CEZBE VE DESTE', title: 'BÖLÜK KARTI', label: '1-4 KART', color: '240,180,41', need: 1, bar: true, regen: true, cards: true,
+    text: 'Sol altta elindeki dört kart; kırmızı damla bedelidir, Cezbe yeten kart parlar. 1-4 ile bir bölük kartı oyna: askerler hemen gelir, 32 vuruş savaşır, ayaklarındaki altın yay bitince evine döner. Oynanan kartın yerine SIRADAKİ gelir.',
+    count: TUT_UNIT },
+  { id: 'karsi', sec: 'CEZBE VE DESTE', title: 'SÜRÜYE GÖRE KART', label: 'KEMANKEŞ', color: '111,179,90', need: 4, bar: true, regen: true, cards: true, fight: true,
+    group: ['yarasa', 'yarasa', 'yarasa', 'yarasa'], groupAt: 6, hand: 'kemankes', minBar: 3,
+    text: 'Sürü önceden haber verilir: ekranın kenarında ne geldiği, kaç vuruş kaldığı ve hangi askerin güçlü olduğu yazar. Yarasa uçar, mızrak ona yetişmez: Kemankeş kartını oyna. Altın sayılar iki kat hasardır.',
+    count: (kind, i) => kind === 'kill' && i.e.type === 'yarasa' },
+  { id: 'buyu', sec: 'CEZBE VE DESTE', title: 'BÜYÜ KARTI', label: 'TOP ATIŞI', color: '255,150,90', need: 1, bar: true, regen: true, cards: true,
+    spawn: ['koc', 'koc', 'koc', 'koc', 'koc', 'koc'], near: 190, refill: true, hp: 2, hand: 'top', minBar: 3,
+    text: 'Büyü kartı asker getirmez, anında iş görür. Top Atışı yakındaki bütün canavarları döver; Kös Duvarı 4 vuruş her darbeyi bloklar, Mehter Marşı canları doldurur, Hücum Borusu hasarı ikiye katlar. Bir büyü kartı oyna.',
+    count: (kind, i) => kind === 'card' && !i.k.unit },
+  { id: 'hucum', sec: 'SAVAŞ', title: 'TOPLU HÜCUM', key: 'down', need: 2, bar: true, regen: true, cards: true,
+    spawn: ['koc', 'koc', 'koc', 'koc', 'koc'], refill: true, hucum: 'every', hp: 4,
+    text: 'Canavarlar kimi zaman hep birlikte saldırır: TOPLU HÜCUM! Bütün darbeler üç vuruş sonra aynı anda iner. O vuruşta ↓ çal: auradaki herkes korunur. İki hücumu karşıla.' },
+  { id: 'dalga', sec: 'SAVAŞ', title: 'DENEME DALGASI', label: '', color: '240,180,41', bar: true, regen: true, cards: true, fight: true, hucum: 'auto', hp: 0.8, deck: true, minBar: 4,
+    groups: [['koc', 'koc', 'koc', 'koc', 'koc'], ['yarasa', 'yarasa', 'yarasa'], ['sapanci', 'sapanci'], ['koc', 'koc', 'koc', 'koc']],
+    text: 'Şimdi hepsi bir arada. Sürüye göre kart seç, darbeleri blokla, dağılanı topla. Düşen canavar ganimet bırakır; ganimet dolunca dalga sonunda terfi seçersin. Burada kalp gitmez.',
+    count: (kind) => kind === 'kill' },
 ];
-const tutTitle = (st) => (st.key === 'card' ? '1-4 Kart · SANCAK DESTESİ' : `${ORDERS[st.key].key} ${ORDERS[st.key].inst} · ${ORDERS[st.key].name}`);
-const tutColor = (st) => (st.key === 'card' ? '240,180,41' : ORDERS[st.key].color);
+const tutSt = () => TUT_STEPS[G.tut.step];
+const tutFlag = (f) => !!(G.tut && tutSt()[f]);
+const tutTitle = (st) => st.title || `${ORDERS[st.key].key} ${ORDERS[st.key].inst} · ${ORDERS[st.key].name}`;
+const tutColor = (st) => st.color || ORDERS[st.key].color;
+const tutLabel = (st) => (st.label != null ? st.label : `${ORDERS[st.key].key} ${ORDERS[st.key].name}`);
 function startTutorial() {
   G.phase = 'tutorial';
-  G.tut = { step: 1, count: 0, fake: null };
-  bigText('EĞİTİM', 'Dört çalgı, dört emir · Boşluk: atla', '#f0b429', 2);
+  G.tut = { step: 0, count: 0, fake: null, walked: 0, doneAt: 0, hucumK: 0, lx: G.leader.x, ly: G.leader.y };
+  tutStep(1);
 }
 function tutStep(n) {
-  G.tut.step = n; G.tut.count = 0;
-  const st = TUT_STEPS[n];
-  bigText(tutTitle(st), st.text, `rgb(${tutColor(st)})`, 1.8);
-  // The card step starts with a full Cezbe, so any card can be tried.
-  if (st.key === 'card') G.bar = T.barMax;
+  const tu = G.tut, prev = TUT_STEPS[tu.step], st = TUT_STEPS[n];
+  tu.step = n; tu.count = 0; tu.doneAt = 0; tu.fake = null; tu.walked = 0; tu.hucumK = G.curK + 2;
+  if (!st.keep) tutClear();
+  G.hpScale = st.hp || 1; G.dmgScale = 0.7;
+  // Cezbe starts empty where it is taught; a card step makes sure the card it is about is in
+  // hand and can be paid for.
+  if (st.id === 'cezbe') { G.bar = 0; setHand(DEFAULT_DECK); }
+  if (st.hand) toHand(st.hand);
+  if (st.deck) shuffleDeck(meta.deck);
+  if (st.minBar && G.bar < st.minBar) G.bar = st.minBar;
+  G.regenAt = G.curK + T.regenBeats;
+  if (st.spawn) tutSpawn(st);
+  G.waveBeat = 0; G.groups = []; G.incoming = [];
+  if (st.group) G.groups.push({ at: st.groupAt, list: st.group, done: false, warned: false });
+  if (st.groups) {
+    let at = T.firstGroup;
+    for (const list of st.groups) { G.groups.push({ at, list, done: false, warned: false }); at += clamp(Math.round(list.length * 0.8), T.groupGap[0], T.groupGap[1]); }
+    tu.need = st.groups.reduce((s, l) => s + l.length, 0);
+  }
+  // The drill's groups come from the right, so their marker stays clear of the panel and the hand.
+  if (st.group || st.groups) G.dir = rand(-0.5, 0.5);
+  G.hucum = null; G.nextHucum = st.hucum === 'auto' ? G.h + hucumGap() * 0.7 : Infinity;
+  const newSec = !prev || prev.sec !== st.sec;
+  bigText(newSec ? st.sec : tutTitle(st), newSec ? tutTitle(st) : `Adım ${n}/${TUT_STEPS.length - 1}`, `rgb(${tutColor(st)})`, 1.8);
   sfx('tutStep', 0.2, (t) => S.arp(t, 0.8, sfxBus, [587.33, 880], 0.08));
+}
+const tutNeed = () => G.tut.need && tutSt().groups ? G.tut.need : tutSt().need;
+// A step's monsters come in on one side, close enough to reach the band in a few seconds.
+function tutSpawn(st) {
+  const L = G.leader, a = rand(0, TAU), R = st.far || st.near || 320;
+  st.spawn.forEach((type, i) => {
+    const aa = a + (i - (st.spawn.length - 1) / 2) * (st.near ? 0.9 : 0.25);
+    spawnEnemy(type, L.x + Math.cos(aa) * R + rand(-20, 20), L.y + Math.sin(aa) * R + rand(-20, 20));
+  });
+  sfx('horn', 0.2, (t) => S.kos(t, 0.3, sfxBus));
+}
+// The step's monsters leave in a puff, with whatever they were doing.
+function tutClear() {
+  for (const e of G.enemies) { if (e.holding) releaseGrab(e); burst(e.x, e.y, '#8a7a5a', 8, 120); }
+  G.enemies = []; G.pending = []; G.zones = []; G.groups = []; G.incoming = []; G.shots = []; G.hucum = null;
+}
+// The drill's deck: the default one in its own order, so the cards the steps talk about come up.
+function setHand(ids) {
+  const list = ids.map((id) => KART_BY_ID[id]);
+  G.hand = list.slice(0, HAND); G.queue = list.slice(HAND);
+}
+function toHand(id) {
+  if (G.hand.some((k) => k && k.id === id)) return;
+  const qi = G.queue.findIndex((k) => k.id === id);
+  if (qi < 0) return;
+  const [k] = G.queue.splice(qi, 1);
+  const out = G.hand[0];
+  G.hand[0] = k;
+  if (out) G.queue.unshift(out);
 }
 function endTutorial(skipped) {
   store.set('mehter4.tutorial', true);
   G.tut = null;
-  // Practice presses and practice cards do not carry over into the run.
+  // Practice presses, cards, monsters and loot do not carry over into the run.
+  tutClear();
   G.bar = 0; G.streak = 0; G.kos = null; G.wallUntil = G.rushUntil = -1;
+  G.coins = []; G.ganimet = 0; G.lootFrac = 0; G.hpScale = G.dmgScale = 1; G.waveBeat = 0; G.hint = null;
   for (const k in G.cd) G.cd[k] = 0;
   G.soldiers = G.soldiers.filter((s) => s.core);
-  for (const s of G.soldiers) { s.outUntil = -1; s.dash = null; s.hp = s.maxHp; }
+  for (const s of G.soldiers) {
+    s.outUntil = -1; s.dash = null; s.hp = s.maxHp; s.grabbed = null; s.target = null;
+    s.dazeUntil = s.poisonUntil = -Infinity; s.kx = s.ky = 0;
+  }
   shuffleDeck(meta.deck);
   G.stats = newStats(G.soldiers.length);
   if (!skipped) {
@@ -1347,18 +1451,43 @@ function endTutorial(skipped) {
   }
   startBreather();
 }
-// In the Kös step a practice blow closes on the leader and lands three beats after it starts;
-// a new one starts on the beat after the last has landed.
+// Every beat of the drill: the practice blow of the first Kös step, Cezbe filling by itself,
+// monsters coming back, announced groups and mass charges.
 function tutorialBeat(b) {
-  const tu = G.tut;
-  if (!TUT_STEPS[tu.step].red || tu.fake) return;
-  tu.fake = { from: b.t, at: b.t + 3 * 60 / BPM };
-  sfx('warn', 0.2, (t) => S.warn(t, 0.5, sfxBus));
+  const tu = G.tut, st = tutSt();
+  if (st.red && !tu.fake && !tu.doneAt) {
+    // A practice blow closes on the leader and lands three beats after it starts; a new one
+    // starts on the beat after the last has landed.
+    tu.fake = { from: b.t, at: b.t + 3 * 60 / BPM };
+    sfx('warn', 0.2, (t) => S.warn(t, 0.5, sfxBus));
+  }
+  if (st.regen) regenBeat();
+  if (st.refill && !tu.doneAt && !G.enemies.length) tutSpawn(st);
+  G.waveBeat++;
+  groupBeat();
+  if (st.hucum === 'every' && !G.hucum && G.curK >= tu.hucumK) G.nextHucum = 0;
+  if (st.hucum) {
+    const had = G.hucum;
+    hucumBeat(b);
+    if (G.hucum && G.hucum !== had) tu.hucumK = G.curK + 8;
+  }
+  if (st.groups && !tu.doneAt && G.groups.every((g) => g.done) && !G.enemies.length) tutDone();
 }
 function tutorialUpdate(h) {
-  const f = G.tut && G.tut.fake, L = G.leader;
+  const tu = G.tut, st = tutSt(), L = G.leader;
+  tu.walked += Math.hypot(L.x - tu.lx, L.y - tu.ly); tu.lx = L.x; tu.ly = L.y;
+  if (tu.doneAt) { if (h >= tu.doneAt) tutNext(); return; }
+  if (st.poll) { const v = Math.min(st.need, st.poll(tu)); if (v !== tu.count) { tu.count = v; if (v >= st.need) tutDone(); } }
+  // A mass charge is met when the Kös covers the beat all its blows land on.
+  const hc = G.hucum;
+  if (st.hucum === 'every' && hc && !hc.judged && h >= hc.at + ORD.kosLate) {
+    hc.judged = true;
+    if (kosCovers(hc.at)) { floatText(L.x, L.y - 124, 'HÜCUM KARŞILANDI', '#9ecbff', 20, true); tutCount(); }
+    else floatText(L.x, L.y - 124, 'kaçtı · darbeler inerken ↓ çal', '#ff9a80', 16, true);
+  }
+  const f = tu.fake;
   if (!f || h < f.at + ORD.kosLate) return;
-  G.tut.fake = null;
+  tu.fake = null;
   if (kosCovers(f.at)) {
     floatText(L.x, L.y - 30, 'BLOK', '#9ecbff', 18, true);
     ring(L.x, L.y, '#7fb6ff', 40);
@@ -1369,15 +1498,30 @@ function tutorialUpdate(h) {
     addShake(4); G.flash = 0.35; G.flashColor = '255,60,40';
   }
 }
-// A press of the step's instrument counts; in the Kös step only a block does.
-function tutorialPress(dir) {
-  const st = TUT_STEPS[G.tut.step];
-  if (dir === st.key && !st.red) tutCount();
+// Something happened that a step may count: a press, a VUR or ATIL, a block, a card, a kill.
+function tutEvent(kind, info) {
+  const st = tutSt(), L = G.leader;
+  if (G.tut.doneAt) return;
+  // Another card than the one a card step is about still works, and says which one the step wants.
+  if (kind === 'card' && st.hand && info.k.id !== st.hand) floatText(L.x, L.y - 120, `Burada ${KART_BY_ID[st.hand].name} daha iyi olurdu`, '#f0b429', 15, true);
+  if (kind === 'card' && st.id === 'kart' && !info.k.unit) floatText(L.x, L.y - 120, 'Bu bir büyü kartı: bir bölük kartı dene', '#f0b429', 15, true);
+  if (st.count && st.count(kind, info)) tutCount();
 }
 function tutCount() {
   const tu = G.tut;
   tu.count++;
-  if (tu.count >= TUT_STEPS[tu.step].need) { if (tu.step < TUT_STEPS.length - 1) tutStep(tu.step + 1); else endTutorial(false); }
+  if (tu.count >= tutNeed()) tutDone();
+}
+// A step is done: a short cheer, and the next one starts a moment later.
+function tutDone() {
+  const tu = G.tut;
+  tu.doneAt = G.h + 1.1; tu.fake = null;
+  floatText(G.leader.x, G.leader.y - 110, 'TAMAM!', '#ffcf4a', 22, true);
+  burst(G.leader.x, G.leader.y, '#ffcf4a', 14, 220);
+  sfx('tutOk', 0.2, (t) => { S.zil(t, 0.6, sfxBus, true); S.arp(t, 0.6, sfxBus, [659.25, 987.77], 0.07); });
+}
+function tutNext() {
+  if (G.tut.step < TUT_STEPS.length - 1) tutStep(G.tut.step + 1); else endTutorial(false);
 }
 
 // ---------------------------------------------------------------- flow
@@ -1478,7 +1622,7 @@ function onBeat(b) {
     }
   }
   // Temporary companies go home when their time is up.
-  if (G.phase !== 'tutorial') for (const s of G.soldiers) if (!s.dead && s.until <= G.curK) sendHome(s);
+  for (const s of G.soldiers) if (!s.dead && s.until <= G.curK) sendHome(s);
   if (G.phase === 'tutorial') {
     tutorialBeat(b);
   } else if (G.phase === 'breather') {
@@ -1487,12 +1631,7 @@ function onBeat(b) {
   } else if (G.phase === 'wave') {
     G.waveBeat++;
     regenBeat();
-    // A group is announced warnBeats ahead, from the side it will come from.
-    for (const g of G.groups) {
-      if (!g.warned && G.waveBeat >= g.at - T.warnBeats) { g.warned = true; g.side = groupSide(); G.incoming.push(g); announceGroup(g); }
-      if (!g.done && G.waveBeat >= g.at) { g.done = true; spawnGroup(g.list, g.side); }
-    }
-    G.incoming = G.incoming.filter((g) => !g.done);
+    groupBeat();
     const tg = G.target;
     // A fort sends out its garrison; a serdar without summons of its own brings an escort.
     const th = theme();
@@ -1515,6 +1654,14 @@ function onBeat(b) {
     G.victoryBeat++;
     if (G.victoryBeat === 6) endRun(true);
   }
+}
+// A group is announced warnBeats ahead, from the side it will come from.
+function groupBeat() {
+  for (const g of G.groups) {
+    if (!g.warned && G.waveBeat >= g.at - T.warnBeats) { g.warned = true; g.side = groupSide(); G.incoming.push(g); announceGroup(g); }
+    if (!g.done && G.waveBeat >= g.at) { g.done = true; spawnGroup(g.list, g.side); }
+  }
+  G.incoming = G.incoming.filter((g) => !g.done);
 }
 function gameOver() { endRun(false); }
 // A run ends, fallen, won or left: its şan goes into the book and the Vakanüvis writes it down.
@@ -1618,14 +1765,14 @@ function drum(dir, stamp) {
     if (grade === 'p') G.stats.perfect++; else G.stats.good++;
     // One Cezbe gain per beat, so a chord of instruments does not pay twice. The breather is for
     // practice and pays nothing.
-    if (!b.claimed && G.phase !== 'breather') { b.claimed = true; addBar((grade === 'p' ? T.perfectGain : T.goodGain) * (dir === 'left' ? ORD.zilCezbe : 1)); }
+    if (!b.claimed && G.phase !== 'breather' && (!G.tut || tutFlag('bar'))) { b.claimed = true; addBar((grade === 'p' ? T.perfectGain : T.goodGain) * (dir === 'left' ? ORD.zilCezbe : 1)); }
   }
   showGrade(dir, grade, err);
   if (dir === 'up') cmdStrike(grade);
   else if (dir === 'down') cmdGuard(h, grade);
   else if (dir === 'right') cmdCharge(grade);
   else cmdRally(grade);
-  if (G.tut) tutorialPress(dir);
+  if (G.tut) tutEvent('press', { dir, grade });
 }
 // Grades a press heard at h against the nearest beat, keeps its error for the latency
 // suggestion, and starts the instrument's cooldown.
@@ -1707,6 +1854,7 @@ function cmdStrike(grade) {
   }
   if (n) sfx('hah', 0.08, (t) => S.shout(t, Math.min(0.9, 0.3 + n * 0.05), sfxBus, 150 + Math.random() * 20));
   if (hits && grade === 'p') { G.hitstop = 0.055; addShake(5); } else if (hits) addShake(2.5);
+  if (G.tut) tutEvent('vur', { grade, hits });
 }
 // DİREN: blows landing in the next moment on the leader or on soldiers that hear are blocked.
 // On the beat the guard stays up longer.
@@ -1736,6 +1884,7 @@ function cmdCharge(grade) {
   if (n) {
     sfx('hucum', 0.08, (t) => { S.shout(t, Math.min(1, 0.4 + n * 0.05), sfxBus, 190); S.shout(t + 0.1, Math.min(1, 0.4 + n * 0.05), sfxBus, 240); });
     addShake(grade === 'p' ? 5 : 3);
+    if (G.tut) tutEvent('atil', { grade, n });
     if (G.phase === 'wave') hintOnce('atil', 'ATIL: askerlerin dışarıda. Birkaç saniye emir duymazlar ve Kös onları korumaz. ← Zil ile geri topla.', 8);
   }
 }
@@ -1822,6 +1971,7 @@ function killEnemy(e, a, quiet) {
   const d = ENEMY[e.type];
   if (e.holding) releaseGrab(e);
   G.stats.kills++;
+  if (G.tut) tutEvent('kill', { e });
   burst(e.x, e.y, d.color, d.goal ? 50 : 16, d.goal ? 380 : 230);
   ring(e.x, e.y, '#ffffff', d.goal ? 90 : 30);
   if (!d.fixed) {
@@ -1938,7 +2088,7 @@ function hazard(type, spec, x, y) {
 // goes through its attacks in turn and, when its next one cannot reach, falls back on a far one.
 function tryAttack(e) {
   const d = ENEMY[e.type], L = G.leader;
-  if (G.phase !== 'wave' || G.h < e.atkReady || e.gallop > 0 || e.stunUntil >= G.curK || e.hidden) return;
+  if (!(G.phase === 'wave' || tutFlag('fight')) || G.h < e.atkReady || e.gallop > 0 || e.stunUntil >= G.curK || e.hidden) return;
   const tg = e.target;
   if (!tg || tg.dead) return;
   let id = nextAttack(e), spec = ATTACKS[id], aim = aimsAtLeader(spec) ? L : tg, advance = true;
@@ -2055,6 +2205,7 @@ function resolveStrike(p, guarded) {
     if (ENEMY[e.type].move === 'fly') e.lowUntil = G.h + e.gallop + ATK.lowSec;
   }
   if (e) finishAttack(e, blocked);
+  if (G.tut && blocked) tutEvent('block', {});
   if (blocked) {
     floatText(a.x, a.y - 30, 'BLOK', '#9ecbff', 18, true);
     sfx('kang', 0.05, (t) => S.kang(t, 0.9, sfxBus));
@@ -2144,6 +2295,15 @@ function releaseGrab(e) {
 function hurtLeader(fromType) {
   const L = G.leader;
   if (L.invuln > 0 || G.mode !== 'play') return;
+  if (G.tut) {
+    // The drill takes no heart: the blow only shows.
+    L.invuln = 1;
+    if (tutFlag('bar')) dropBar(T.hitDrop);
+    addShake(8); G.flash = 0.6; G.flashColor = '255,60,40';
+    floatText(L.x, L.y - 34, 'darbe! · eğitimde kalp gitmez', '#ff6a55', 16, true);
+    sfx('hurt', 0.1, (t) => S.thud(t, 0.8, sfxBus));
+    return;
+  }
   L.hearts--; L.invuln = 2; G.lastHitBy = fromType;
   dropBar(T.hitDrop); G.streak = 0;
   addShake(12); G.flash = 1; G.flashColor = '255,60,40';
@@ -2180,6 +2340,8 @@ function hurtSoldier(s, dmg, fromType) {
 }
 function killSoldier(s) {
   if (s.dead) return;
+  // Nobody falls in the drill.
+  if (G.tut) { s.hp = Math.max(1, s.hp); return; }
   s.dead = true;
   if (s.grabbed) releaseGrab(s.grabbed);
   burst(s.x, s.y, SOLDIER[s.type].color, 12, 180);
@@ -2187,13 +2349,14 @@ function killSoldier(s) {
 }
 
 // ---------------------------------------------------------------- the deck
+const cardsOpen = () => G.phase === 'wave' || tutFlag('cards');
 // A card is played at once, any time in a wave, and spends its cost in Cezbe pips. It goes to the
 // back of the deck and the next card takes its slot.
 function playCard(i) {
   if (G.mode !== 'play' || G.paused || G.terfi || G.konak) return;
-  const tutCard = G.tut && TUT_STEPS[G.tut.step].key === 'card';
-  if (G.phase !== 'wave' && !tutCard) {
-    if (G.phase === 'breather') floatText(G.leader.x, G.leader.y - 80, 'Kartlar dalga başlayınca oynanır', '#b8a988', 13);
+  if (!cardsOpen()) {
+    if (G.tut) floatText(G.leader.x, G.leader.y - 80, 'Kartları birazdan öğreneceksin', '#b8a988', 13);
+    else if (G.phase === 'breather') floatText(G.leader.x, G.leader.y - 80, 'Kartlar dalga başlayınca oynanır', '#b8a988', 13);
     return;
   }
   const k = G.hand[i];
@@ -2211,7 +2374,7 @@ function playCard(i) {
   G.hand[i] = G.queue.shift() || null;
   G.queue.push(k);
   castCard(k);
-  if (G.tut) { G.bar = T.barMax; if (tutCard) tutCount(); }
+  if (G.tut) tutEvent('card', { k });
 }
 function castCard(k) {
   const L = G.leader, col = `rgb(${k.color})`;
@@ -2967,7 +3130,7 @@ const PANELS = {
       ${actions(`${cal.sug != null ? `<button class="btn ghost" type="button" data-act="offset" data-arg="${cal.sug}">Öneriyi uygula: ${cal.sug} ms</button>` : ''}
         <button class="btn ghost" type="button" data-act="click">Tık sesi: ${settings.click ? 'açık' : 'kapalı'}</button>`)}
       <h3 class="sub">Eğitim</h3>
-      <p class="dim">Dört çalgıyı adım adım gösteren kısa eğitim; bitince sefer başlar.</p>
+      <p class="dim">On üç adımlık eğitim: yürüyüş ve ritim, dört çalgı, Cezbe ve kartlar, toplu hücum ve bir deneme dalgası. Canavarlar zayıf, kalp gitmez; bitince sefer başlar.</p>
       ${actions(`<button class="btn ghost" type="button" data-act="tutorial">Eğitimle sefere çık</button>${closeBtn('Tamam')}`)}`;
   },
   // The Vakanüvis: the runs so far and every monster met, with how to meet it.
@@ -4333,9 +4496,8 @@ function drawLeader(c) {
     c.globalAlpha = 1;
   }
   if (G.tut && G.mode === 'play') {
-    // The key to press under the leader; the card step has no instrument, so it names the cards.
-    const st = TUT_STEPS[G.tut.step], o = ORDERS[st.key], w = 0.45 + 0.55 * callPhase() ** 2;
-    const txt = o ? `${o.key} ${o.name}` : '1-4 KART';
+    // What to press, under the leader.
+    const st = tutSt(), w = 0.45 + 0.55 * callPhase() ** 2, txt = tutLabel(st);
     c.globalAlpha = w; c.textAlign = 'center';
     c.font = `22px ${FD}`; c.lineWidth = 5; c.strokeStyle = '#140f0a';
     c.strokeText(txt, L.x, L.y + 84); c.fillStyle = `rgb(${tutColor(st)})`; c.fillText(txt, L.x, L.y + 84);
@@ -4588,12 +4750,15 @@ function drawHUD(c, now) {
   // top-centre: preview or goal, then hint
   let y = compact ? 136 : 14;
   if (G.tut) {
-    const st = TUT_STEPS[G.tut.step];
-    const dots = '●'.repeat(G.tut.count) + '○'.repeat(Math.max(0, st.need - G.tut.count));
+    // The step's panel: where it is in the drill, what to do, and how far along it is.
+    const st = tutSt(), need = tutNeed(), n = Math.min(G.tut.count, need);
+    const done = G.tut.doneAt ? 'TAMAM!' : need > 8 ? `${n}/${need}` : '●'.repeat(n) + '○'.repeat(need - n);
+    c.font = `500 14px ${FB}`;
+    const body = wrapLines(c, st.text, Math.min(620, W - 70));
     const h = pill(c, W / 2, y,
-      [`EĞİTİM · ADIM ${G.tut.step}/${TUT_STEPS.length - 1}`, tutTitle(st), st.text, `${dots}   ·   Boşluk: eğitimi atla`],
-      [`700 11px ${FB}`, `22px ${FD}`, `500 14px ${FB}`, `500 12px ${FB}`],
-      ['#f0b429', `rgb(${tutColor(st)})`, '#f1e6cc', '#b8a988'], 24, 20);
+      [`EĞİTİM · ${st.sec} · ADIM ${G.tut.step}/${TUT_STEPS.length - 1}`, tutTitle(st), ...body, done, 'Enter: adımı geç · Boşluk: eğitimi bitir'],
+      [`700 11px ${FB}`, `22px ${FD}`, ...body.map(() => `500 14px ${FB}`), `700 15px ${FB}`, `500 11px ${FB}`],
+      ['#f0b429', `rgb(${tutColor(st)})`, ...body.map(() => '#f1e6cc'), '#ffcf4a', '#8a7d62'], 21, 20);
     y += h + 8;
   } else if (G.phase === 'breather') {
     const left = Math.max(0, G.breatherLen - G.breatherBeat);
@@ -4643,7 +4808,7 @@ function drawHand(c, now, compact, maxW) {
   G.hand.forEach((k, i) => {
     const x = barX + i * (cw + gap), f = G.ultFlash[i];
     if (!k) { rr(c, x, cy, cw, ch, 8); c.strokeStyle = '#3a3223'; c.lineWidth = 1.5; c.stroke(); return; }
-    const ok = G.bar + 1e-6 >= k.cost && (G.phase === 'wave' || !!G.tut), wait = clamp(G.bar / Math.max(1, k.cost), 0, 1);
+    const ok = G.bar + 1e-6 >= k.cost && cardsOpen(), wait = clamp(G.bar / Math.max(1, k.cost), 0, 1);
     rr(c, x, cy, cw, ch, 8);
     c.fillStyle = f > 0 ? `rgba(${k.color},${0.25 + 0.5 * f})` : f < 0 ? 'rgba(200,60,40,0.35)' : 'rgba(30,25,18,0.92)'; c.fill();
     if (!ok) {
@@ -5489,6 +5654,7 @@ window.addEventListener('keydown', (e) => {
   if (dir) { drum(dir, e.timeStamp); return; }
   if (DIGIT[code] != null && DIGIT[code] < HAND) { playCard(DIGIT[code]); return; }
   if (code === 'Space') { if (G.tut) endTutorial(true); else if (G.phase === 'breather') startWave(); return; }
+  if (code === 'Enter' && G.tut) { e.preventDefault(); if (!G.tut.doneAt) tutNext(); return; }
   if (['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(code)) held.add(code);
 });
 function panelKey(e, code) {

@@ -434,7 +434,22 @@ bot has played it. Everything not listed here is as in prototype 3. Its storage 
   it comes, with a marker at the screen's edge on the side it comes from: how many, what, the beats
   left, and which soldier is strong against it. The gap to the next group grows with its size, 4-8
   beats. Tuning is in `T.warnBeats`, `T.groupGap` and `T.groupSize`.
-- **Tutorial:** a fifth step plays two cards.
+- **Tutorial (decision 29).** Thirteen steps in four parts, most with weakened chapter-1 monsters
+  to practise on. The leader loses no heart in it and no soldier falls (a soldier stops at 1
+  health); monsters met here do not count as seen, so wave 1 still shows their tips.
+
+  | Part | Steps |
+  |---|---|
+  | Hareket, Ritim | walk 300 px; four presses on the beat |
+  | Çalgılar | three VUR on the beat that hit Kara Koçlar; two blocks of practice blows on the leader; three blocks of real Koç blows; two ATIL on the beat against Sapancılar; two TOPLAN on the beat |
+  | Cezbe ve deste | fill Cezbe from empty to 4 (it fills by itself and on the beat, as in a wave); play a company card; an announced group of four Yarasa, with the Kemankeş card put in hand; play a spell, with Top Atışı in hand and six Koçlar close by |
+  | Savaş | meet two mass charges with a Kös on their beat; a practice wave of four groups (5 Koç, 3 Yarasa, 2 Sapancı, 4 Koç) with the player's own deck |
+
+  From the Cezbe step until the practice wave the hand is the default deck in its own order. Cezbe only
+  fills from the Cezbe step on, and cards are only played from the card step on. A step is done
+  with "TAMAM!" and the next starts a second later. The panel at the top shows the part, the step,
+  what to do and how far along it is; Enter skips a step and Space ends the drill. Nothing from it
+  (monsters, loot, cards, soldiers from cards) carries into the run. Tuning is in `TUT_STEPS`.
 - **End screen:** cards played, the three most played, and Cezbe wasted.
 - **Bot test after decision 28:** good 7 of 8 (4 hearts lost, one fall at 3-4), mid 0 of 8
   (falls at 3-2 twice and 3-4 six times). Without the banners' free companies the mid bot is back
@@ -574,6 +589,10 @@ Build on these; do not re-propose what they rule out.
     bunlar v4e özgü". Built as in "Prototype 4". Loot still decides when a terfi is earned; only
     when it opens changed (Claude's reading, listed below).
 
+29. **2026-09-27: a detailed tutorial for prototype 4.** The user: "v4 için detaylı eğitim bölümü
+    yapmalısın. baştaki eğitim bölümünü detaylandır". Built as the thirteen steps in "Prototype 4";
+    their order, content and numbers are Claude's (listed below).
+
 ## Claude's calls the user has not confirmed
 
 - Decision 18's four instruments and their gains and prices: bringing back ATIL and TOPLAN, the
@@ -600,6 +619,10 @@ Build on these; do not re-propose what they rule out.
   company added to the core at each chapter konak instead of choosing ulti slots; Akıncı Baskını
   as a company of each kind; groups of one kind, the 4-beat warning and the gaps; the army limits
   20/24/28.
+- Decision 29's tutorial: its thirteen steps and their goals, practising on real monsters, no heart
+  or soldier lost in it, a practice wave at the end, Enter to skip a step, and counting a mass
+  charge as met when a Kös covers its beat (blocks alone did not work: soldiers fighting outside
+  the aura are not covered).
 - Decision 28's reading: a terfi is still earned by loot and only waits for the wave's end (not
   one terfi every wave); the chapter konak's deck change lasts for that run only.
 - One banner per breather, bringing two companies, and waves 1.5 times as large (decision 16
