@@ -23,6 +23,7 @@ plan" and "Prototype 2" below.
 | `mehter-seferi.html` | Prototype 1, the old version: plays version 6. Open it in a desktop browser with sound on. |
 | `mehter-seferi-v2.html` | Prototype 2: plays the version 7 plan. Kept as a separate file so prototype 1 stays playable. |
 | `mehter-seferi-v3.html` | Prototype 3: prototype 2 made real-time (decision 19), with Mehterhane Konağı, the hub between runs (decision 25). Not published as an artifact yet. |
+| `mehter-seferi-v4.html` | Prototype 4: prototype 3 with a Clash Royale-style deck for choosing soldiers (decision 27). Prototypes 1-3 stay as they are. |
 | `game-loop-flowchart.html` | Five linked flowcharts: the konak between runs (0), the run, every instrument press, the fight, the ulti. Since 2026-09-26 they draw prototype 3; the published artifact still shows the older prototype 2 loop. |
 | `dusman-plani.md` | The enemy plan for prototype 3, in Turkish: monsters instead of armies, three themed chapters, one boss each. A plan only, not built yet. |
 | `mehter-sefer-akisi.pdf` | The flowchart printed to A4, one chart per page. Re-print it from the HTML with headless Chrome after each change. |
@@ -384,6 +385,69 @@ has played it. Everything not listed here is as in prototype 2. Its storage keys
 - **Next:** publishing prototype 3 and the flowchart as artifacts, and republishing prototype 2's
   artifact with decision 18.
 
+## Prototype 4
+
+Built on 2026-09-27 from prototype 3, after the user found the way soldiers are chosen for the
+fight too thin and asked whether a Clash Royale-style model would help (decision 27). Only a test
+bot has played it. Everything not listed here is as in prototype 3. Its storage keys are
+`mehter4.*`; `game-loop-flowchart.html` still draws prototype 3.
+
+- **Cezbe is the elixir.** Ten pips. One fills by itself every 8 beats during a wave, and every
+  beat played on time adds 0.2 more (Perfect 0.3, the zil twice that), once per beat. The breather
+  pays nothing. A blow on the leader takes 2. A wave starts with at least 4. What would go past a
+  full bar is wasted, and the bar blinks "DOLU · kart oyna!". Cezbe no longer raises the soldiers'
+  health, damage or speed, and there are no levels.
+- **The deck.** Eight cards, built at the Bayraktar in the konak; a company card may go in twice, a
+  spell once. Four are in hand on 1-4 (LB RB LT RT), with the next one shown beside them. A played
+  card goes to the back and the next comes into its slot. Cards are played only in a wave.
+
+  | Card | Cost | Does |
+  |---|---|---|
+  | Azap | 2 | 3 Azap |
+  | Yeniçeri | 4 | 2 Yeniçeri |
+  | Kemankeş | 3 | 2 Kemankeş |
+  | Deli | 3 | 3 Deli |
+  | Top Atışı | 3 | as the ulti |
+  | Kös Duvarı | 3 | as the ulti |
+  | Mehter Marşı | 4 | as the ulti |
+  | Hücum Borusu | 4 | as the ulti |
+  | Akıncı Baskını | 7 | a company of each of the four kinds (locked until bought) |
+  | Zil Çınlaması | 5 | as the ulti (locked until bought) |
+
+  The default deck is the first eight. Tuning is in `KARTS`, `DECK_SIZE` and `HAND`.
+- **Soldiers from cards are temporary.** A company from a card fights for 32 beats, with a gold
+  arc under each soldier that shrinks as its time runs out, then goes home. The core army stays:
+  the Bayraktar's starting companies, prisoners freed from forts, and one company of the player's
+  choice added at each chapter konak (which replaces choosing ulti slots there). The army's limit
+  is 20, 24 and 28 by chapter.
+- **The breather banner is a free card.** Walking under one of the four banners puts a free,
+  one-time card of two companies of that kind at the front of the deck: it is the next card.
+- **Monsters come in groups of one kind.** Each kind in a wave is its own group (split in two past
+  8), and each big monster comes alone, in the second half. A group is announced 4 beats before
+  it comes, with a marker at the screen's edge on the side it comes from: how many, what, the beats
+  left, and which soldier is strong against it. The gap to the next group grows with its size, 4-8
+  beats. Tuning is in `T.warnBeats`, `T.groupGap` and `T.groupSize`.
+- **Tutorial:** a fifth step plays two cards.
+- **End screen:** cards played, the three most played, and Cezbe wasted.
+- **Bot test, 2026-09-27** (`tools/playtest`, 8 runs each). The bots play a card as soon as they
+  can afford one; the good bot picks the card that is strong against the monsters near and coming,
+  the new `rand` bot picks at random at the same pace:
+
+  | Bot | Wins | Hearts lost | Where it falls |
+  | --- | --- | --- | --- |
+  | good | 7 of 8 | 4 | once at 3-4 |
+  | rand (good, random cards) | 6 of 8 | 7 | 3-4, 3-5 |
+  | mid | 4 of 8 | 14 | 1-5, 3-4, 3-5 twice |
+  | VUR only (4 runs, earlier build) | 0 of 4 | - | 1-4, 1-5 |
+
+  - **Choosing the right card helps, but only a little.** How many cards are played matters more.
+    An earlier bot that held its cards for a good match lost to one that played at random but
+    sooner (3 of 6 against 6 of 6).
+  - A strong match doing ×3 instead of ×2 did not widen the gap within the noise of 8 runs, so it
+    is back at ×2 (`MATCH`).
+  - Chapters 1 and 2 cost the good bots nothing; the last two waves decide most runs.
+  - The waves are about 15 s each, half of prototype 3's.
+
 ## The user's decisions
 
 Build on these; do not re-propose what they rule out.
@@ -486,6 +550,15 @@ Build on these; do not re-propose what they rule out.
     konaklarda da çok daha sakin bir konak müziği olacak". It is quiet and does not follow the
     fight, so decision 3 still holds; the music itself is Claude's (listed below).
 
+27. **2026-09-27: a Clash Royale-style model for choosing soldiers (prototype 4).** The user:
+    "neye göre savaştığımıza bağlı olarak hangi askeri seçip ilerleyeceğimiz konusundaki mekanik
+    hala bana yetersiz geliyor ... clash royale tarzı bir strateji mekaniği birim seçmede işimize
+    yarayabilir mi", then "v4 olarak bunu yapalım diğerleri yedekte kalsın". Built as prototype 4
+    from Claude's proposal: Cezbe as the elixir, a deck of eight with four in hand, companies from
+    cards that fight for a while, and monsters in announced groups of one kind. The user did not
+    choose between the options offered (Cezbe as pure elixir or with its stat bonus kept; temporary
+    or capped soldiers; what the breather offers), so the details are Claude's (listed below).
+
 ## Claude's calls the user has not confirmed
 
 - Decision 18's four instruments and their gains and prices: bringing back ATIL and TOPLAN, the
@@ -507,6 +580,11 @@ Build on these; do not re-propose what they rule out.
   the upgrades are bought, and keepsakes for the loadout; neither is built.
 - Decision 26's music: the makams, the voices, every phrase, the levels, the echo, and the
   chapter konak playing the konak's track.
+- Decision 27's details: Cezbe as a pure elixir with no stat bonus, its ten pips and every gain;
+  the card costs; a company card allowed twice in a deck; 32 beats for a company from a card; a
+  company added to the core at each chapter konak instead of choosing ulti slots; the breather
+  banner as a free card; Akıncı Baskını as a company of each kind; groups of one kind, the 4-beat
+  warning and the gaps; the army limits 20/24/28.
 - One banner per breather, bringing two companies, and waves 1.5 times as large (decision 16
   only asked for soldiers on pick and a little longer waves).
 
@@ -576,11 +654,13 @@ and plays a whole run in about two minutes.
 
 `tools/playtest` holds this route ready to run (from Git Bash):
 
-    python tools/playtest/build.py              # writes tools/playtest/out/test.html
+    python tools/playtest/build.py              # writes tools/playtest/out/test.html (v4; pass v3 for prototype 3)
     tools/playtest/many.sh r1 mid 8             # 8 runs of the mid bot in parallel
     python tools/playtest/sum.py r1 mid         # hearts lost and deaths per wave
 
-The bots are `vur`, `mid` and `good` (see `bot.js`). A run takes a few seconds, because the
+The bots are `vur`, `mid` and `good` (see `bot.js`), and for prototype 4 `rand`: the good bot
+with its cards chosen at random, to measure what the choice of card is worth.
+`debugpage.py` also takes `v3` or `v4` (default v4). A run takes a few seconds, because the
 test copy skips drawing. The debug handle only lives in `out/`, which git ignores.
 
 Headless `--screenshot` does not capture the canvas. Look at the game through the browser pane

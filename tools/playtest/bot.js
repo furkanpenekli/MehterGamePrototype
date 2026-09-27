@@ -1,7 +1,10 @@
-// Test bot for mehter-seferi-v3. Profile from location.hash: #vur | #mid | #good
+// Test bot for mehter-seferi-v3 and v4. Profile from location.hash: #vur | #mid | #good
+// In v4 (D.playCard) it plays hand cards; in v3 it fires ultis.
 (() => {
-const P = { vur: { smart: false, jitter: 0.02, skip: 0 }, mid: { smart: true, jitter: 0.045, skip: 0.12, ulti: false, raid: false, react: 0.6, dodge: 0.5 },
-  good: { smart: true, jitter: 0.02, skip: 0.03, ulti: true, raid: true, react: 0.92, dodge: 0.9 } }[location.hash.slice(1) || 'mid'];
+const P = { vur: { smart: false, jitter: 0.02, skip: 0, cardSense: 0 }, mid: { smart: true, jitter: 0.045, skip: 0.12, ulti: false, raid: false, react: 0.6, dodge: 0.5, cardSense: 0.5 },
+  good: { smart: true, jitter: 0.02, skip: 0.03, ulti: true, raid: true, react: 0.92, dodge: 0.9, cardSense: 1 },
+  // As good, but its cards are picked at random: how much the choice of card is worth.
+  rand: { smart: true, jitter: 0.02, skip: 0.03, ulti: true, raid: true, react: 0.92, dodge: 0.9, cardSense: 1, cardRand: true } }[location.hash.slice(1) || 'mid'];
 const D = window.__dbg;
 const log = [];
 const out = () => { let pre = document.getElementById('botlog'); if (!pre) { pre = document.createElement('pre'); pre.id = 'botlog'; document.body.appendChild(pre); } pre.textContent = log.join('\n'); };
@@ -37,15 +40,51 @@ function choose(G, t) {
   if (winding && outN === 0 && cd('right')) return 'right';
   return cd('up') ? 'up' : null;
 }
+// v4: which card in hand to play now. A company scores for every monster near or coming that it
+// is strong against, and loses for those it is weak against; a spell scores by the moment. A
+// careless player (cardSense 0) plays whatever it can afford, first slot first, when the bar is
+// full or now and then.
+let nextCardT = 0;
+function cards(G, now) {
+  if (now < nextCardT) return;
+  const L = G.leader, full = G.bar >= 9.99;
+  const ok = G.hand.map((k, i) => (k && G.bar >= k.cost ? i : -1)).filter((i) => i >= 0);
+  if (!ok.length) return;
+  if (Math.random() >= P.cardSense) {
+    if (full || Math.random() < 0.01) { D.playCard(ok[0]); nextCardT = now + 1; }
+    return;
+  }
+  const alive = G.soldiers.filter((s) => !s.dead);
+  const foes = G.enemies.filter((e) => !e.dead && !D.ENEMY[e.type].fixed && dist(e, L) < 600).map((e) => e.type)
+    .concat(P.cardSense >= 1 ? G.incoming.flatMap((g) => g.list) : []);
+  const near = G.enemies.filter((e) => !e.dead && !D.ENEMY[e.type].fixed && dist(e, L) < 300).length;
+  const hurt = alive.filter((s) => s.hp < s.maxHp * 0.4).length;
+  const score = (k) => {
+    if (k.unit) return 0.4 + foes.reduce((s, t) => s + (D.STRONG[k.unit].includes(t) ? 1 : 0) - (D.WEAK[k.unit].includes(t) ? 0.6 : 0), 0) - alive.length * 0.05;
+    if (k.id === 'duvar') return G.hucum && G.hucum.at - G.h < 1.2 ? 6 : 0;
+    if (k.id === 'mars') return hurt >= 4 ? hurt * 0.6 : 0;
+    if (k.id === 'top') return near >= 6 ? near * 0.5 : 0;
+    if (k.id === 'hucum') return near >= 8 ? near * 0.4 : 0;
+    if (k.id === 'zil') return G.hucum ? 5 : near >= 10 ? 3 : 0;
+    if (k.id === 'akinci') return G.bar >= 9 ? 4 : 0;
+    return 0;
+  };
+  // Both a careful and a random player play a card as soon as they can, at the same pace; only
+  // the choice differs. A careful one takes the best-scoring card it can afford.
+  if (!full && Math.random() >= 0.012) return;
+  let best = ok[Math.floor(Math.random() * ok.length)];
+  if (!P.cardRand) { let bs = -99; for (const i of ok) { const sc = score(G.hand[i]) - G.hand[i].cost * 0.15; if (sc > bs) { bs = sc; best = i; } } }
+  D.playCard(best); nextCardT = now + 0.6;
+}
 function tick() {
   const G = D.G;
   if (!started) { started = true; D.start(false); log.push('start ' + (location.hash || '#mid')); }
   if (G.mode === 'over') {
-    log.push(`RESULT ${G.phase === 'won' ? 'WON' : 'LOST'} at c${G.chapter}w${G.wi} kills=${G.stats.kills} perfect=${G.stats.perfect} good=${G.stats.good} miss=${G.stats.miss} use=${JSON.stringify(G.stats.use)}`);
+    log.push(`RESULT ${G.phase === 'won' ? 'WON' : 'LOST'} at c${G.chapter}w${G.wi} kills=${G.stats.kills} perfect=${G.stats.perfect} good=${G.stats.good} miss=${G.stats.miss} use=${JSON.stringify(G.stats.use)}` + (G.stats.played ? ` cards=${JSON.stringify(G.stats.played)} wasted=${Math.round(G.stats.wasted)}` : ''));
     out(); document.title = 'DONE'; return;
   }
   if (G.terfi) { D.pickCard(Math.floor(Math.random() * G.terfi.cards.length), true); }
-  if (G.konak) { D.leaveKonak(); }
+  if (G.konak) { if (D.toggleUlti && D.playCard) D.toggleUlti(Math.floor(Math.random() * 4)); D.leaveKonak(); }
   const now = performance.now() / 1000;
   if (G.leader.hearts < lastHearts) {
     const near = G.enemies.filter((e) => !e.dead && dist(e, G.leader) < 140).map((e) => e.type);
@@ -102,8 +141,9 @@ function tick() {
       }
     }
     goal ? walk(goal[0], goal[1], goal[2]) : walk(null);
+    if (D.playCard) cards(G, now);
     // Ultis.
-    if (P.ulti && D.level() >= 1) {
+    else if (P.ulti && D.level() >= 1) {
       const alive = G.soldiers.filter((s) => !s.dead);
       const hurt = alive.filter((s) => s.hp < s.maxHp * 0.4).length;
       const near = G.enemies.filter((e) => !e.dead && !D.ENEMY[e.type].fixed && dist(e, G.leader) < 300).length;

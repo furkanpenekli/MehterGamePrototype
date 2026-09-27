@@ -1,8 +1,10 @@
 # Builds out/test.html: a copy of the game with a fake audio clock, no drawing, a debug handle
 # and the bot. Never ship the debug handle.
-import pathlib
-here = pathlib.Path(__file__).parent
-src = (here.parent.parent / 'mehter-seferi-v3.html').read_text(encoding='utf-8')
+# usage: build.py [v3|v4]  (default v4)
+import pathlib, sys
+here = pathlib.Path(__file__).resolve().parent
+ver = sys.argv[1] if len(sys.argv) > 1 else 'v4'
+src = (here.parent.parent / f'mehter-seferi-{ver}.html').read_text(encoding='utf-8')
 prelude = r'''<script>
 (() => {
   const P = () => new Proxy(function () {}, {
@@ -31,7 +33,8 @@ prelude = r'''<script>
 i = src.index('<script>')
 src = src[:i] + prelude + src[i:]
 j = src.rindex('})();')
-src = src[:j] + 'window.__dbg = { get G() { return G; }, held, beats, start, startWave, drum, pickCard, leaveKonak, fireUlti, level, covers, kosCovers, isOut, inAura, ENEMY, STRONG, WEAK };\n' + src[j:]
+extra = 'fireUlti, level' if ver == 'v3' else 'playCard, toggleUlti'
+src = src[:j] + 'window.__dbg = { get G() { return G; }, held, beats, start, startWave, drum, pickCard, leaveKonak, ' + extra + ', covers, kosCovers, isOut, inAura, ENEMY, STRONG, WEAK };\n' + src[j:]
 R = '  } else if (!G.paused) updateFx(rdt);\n  render(now);\n}'
 assert src.count(R) == 1
 src = src.replace(R, '  } else if (!G.paused) updateFx(rdt);\n}')
