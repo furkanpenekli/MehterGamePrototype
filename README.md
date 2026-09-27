@@ -52,9 +52,12 @@ code and comments are English.
 | ATIL (çevgen) | → | B |
 | TOPLAN / seal a combo (zil) | ← | X |
 | Walk; walk under a banner to pick it | W A S D | Left stick |
-| Pick a promotion card | A W D (left, middle, right) | X Y B |
+| Pick a promotion card | A W D (left, middle, right) | X Y B (or d-pad left, up, right) |
+| Play a card in hand (prototype 4) | 1 2 3 4 | LT LB RB RT, left to right as the cards lie |
+| Tutorial (prototype 4): next step, end it | Enter, Space | Back, "Eğitimi bitir" in the Start menu |
 | Konak (prototype 3): talk to someone, go through the gate | E, Enter or Space | A |
 | Konak panel: move between buttons, press, close | Arrows, Enter, Esc | D-pad, A, B |
+| Any page of buttons in prototype 4 (title, pause, konaks, end) | Arrows, Enter, Esc | D-pad or stick, A, B; left and right move a slider |
 | Skip the breather | Space | Back |
 | Pause, latency calibration, settings | Esc | Start |
 | Tempo: call-and-response / every beat | T | - |
@@ -62,6 +65,12 @@ code and comments are English.
 | Beat click on / off | M | - |
 
 The right hand plays and the left hand chooses. That split is deliberate: see decision 2 below.
+
+In prototype 4 every key the screen names follows the device last used: with a pad in hand the
+HUD's diamond, the cards, the hints, the tutorial and the pages name its buttons, as Xbox letters
+or, for a Sony pad, as △ ✕ ○ □, L1 R1 L2 R2, Options and Create. A trigger counts from halfway
+down, and the pad rumbles when the leader is hit. The arrows and the d-pad move through a grid of
+cards as a grid.
 
 ## The design
 
@@ -593,6 +602,11 @@ Build on these; do not re-propose what they rule out.
     yapmalısın. baştaki eğitim bölümünü detaylandır". Built as the thirteen steps in "Prototype 4";
     their order, content and numbers are Claude's (listed below).
 
+30. **2026-09-27: prototype 4 played on a gamepad.** The user: "v4ü gamepad ile oynanılabilir hale
+    getir güzel bir tuş planıyla". Built as in "Controls". The pad's button presses never
+    registered before (the edge test read the state it had just overwritten); prototypes 1-3 still
+    have that bug. The button map is Claude's (listed below).
+
 ## Claude's calls the user has not confirmed
 
 - Decision 18's four instruments and their gains and prices: bringing back ATIL and TOPLAN, the
@@ -604,7 +618,9 @@ Build on these; do not re-propose what they rule out.
   Zil-triggered fever was folded into the Cezbe meter.
 - The siege as wave 6, the gate's 7000 health, and the run ending there. The v7 chapters replace it.
 - All of Cezbe's numbers: thresholds 10/20/30, the level table, −6 per miss.
-- Gamepad support and its button map.
+- Gamepad support and its button map. In prototype 4: the cards on LT LB RB RT in the hand's order,
+  Back for the next tutorial step, ending the tutorial from the Start menu, A both talking and
+  playing the Kös in Mehterhane Konağı, and the rumble.
 - Decision 25's content: şan as the one currency kept between runs, and what pays it; every
   upgrade and price in `UPGRADES`; locking Akıncı Baskını and Zil Çınlaması behind şan; Hızır Duası;
   the four people (Kethüda, Bayraktar, Talimci, Vakanüvis) and their lines; the starting company

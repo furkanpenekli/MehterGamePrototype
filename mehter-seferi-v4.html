@@ -150,6 +150,10 @@
     box-shadow: inset 0 0 0 1px var(--panel-edge);
   }
   .btn:focus-visible, .card:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  /* With a pad in hand the focus is always shown, and the lines say its buttons. */
+  body.pad .btn:focus, body.pad .card:focus, body.pad input:focus { outline: 3px solid var(--gold); outline-offset: 2px; }
+  body.pad .keys li { grid-template-columns: 96px 1fr; }
+  body.pad .kb, body:not(.pad) .gp { display: none; }
   .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin: 14px 0; }
   .stat { background: #211c14; border-radius: 8px; padding: 10px 12px; }
   .stat .v { font-family: var(--display); font-size: 24px; font-variant-numeric: tabular-nums; }
@@ -217,20 +221,20 @@
       <p>Mehterbaşısın. Kendin vurmazsın: çaldığın çalgı, auradaki askerlere bir emirdir. <b>Çalgıları istediğin an çal</b>; <b>tempoya denk getirirsen</b> emir güçlenir ve <b>Cezbe</b> daha hızlı dolar. Cezbe senin iksirin: elindeki <b>dört kartı</b> onunla oynarsın. Kart bir bölük çağırır ya da bir ulti atar; oynanan kart destenin sonuna gider, sıradaki gelir. Canavarlar <b>tür tür sürüler</b> halinde gelir ve birkaç vuruş önce haber verilir: <b>ne geliyorsa ona güçlü olan bölüğü sür.</b> <b>Hedef: üç bölümü geç.</b></p>
       <div class="cols">
         <div>
-          <h3>Sağ el çalar · istediğin an, en iyisi tempoda</h3>
+          <h3><span class="kb">Sağ el çalar</span><span class="gp">Sağ başparmak çalar</span> · istediğin an, en iyisi tempoda</h3>
           <ul class="keys">
-            <li><kbd>↑</kbd><span><b>Davul · VUR</b>: auradakiler hep birlikte tam vurur. <span class="red">Korumaz.</span></span></li>
-            <li><kbd>↓</kbd><span><b>Kös · DİREN</b>: halka kapanırken çal, o anda inen darbeler bloklanır; tam anında çalarsan sersemletir. <span class="red">Kimse vurmaz.</span></span></li>
-            <li><kbd>→</kbd><span><b>Çevgen · ATIL</b>: askerler uzağa atılır, ×1.5 vurur, kurulan saldırıyı keser. <span class="red">Birkaç saniye auradan çıkar, emir duymaz, Kös korumaz.</span></span></li>
-            <li><kbd>←</kbd><span><b>Zil · TOPLAN</b>: herkes sana koşar, can dolar, Cezbe iki kat artar. <span class="red">Ne vurur ne korur.</span></span></li>
+            <li><kbd data-k="up">↑</kbd><span><b>Davul · VUR</b>: auradakiler hep birlikte tam vurur. <span class="red">Korumaz.</span></span></li>
+            <li><kbd data-k="down">↓</kbd><span><b>Kös · DİREN</b>: halka kapanırken çal, o anda inen darbeler bloklanır; tam anında çalarsan sersemletir. <span class="red">Kimse vurmaz.</span></span></li>
+            <li><kbd data-k="right">→</kbd><span><b>Çevgen · ATIL</b>: askerler uzağa atılır, ×1.5 vurur, kurulan saldırıyı keser. <span class="red">Birkaç saniye auradan çıkar, emir duymaz, Kös korumaz.</span></span></li>
+            <li><kbd data-k="left">←</kbd><span><b>Zil · TOPLAN</b>: herkes sana koşar, can dolar, Cezbe iki kat artar. <span class="red">Ne vurur ne korur.</span></span></li>
           </ul>
         </div>
         <div>
-          <h3>Sol el seçer</h3>
+          <h3><span class="kb">Sol el seçer</span><span class="gp">Sol çubuk yürür, omuz tuşları kart oynar</span></h3>
           <ul class="keys">
-            <li><kbd>WASD</kbd><span>Yürü, ordu seni izler</span></li>
-            <li><kbd>1-4</kbd><span><b>Kart oyna</b>: bölük çağır ya da ulti at, Cezbe harcar</span></li>
-            <li><kbd>A W D</kbd><span><b>Terfi</b> kartı seç: ganimet dolduysa dalga bitince gelir</span></li>
+            <li><kbd data-k="walk">WASD</kbd><span>Yürü, ordu seni izler</span></li>
+            <li><kbd data-k="hand">1-4</kbd><span><b>Kart oyna</b>: bölük çağır ya da ulti at, Cezbe harcar<span class="gp">. Soldan sağa eldeki dört kart</span></span></li>
+            <li><kbd data-k="terfi">A W D</kbd><span><b>Terfi</b> kartı seç: ganimet dolduysa dalga bitince gelir</span></li>
           </ul>
         </div>
       </div>
@@ -239,7 +243,7 @@
       <div class="actions">
         <button class="btn" id="startBtn" type="button">Konağa gir</button>
         <button class="btn ghost" id="tutBtn" type="button">Eğitimle başla</button>
-        <span class="dim">İlk seferde adım adım bir eğitim var · ses gerekir · oyun kolu: Y vur, A diren, B atıl, X toplan, LB RB LT RT kartlar, sol çubuk yürür · <kbd>Enter</kbd> eğitimde adımı geç · <kbd>Boşluk</kbd> eğitimi ya da nefesi atla · <kbd>Esc</kbd> duraklat, ses ayarı</span>
+        <span class="dim">İlk seferde adım adım bir eğitim var · ses gerekir · <span class="kb"><kbd>Enter</kbd> eğitimde adımı geç · <kbd>Boşluk</kbd> eğitimi ya da nefesi atla · <kbd>Esc</kbd> duraklat, ses ayarı · oyun kolu da takılabilir</span><span class="gp"><kbd data-k="skip">Back</kbd> eğitimde adımı geç, nefeste dalgayı hemen başlat · <kbd data-k="pause">Start</kbd> duraklat, ses ayarı · menülerde yön tuşları gezer, <kbd data-k="ok">A</kbd> seçer, <kbd data-k="close">B</kbd> geri döner</span></span>
       </div>
       <p class="dim" id="bestLine" hidden></p>
     </div>
@@ -286,11 +290,12 @@
         <span class="mono vol" id="volMusicVal"></span>
       </div>
       <div class="opts">
-        <div class="opt"><span>Tık sesi <kbd>M</kbd></span><button class="btn ghost" id="clickBtn" type="button"></button></div>
+        <div class="opt"><span>Tık sesi <kbd data-k="click">M</kbd></span><button class="btn ghost" id="clickBtn" type="button"></button></div>
       </div>
       <div class="actions">
         <button class="btn" id="resumeBtn" type="button">Devam</button>
         <button class="btn ghost" id="applyBtn" type="button" hidden>Öneriyi uygula</button>
+        <button class="btn ghost" id="tutEndBtn" type="button" hidden>Eğitimi bitir, sefere başla</button>
         <button class="btn ghost" id="restartBtn" type="button">Seferi bırak, konağa dön</button>
       </div>
     </div>
@@ -300,7 +305,7 @@
     <div class="panel wide">
       <p class="eyebrow">Dalga bitti · ganimet doldu</p>
       <h2>Terfi: bir kart seç</h2>
-      <p class="dim">Sol elle seç: <kbd>A</kbd> <kbd>W</kbd> <kbd>D</kbd> (oyun kolunda X Y B)</p>
+      <p class="dim"><span class="kb">Sol elle seç:</span><span class="gp">Seç:</span> <kbd data-k="t0">A</kbd> <kbd data-k="t1">W</kbd> <kbd data-k="t2">D</kbd> ya da tıkla</p>
       <div class="cards" id="cards"></div>
       <h3 class="sub">Aldığın terfiler</h3>
       <div class="build" id="terfiBuild"></div>
@@ -312,10 +317,10 @@
       <p class="eyebrow" id="konakEyebrow">Bölüm bitti</p>
       <h2>Konak</h2>
       <p id="konakNote"></p>
-      <p class="dim">Ocağa bir bölük kat: bu askerler sefer boyunca kalıcıdır. Tıkla ya da <kbd>1</kbd>-<kbd>4</kbd>.</p>
+      <p class="dim">Ocağa bir bölük kat: bu askerler sefer boyunca kalıcıdır. Tıkla ya da <kbd data-k="hand">1-4</kbd>.</p>
       <div class="cards" id="ultiCards"></div>
       <h3 class="sub" id="konakDeckTitle"></h3>
-      <p class="dim">Sıradaki bölüm için desteni düzenle. Bir bölük kartı iki kez girebilir: tıkladıkça sayısı artar, sonra çıkar. Oklarla gez, <kbd>Enter</kbd> ile seç.</p>
+      <p class="dim">Sıradaki bölüm için desteni düzenle. Bir bölük kartı iki kez girebilir: tıkladıkça sayısı artar, sonra çıkar. <span class="kb">Oklarla gez, <kbd>Enter</kbd> ile seç.</span><span class="gp">Yön tuşlarıyla gez, <kbd data-k="ok">A</kbd> ile seç, <kbd data-k="pause">Start</kbd> ile yola çık.</span></p>
       <div class="cards" id="konakDeck"></div>
       <div class="actions">
         <button class="btn" id="konakGo" type="button">Yola çık</button>
@@ -334,7 +339,7 @@
       <div class="actions">
         <button class="btn" id="againBtn" type="button">Konağa dön</button>
         <button class="btn ghost" id="quickBtn" type="button">Hemen yeniden sefere</button>
-        <span class="dim"><kbd>Enter</kbd></span>
+        <span class="dim"><kbd data-k="ok">Enter</kbd></span>
       </div>
     </div>
   </div>
@@ -1322,7 +1327,7 @@ function raidFell(f) {
 const TUT_UNIT = (kind, info) => kind === 'card' && !!info.k.unit;
 const TUT_STEPS = [null,
   { id: 'walk', sec: 'HAREKET', title: 'WASD · YÜRÜ', label: 'W A S D', color: '240,180,41', need: 5,
-    text: 'W A S D ile yürü (oyun kolunda sol çubuk). Ordu seni izler. Çevrendeki halka auradır: emirlerin yalnızca onun içindeki askerlere ulaşır.',
+    text: 'W A S D ile yürü. Ordu seni izler. Çevrendeki halka auradır: emirlerin yalnızca onun içindeki askerlere ulaşır.',
     poll: (tu) => Math.floor(tu.walked / 60) },
   { id: 'beat', sec: 'RİTİM', title: 'TEMPOYU YAKALA', label: '↑ ↓ → ← tempoda', color: '240,180,41', need: 4,
     text: 'Aura altın rengine döndüğü an herhangi bir çalgıya bas. Tempoda basış PERFECT ya da İYİ sayılır: emir güçlenir, çalgı çabuk hazırlanır. Ritim dışı basış zayıf kalır.',
@@ -1365,9 +1370,9 @@ const TUT_STEPS = [null,
 ];
 const tutSt = () => TUT_STEPS[G.tut.step];
 const tutFlag = (f) => !!(G.tut && tutSt()[f]);
-const tutTitle = (st) => st.title || `${ORDERS[st.key].key} ${ORDERS[st.key].inst} · ${ORDERS[st.key].name}`;
+const tutTitle = (st) => (st.title ? upper(keyText(st.title)) : `${keyLabel(st.key)} ${ORDERS[st.key].inst} · ${ORDERS[st.key].name}`);
 const tutColor = (st) => st.color || ORDERS[st.key].color;
-const tutLabel = (st) => (st.label != null ? st.label : `${ORDERS[st.key].key} ${ORDERS[st.key].name}`);
+const tutLabel = (st) => (st.label != null ? keyText(st.label) : `${keyLabel(st.key)} ${ORDERS[st.key].name}`);
 function startTutorial() {
   G.phase = 'tutorial';
   G.tut = { step: 0, count: 0, fake: null, walked: 0, doneAt: 0, hucumK: 0, lx: G.leader.x, ly: G.leader.y };
@@ -1483,7 +1488,7 @@ function tutorialUpdate(h) {
   if (st.hucum === 'every' && hc && !hc.judged && h >= hc.at + ORD.kosLate) {
     hc.judged = true;
     if (kosCovers(hc.at)) { floatText(L.x, L.y - 124, 'HÜCUM KARŞILANDI', '#9ecbff', 20, true); tutCount(); }
-    else floatText(L.x, L.y - 124, 'kaçtı · darbeler inerken ↓ çal', '#ff9a80', 16, true);
+    else floatText(L.x, L.y - 124, keyText('kaçtı · darbeler inerken ↓ çal'), '#ff9a80', 16, true);
   }
   const f = tu.fake;
   if (!f || h < f.at + ORD.kosLate) return;
@@ -2301,6 +2306,7 @@ function hurtLeader(fromType) {
     if (tutFlag('bar')) dropBar(T.hitDrop);
     addShake(8); G.flash = 0.6; G.flashColor = '255,60,40';
     floatText(L.x, L.y - 34, 'darbe! · eğitimde kalp gitmez', '#ff6a55', 16, true);
+    rumble(0.3, 0.5, 140);
     sfx('hurt', 0.1, (t) => S.thud(t, 0.8, sfxBus));
     return;
   }
@@ -2308,6 +2314,7 @@ function hurtLeader(fromType) {
   dropBar(T.hitDrop); G.streak = 0;
   addShake(12); G.flash = 1; G.flashColor = '255,60,40';
   floatText(L.x, L.y - 34, '−1 KALP', '#ff6a55', 22, true);
+  rumble(0.9, 0.6, 280);
   sfx('hurt', 0.1, (t) => S.thud(t, 1, sfxBus));
   if (L.hearts === 1) hintOnce('lastHeart', 'Son kalp! Sana kapanan kırmızı işarette ↓ Kös çal ya da içinden çık.', 6);
   if (L.hearts <= 0 && G.hizir > 0) hizirComes();
@@ -2451,13 +2458,12 @@ function openTerfi() {
   G.pending = []; G.hucum = null;
   held.clear();
   const box = $('cards'); box.textContent = '';
-  const keys = ['A', 'W', 'D'];
   cards.forEach((cd, i) => {
     const b = document.createElement('button');
     b.className = 'card'; b.type = 'button';
     b.style.setProperty('--rar', RAR[cd.r].color);
     const own = cd.build === false ? 0 : G.picks.filter((id) => id === cd.id).length;
-    b.innerHTML = `<kbd class="k">${keys[i]}</kbd><span class="rar">${RAR[cd.r].name}${own ? ` · sende ×${own}` : ''}</span><span class="t">${cd.t}</span><span class="d">${cd.d}</span>`;
+    b.innerHTML = `<kbd class="k" data-k="t${i}">${keyLabel('t' + i)}</kbd><span class="rar">${RAR[cd.r].name}${own ? ` · sende ×${own}` : ''}</span><span class="t">${cd.t}</span><span class="d">${cd.d}</span>`;
     b.addEventListener('click', () => pickCard(i, true));
     box.appendChild(b);
   });
@@ -2507,7 +2513,8 @@ function openKonak() {
   sfx('konak', 0.3, (t) => S.arp(t, 1, sfxBus, [440, 554.37, 659.25, 880], 0.09));
 }
 function renderKonak() {
-  const box = $('ultiCards'); box.textContent = '';
+  const box = $('ultiCards'), was = [...box.children].indexOf(document.activeElement);
+  box.textContent = '';
   const sel = G.konak.sel, next = THEMES[G.chapter];
   SOLDIER_ORDER.forEach((t, i) => {
     const d = SOLDIER[t], on = sel === t;
@@ -2515,10 +2522,12 @@ function renderKonak() {
     const b = document.createElement('button');
     b.className = 'card ' + (on ? 'on' : 'off'); b.type = 'button';
     b.style.setProperty('--rar', d.color);
-    b.innerHTML = `<kbd class="k">${i + 1}</kbd><span class="rar">${on ? 'Seçili' : 'Ocağa kat'} · ${SUMMON[t]} asker</span><span class="t">${d.name}</span><span class="d">${d.role}.${prey.length ? ` Sıradaki diyarda güçlü olduğu: ${prey.join(', ')}.` : ''}</span>`;
+    b.innerHTML = `<kbd class="k" data-k="h${i}">${keyLabel('h' + i)}</kbd><span class="rar">${on ? 'Seçili' : 'Ocağa kat'} · ${SUMMON[t]} asker</span><span class="t">${d.name}</span><span class="d">${d.role}.${prey.length ? ` Sıradaki diyarda güçlü olduğu: ${prey.join(', ')}.` : ''}</span>`;
     b.addEventListener('click', () => toggleUlti(i));
     box.appendChild(b);
   });
+  // A card chosen from the keys or the pad keeps the focus it had.
+  if (was >= 0) box.children[was].focus();
   renderKonakDeck();
 }
 function renderKonakDeck() {
@@ -3051,12 +3060,32 @@ function renderPanel(keepFocus) {
   const again = buttons.find((b) => `${b.dataset.act}|${b.dataset.arg}` === key) || buttons[0];
   if (again) again.focus();
 }
+const focusables = (box) => [...box.querySelectorAll('button:not([disabled]), input[type=range]')].filter((el) => el.getClientRects().length);
 function moveFocus(step, box) {
-  const list = [...(box || $('hubPanel')).querySelectorAll('button:not([disabled])')];
+  const list = focusables(box || $('hubPanel'));
   if (!list.length) return;
   const i = list.indexOf(document.activeElement);
   const j = i < 0 ? (step > 0 ? 0 : list.length - 1) : (i + step + list.length) % list.length;
   list[j].focus();
+}
+// The arrows and the d-pad move to the nearest button that way, so a grid of cards is walked
+// like a grid; with nothing that way the focus goes on along the list.
+function moveFocusDir(dir, box) {
+  box = box || $('hubPanel');
+  const list = focusables(box), cur = document.activeElement, [dx, dy] = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[dir];
+  const step = dx + dy;
+  if (!list.includes(cur)) { moveFocus(step, box); return; }
+  const r = cur.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  let best = null, bs = Infinity;
+  for (const el of list) {
+    if (el === cur) continue;
+    const q = el.getBoundingClientRect(), ex = q.left + q.width / 2 - cx, ey = q.top + q.height / 2 - cy;
+    const along = ex * dx + ey * dy, side = Math.abs(ex * dy - ey * dx);
+    if (along < 4) continue;
+    const score = along + side * 2;
+    if (score < bs) { bs = score; best = el; }
+  }
+  if (best) best.focus(); else moveFocus(step, box);
 }
 const bestText = (w) => (w ? `${Math.floor((w - 1) / 5) + 1}. bölüm, ${(w - 1) % 5 + 1}. dalga` : '-');
 // The monsters of each chapter, in the order they come, for the Vakanüvis's book.
@@ -3098,7 +3127,7 @@ const PANELS = {
     }).join('');
     return `<p class="eyebrow">Kethüda · Konak defteri</p><h2>Şan: <span class="san">${meta.san}</span></h2>
       <p class="dim">Seferde kazandığın şan burada harcanır; lider düşse de şan kalır. Aldığın her gelişme bütün seferlerde geçerlidir.</p>
-      <div class="cards">${cards}</div>${actions(`${closeBtn('Tamam')}<span class="dim"><kbd>Esc</kbd> kapat</span>`)}`;
+      <div class="cards">${cards}</div>${actions(`${closeBtn('Tamam')}<span class="dim"><kbd data-k="close">${keyLabel('close')}</kbd> kapat</span>`)}`;
   },
   // The Bayraktar keeps the loadout: the company the run starts with, and the deck of eight.
   hazirlik() {
@@ -3118,13 +3147,13 @@ const PANELS = {
       <h3 class="sub">Sancak destesi · ${sel.length}/${DECK_SIZE}</h3>
       <p class="dim">Seferde elinde bu destenin dört kartı olur; oynanan kart sona gider. Bir bölük kartı desteye iki kez girebilir: tıkladıkça sayısı artar, sonra çıkar.</p>
       <div class="cards">${deck}</div>
-      ${actions(`${closeBtn('Tamam', !ok)}<span class="dim">${ok ? '<kbd>Esc</kbd> kapat' : `Sekiz kart seç; seçmezsen eskisi kalır.`}</span>`)}`;
+      ${actions(`${closeBtn('Tamam', !ok)}<span class="dim">${ok ? `<kbd data-k="close">${keyLabel('close')}</kbd> kapat` : `Sekiz kart seç; seçmezsen eskisi kalır.`}</span>`)}`;
   },
   // The Talimci: what the dummy is for, the latency suggestion from the presses made here, and the tutorial.
   talim() {
     const cal = calibration();
     return `<p class="eyebrow">Talimci · Talimhane</p><h2>Talim</h2>
-      <p>Kuklanın yanında çal: auradaki askerlerin ona vurur. <kbd>↑</kbd> vur, <kbd>→</kbd> atıl, <kbd>←</kbd> topla, <kbd>↓</kbd> diren. Tempoya denk gelen emir daha sert iner; sayılar kuklanın üstünde çıkar.</p>
+      <p>Kuklanın yanında çal: auradaki askerlerin ona vurur. <kbd data-k="up">${keyLabel('up')}</kbd> vur, <kbd data-k="right">${keyLabel('right')}</kbd> atıl, <kbd data-k="left">${keyLabel('left')}</kbd> topla, <kbd data-k="down">${keyLabel('down')}</kbd> diren. Tempoya denk gelen emir daha sert iner; sayılar kuklanın üstünde çıkar.</p>
       <h3 class="sub">Gecikme</h3>
       <p class="dim mono">Şu anki düzeltme: ${settings.offsetMs} ms. ${cal.text}</p>
       ${actions(`${cal.sug != null ? `<button class="btn ghost" type="button" data-act="offset" data-arg="${cal.sug}">Öneriyi uygula: ${cal.sug} ms</button>` : ''}
@@ -4671,7 +4700,7 @@ function pill(c, cxp, y, lines, fonts, colors, lineH, padX) {
 function drawHint(c, y) {
   if (!G.hint) return;
   c.font = `500 15px ${FB}`;
-  const lines = wrapLines(c, G.hint.text, Math.min(560, W - 60));
+  const lines = wrapLines(c, keyText(G.hint.text), Math.min(560, W - 60));
   c.globalAlpha = clamp(G.hint.life / 0.4, 0, 1);
   pill(c, W / 2, y, lines, lines.map(() => `500 15px ${FB}`), lines.map(() => '#f1e6cc'), 20, 16);
   c.globalAlpha = 1;
@@ -4684,7 +4713,7 @@ function drawBig(c, compact) {
     c.textAlign = 'center';
     c.font = `${compact ? 38 : 58}px ${FD}`; c.lineWidth = 7; c.strokeStyle = '#140f0a';
     c.strokeText(b.text, 0, 0); c.fillStyle = b.color; c.fillText(b.text, 0, 0);
-    if (b.sub) { c.font = `500 ${compact ? 13 : 16}px ${FB}`; c.lineWidth = 4; c.strokeText(b.sub, 0, 28); c.fillStyle = '#f1e6cc'; c.fillText(b.sub, 0, 28); }
+    if (b.sub) { const sub = keyText(b.sub); c.font = `500 ${compact ? 13 : 16}px ${FB}`; c.lineWidth = 4; c.strokeText(sub, 0, 28); c.fillStyle = '#f1e6cc'; c.fillText(sub, 0, 28); }
     c.restore();
   }
 }
@@ -4706,7 +4735,7 @@ function drawPad(c, compact) {
       c.restore();
     }
     c.textAlign = 'center';
-    c.font = `700 ${Math.round(17 * cs)}px ${FB}`; c.fillStyle = '#f1e6cc'; c.fillText(o.key, x, yy + 1);
+    c.font = `700 ${Math.round(17 * cs)}px ${FB}`; c.fillStyle = '#f1e6cc'; c.fillText(keyLabel(dir), x, yy + 1);
     c.font = `700 ${Math.round(9 * cs)}px ${FB}`; c.fillStyle = '#d8c9a6'; c.fillText(o.name, x, yy + 14 * cs);
   }
   return { ccx, step, cap };
@@ -4733,7 +4762,7 @@ function drawHUD(c, now) {
   c.fillStyle = '#f0b429'; rr(c, gx, gy, gw * clamp(G.ganimet / G.need, 0, 1), 9, 4.5); c.fill();
   c.textAlign = 'right'; c.font = `500 12px ${FB}`; c.fillStyle = '#b8a988';
   c.fillText(`GANİMET ${G.ganimet}/${G.need} · Terfi ${G.level + 1}${G.ganimet >= G.need && G.phase === 'wave' ? ' dalga sonunda' : ''}`, W - 16, gy + 26);
-  c.fillText('Esc · duraklat ve ayarlar', W - 16, gy + 44);
+  c.fillText(`${keyLabel('pause')} · duraklat ve ayarlar`, W - 16, gy + 44);
   // under it, the build so far, so the player keeps it in mind
   const build = buildList();
   if (build.length && W >= 900 && !G.tut) {
@@ -4754,16 +4783,16 @@ function drawHUD(c, now) {
     const st = tutSt(), need = tutNeed(), n = Math.min(G.tut.count, need);
     const done = G.tut.doneAt ? 'TAMAM!' : need > 8 ? `${n}/${need}` : '●'.repeat(n) + '○'.repeat(need - n);
     c.font = `500 14px ${FB}`;
-    const body = wrapLines(c, st.text, Math.min(620, W - 70));
+    const body = wrapLines(c, keyText(st.text), Math.min(620, W - 70));
     const h = pill(c, W / 2, y,
-      [`EĞİTİM · ${st.sec} · ADIM ${G.tut.step}/${TUT_STEPS.length - 1}`, tutTitle(st), ...body, done, 'Enter: adımı geç · Boşluk: eğitimi bitir'],
+      [`EĞİTİM · ${st.sec} · ADIM ${G.tut.step}/${TUT_STEPS.length - 1}`, tutTitle(st), ...body, done, padMode ? `${keyLabel('skip')}: adımı geç · ${keyLabel('pause')} menüsünden eğitimi bitir` : 'Enter: adımı geç · Boşluk: eğitimi bitir'],
       [`700 11px ${FB}`, `22px ${FD}`, ...body.map(() => `500 14px ${FB}`), `700 15px ${FB}`, `500 11px ${FB}`],
       ['#f0b429', `rgb(${tutColor(st)})`, ...body.map(() => '#f1e6cc'), '#ffcf4a', '#8a7d62'], 21, 20);
     y += h + 8;
   } else if (G.phase === 'breather') {
     const left = Math.max(0, G.breatherLen - G.breatherBeat);
     const h = pill(c, W / 2, y,
-      [`SIRADAKİ · DALGA ${G.wi}/${T.wavesPerChapter} · ${upper(goalName(G.goal))}`, enemySummary(G.goal, G.def), `${left} vuruş · Boşluk: hemen başlat`],
+      [`SIRADAKİ · DALGA ${G.wi}/${T.wavesPerChapter} · ${upper(goalName(G.goal))}`, enemySummary(G.goal, G.def), `${left} vuruş · ${keyLabel('next')}: hemen başlat`],
       [`700 11px ${FB}`, `20px ${FD}`, `500 12px ${FB}`], ['#f0b429', '#f1e6cc', '#b8a988'], 22, 18);
     y += h + 8;
   } else if (G.phase === 'wave') {
@@ -4828,7 +4857,7 @@ function drawHand(c, now, compact, maxW) {
     }
     c.restore();
     c.textAlign = 'left'; c.font = `700 11px ${FB}`; c.fillStyle = ok ? '#ffcf4a' : '#8a7d62';
-    c.fillText(String(i + 1), x + 6, cy + 14);
+    c.fillText(keyLabel('h' + i), x + 6, cy + 14);
     // The cost in a drop, top right.
     c.fillStyle = ok ? '#c8322b' : '#4a2a22'; c.beginPath(); c.arc(x + cw - 11, cy + 11, 8.5, 0, TAU); c.fill();
     c.textAlign = 'center'; c.font = `700 11px ${FB}`; c.fillStyle = '#fff4df'; c.fillText(String(k.cost), x + cw - 11, cy + 15);
@@ -5404,18 +5433,18 @@ function drawHubHUD(c, now) {
   c.font = `500 13px ${FB}`; c.fillStyle = '#9fd8d0'; c.fillText('şan', 22 + sw, 86);
   if (!compact) {
     c.textAlign = 'right'; c.font = `500 12px ${FB}`; c.fillStyle = '#b8a988';
-    c.fillText('Esc · duraklat ve ayarlar', W - 16, 26);
-    c.fillText('WASD yürü · E konuş · oklar çalar', W - 16, 44);
+    c.fillText(`${keyLabel('pause')} · duraklat ve ayarlar`, W - 16, 26);
+    c.fillText(padMode ? `sol çubuk yürü · ${keyLabel('talk')} konuş · ${['up', 'right', 'left', 'down'].map(keyLabel).join(' ')} çalar` : 'WASD yürü · E konuş · oklar çalar', W - 16, 44);
   }
   // Under the konak's name where the screen is too narrow for both on one line.
   drawHint(c, W < 1100 ? 100 : 14);
   // Whoever the leader stands by: what they say, and what E does there.
   if (hub.near && !hub.panel && !hub.leaving) {
     const sp = hub.near, [sx, sy] = toScreen(sp.x, sp.y);
-    if (sp.npc) speech(c, sx, sy - 72 * zoom, sp.name, hub.lines[sp.npc], `E · ${sp.verb}`);
+    if (sp.npc) speech(c, sx, sy - 72 * zoom, sp.name, hub.lines[sp.npc], `${keyLabel('talk')} · ${sp.verb}`);
     else {
       const load = `${G.soldiers.length} ${SOLDIER[meta.company].name} · deste: ${meta.deck.map((id) => KART_BY_ID[id].name).join(', ')}`;
-      pill(c, sx, sy + 24 * zoom, [`E · ${sp.verb}`, load], [`700 14px ${FB}`, `500 12px ${FB}`], ['#ffcf4a', '#b8a988'], 20, 16);
+      pill(c, sx, sy + 24 * zoom, [`${keyLabel('talk')} · ${sp.verb}`, load], [`700 14px ${FB}`, `500 12px ${FB}`], ['#ffcf4a', '#b8a988'], 20, 16);
     }
   }
   // bottom-left: what the next run starts with
@@ -5516,6 +5545,7 @@ function pause() {
   refreshOptions();
   // In the konak there is no run to show or to leave.
   $('pauseBuildBox').hidden = $('restartBtn').hidden = G.mode === 'hub';
+  $('tutEndBtn').hidden = !G.tut;
   renderBuild($('pauseBuild'));
   $('pauseOv').hidden = false;
   $('resumeBtn').focus();
@@ -5548,57 +5578,128 @@ function toggleClick() {
   refreshOptions();
 }
 
-// Gamepad: the face buttons play the instruments where the arrow keys sit: Y VUR, A DİREN,
-// B ATIL, X TOPLAN. LB RB LT RT play hand cards 1-4, the left stick walks, Start pauses and Back skips the
-// breather. Terfi cards take X, Y, B; at the konak the d-pad moves, A presses and Start leaves. In
-// Mehterhane Konağı A talks to whoever the leader stands by (elsewhere it is still the Kös), and
-// in a panel the d-pad moves, A presses and B or Start closes.
+// Gamepad. In a run the face buttons play the instruments where the arrows sit on the HUD's
+// diamond: Y VUR, A DİREN, B ATIL, X TOPLAN. The hand's four cards take the shoulders from left
+// to right: LT LB RB RT. The left stick walks, Start pauses, Back skips the breather or a tutorial
+// step. Terfi cards take X Y B (or the d-pad's left, up and right). On every page of buttons
+// (the title, the pause menu, the konaks, the end) the d-pad or the stick moves, A presses, a
+// slider takes left and right, and B or Start goes back. In Mehterhane Konağı A talks to whoever
+// the leader stands by (elsewhere it is still the Kös).
 const PAD_DRUM = { 3: 'up', 0: 'down', 1: 'right', 2: 'left' };
-const PAD_ULTI = { 4: 0, 5: 1, 6: 2, 7: 3 };
-const PAD_CARD = { 2: 0, 3: 1, 1: 2, 14: 0, 12: 1, 15: 2 };
-let padPrev = [];
+const PAD_HAND = { 6: 0, 4: 1, 5: 2, 7: 3 };
+const PAD_TERFI = { 2: 0, 3: 1, 1: 2, 14: 0, 12: 1, 15: 2 };
+// The names on the pad in hand: Xbox letters, or PlayStation shapes for a Sony pad.
+const PAD_NAMES = {
+  xbox: { up: 'Y', down: 'A', right: 'B', left: 'X', hand: ['LT', 'LB', 'RB', 'RT'], ok: 'A', back: 'B', start: 'Start', select: 'Back' },
+  ps: { up: '△', down: '✕', right: '○', left: '□', hand: ['L2', 'L1', 'R1', 'R2'], ok: '✕', back: '○', start: 'Options', select: 'Create' },
+};
+let padMode = false, padKind = 'xbox', padNow = null, padPrev = [], navDir = null, navNext = 0;
+// What to press for an action on the device last used. '' means the pad has no button for it.
+function keyLabel(name) {
+  const g = PAD_NAMES[padKind];
+  const kb = { up: '↑', down: '↓', right: '→', left: '←', walk: 'WASD', hand: '1-4', h0: '1', h1: '2', h2: '3', h3: '4',
+    terfi: 'A W D', t0: 'A', t1: 'W', t2: 'D', pause: 'Esc', skip: 'Enter', next: 'Boşluk', ok: 'Enter', close: 'Esc', talk: 'E', click: 'M' };
+  if (!padMode) return kb[name] || '';
+  const pad = { up: g.up, down: g.down, right: g.right, left: g.left, walk: 'sol çubuk', hand: g.hand.join(' '),
+    h0: g.hand[0], h1: g.hand[1], h2: g.hand[2], h3: g.hand[3], terfi: `${g.left} ${g.up} ${g.right}`, t0: g.left, t1: g.up, t2: g.right,
+    pause: g.start, skip: g.select, next: g.select, ok: g.ok, close: g.back, talk: g.ok, click: '' };
+  return pad[name] || '';
+}
+// Keyboard words in a hint or a tutorial line, said for the pad when the pad is in hand.
+const ARROW_DIR = { '↑': 'up', '↓': 'down', '→': 'right', '←': 'left' };
+function keyText(s) {
+  if (!padMode || !s) return s;
+  return s.replace(/W A S D|WASD/g, keyLabel('walk')).replace(/1-4/g, keyLabel('hand'))
+    .replace(/[↑↓→←]/g, (a) => keyLabel(ARROW_DIR[a])).replace(/Boşluk/g, keyLabel('next')).replace(/\bE ile/g, `${keyLabel('talk')} ile`);
+}
+// The pages say keys through [data-k] elements, and .kb / .gp spans for longer lines.
+function refreshKeys() {
+  document.body.classList.toggle('pad', padMode);
+  for (const el of document.querySelectorAll('[data-k]')) { const t = keyLabel(el.dataset.k); el.textContent = t; el.hidden = !t; }
+}
+function setInputMode(pad, kind) {
+  if (pad === padMode && (!kind || kind === padKind)) return;
+  padMode = pad; if (kind) padKind = kind;
+  refreshKeys();
+}
+function rumble(strong, weak, ms) {
+  const act = padMode && padNow && padNow.vibrationActuator;
+  if (act && act.playEffect) act.playEffect('dual-rumble', { duration: ms, strongMagnitude: strong, weakMagnitude: weak }).catch(() => {});
+}
+// Menu steps from the d-pad or the stick: one on the press, then repeating while held.
+function padNav(pad, pressed, now) {
+  const ax = pad.axes[0] || 0, ay = pad.axes[1] || 0;
+  const dir = pressed[12] ? 'up' : pressed[13] ? 'down' : pressed[14] ? 'left' : pressed[15] ? 'right'
+    : Math.max(Math.abs(ax), Math.abs(ay)) < 0.6 ? null : Math.abs(ax) > Math.abs(ay) ? (ax > 0 ? 'right' : 'left') : (ay > 0 ? 'down' : 'up');
+  if (dir !== navDir) { navDir = dir; navNext = now + 380; return dir; }
+  if (dir && now >= navNext) { navNext = now + 110; return dir; }
+  return null;
+}
+// A page of buttons on the pad: the d-pad moves, A presses, a focused slider takes left and right.
+// Says whether A pressed a button.
+function padMenu(box, nav, edge) {
+  const el = document.activeElement, inBox = !!el && el !== box && box.contains(el);
+  if (nav) {
+    if (inBox && el.type === 'range' && (nav === 'left' || nav === 'right')) {
+      if (nav === 'right') el.stepUp(); else el.stepDown();
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    } else moveFocusDir(nav, box);
+  }
+  if (edge(0) && inBox && el.tagName === 'BUTTON') { el.click(); return true; }
+  return false;
+}
 function pollPad() {
   G.stick = null;
   const pads = navigator.getGamepads ? navigator.getGamepads() : null;
   const pad = pads && Array.from(pads).find((p) => p && p.connected && p.buttons.length >= 10);
-  if (!pad) { padPrev = []; return; }
-  const pressed = pad.buttons.map((b) => b.pressed);
-  const edge = (i) => pressed[i] && !padPrev[i];
+  padNow = pad || null;
+  if (!pad) { padPrev = []; navDir = null; return; }
+  // The triggers count from halfway down, so a resting finger plays no card.
+  const pressed = pad.buttons.map((b, i) => (i === 6 || i === 7 ? b.value > 0.45 : b.pressed));
+  const prev = padPrev, edge = (i) => pressed[i] && !prev[i];
+  const any = pressed.some((p, i) => p && !prev[i]);
   padPrev = pressed;
   const now = performance.now();
   const stamp = pad.timestamp > 0 && pad.timestamp <= now ? pad.timestamp : now;
-  if (G.mode === 'over') { if (!$('overOv').hidden && (edge(0) || edge(9))) enterHub(true); return; }
-  if (G.mode === 'hub') { hubPad(edge, pad, stamp); return; }
+  const ax = pad.axes[0] || 0, ay = pad.axes[1] || 0;
+  if (any || Math.hypot(ax, ay) > 0.5) setInputMode(true, /054c|playstation|dualsense|dualshock|wireless controller/i.test(pad.id) ? 'ps' : 'xbox');
+  const nav = padNav(pad, pressed, now);
+  if (G.mode === 'title') {
+    if (!padMenu($('titleOv'), nav, edge) && (edge(0) || edge(9))) enterHub(false);
+    return;
+  }
+  if (G.mode === 'over') {
+    if (!$('overOv').hidden && !padMenu($('overOv'), nav, edge) && (edge(0) || edge(9))) enterHub(true);
+    return;
+  }
+  if (G.paused) {
+    if (edge(1) || edge(9)) resume(); else padMenu($('pauseOv'), nav, edge);
+    return;
+  }
+  if (G.mode === 'hub') { hubPad(edge, nav, stamp, ax, ay); return; }
   if (G.mode !== 'play') return;
   if (G.konak) {
-    if (edge(9)) leaveKonak();
-    else if (edge(12) || edge(14)) moveFocus(-1, $('konakOv'));
-    else if (edge(13) || edge(15)) moveFocus(1, $('konakOv'));
-    else if (edge(0) && $('konakOv').contains(document.activeElement)) document.activeElement.click();
+    if (edge(9)) { leaveKonak(); return; }
+    for (const i in PAD_HAND) if (edge(+i)) toggleUlti(PAD_HAND[i]);
+    padMenu($('konakOv'), nav, edge);
     return;
   }
-  if (edge(9)) { if (G.paused) resume(); else pause(); return; }
-  if (G.paused) return;
-  if (G.terfi) { for (const i in PAD_CARD) if (edge(+i)) { pickCard(PAD_CARD[i], false); break; } return; }
+  if (edge(9)) { pause(); return; }
+  if (G.terfi) { for (const i in PAD_TERFI) if (edge(+i)) { pickCard(PAD_TERFI[i], false); break; } return; }
   for (const i in PAD_DRUM) if (edge(+i)) drum(PAD_DRUM[i], stamp);
-  for (const i in PAD_ULTI) if (edge(+i)) playCard(PAD_ULTI[i]);
-  if (edge(8)) { if (G.tut) endTutorial(true); else if (G.phase === 'breather') startWave(); }
-  const ax = pad.axes[0] || 0, ay = pad.axes[1] || 0;
+  for (const i in PAD_HAND) if (edge(+i)) playCard(PAD_HAND[i]);
+  if (edge(8)) { if (G.tut) { if (!G.tut.doneAt) tutNext(); } else if (G.phase === 'breather') startWave(); }
   if (Math.hypot(ax, ay) > 0.25) G.stick = { x: ax, y: ay };
 }
-function hubPad(edge, pad, stamp) {
+function hubPad(edge, nav, stamp, ax, ay) {
   const hub = G.hub;
-  if (hub.panel && !G.paused) {
-    if (edge(1) || edge(9)) closePanel();
-    else if (edge(12) || edge(14)) moveFocus(-1);
-    else if (edge(13) || edge(15)) moveFocus(1);
-    else if (edge(0) && $('hubPanel').contains(document.activeElement)) document.activeElement.click();
+  if (hub.panel) {
+    if (edge(1) || edge(9)) closePanel(); else padMenu($('hubPanel'), nav, edge);
     return;
   }
-  if (edge(9)) { if (G.paused) resume(); else pause(); return; }
-  if (G.paused || hub.leaving) return;
+  if (edge(9)) { pause(); return; }
+  if (hub.leaving) return;
   for (const i in PAD_DRUM) if (edge(+i)) { if (+i === 0 && hub.near) interact(); else drum(PAD_DRUM[i], stamp); }
-  const ax = pad.axes[0] || 0, ay = pad.axes[1] || 0;
   if (Math.hypot(ax, ay) > 0.25) G.stick = { x: ax, y: ay };
 }
 function setOffset(v) {
@@ -5619,6 +5720,7 @@ const DIGIT = { Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3, Digit5: 4, Digit6: 5
 
 window.addEventListener('keydown', (e) => {
   const code = codeOf(e);
+  setInputMode(false);
   if (e.target && e.target.tagName === 'INPUT') return;
   // A konak panel is a page of buttons: arrows move between them, Enter and Space press, Esc closes.
   if (G.mode === 'hub' && G.hub.panel && !G.paused) { panelKey(e, code); return; }
@@ -5635,9 +5737,9 @@ window.addEventListener('keydown', (e) => {
   if (G.mode !== 'play') return;
   if (G.konak) {
     // Arrows move between the buttons; Enter presses a focused card itself, and elsewhere leaves.
-    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[code];
+    const dir = { ArrowRight: 'right', ArrowDown: 'down', ArrowLeft: 'left', ArrowUp: 'up' }[code];
     const onCard = $('konakOv').contains(document.activeElement) && document.activeElement !== $('konakGo');
-    if (step) moveFocus(step, $('konakOv'));
+    if (dir) moveFocusDir(dir, $('konakOv'));
     else if (DIGIT[code] != null && DIGIT[code] < 4) toggleUlti(DIGIT[code]);
     else if (code === 'Enter' && !onCard) { e.preventDefault(); leaveKonak(); }
     return;
@@ -5659,8 +5761,8 @@ window.addEventListener('keydown', (e) => {
 });
 function panelKey(e, code) {
   if (code === 'Escape') { e.preventDefault(); closePanel(); return; }
-  const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[code];
-  if (step) { e.preventDefault(); moveFocus(step); }
+  const dir = { ArrowRight: 'right', ArrowDown: 'down', ArrowLeft: 'left', ArrowUp: 'up' }[code];
+  if (dir) { e.preventDefault(); moveFocusDir(dir); }
 }
 function hubKey(e, code) {
   if (code === 'Escape' || code === 'KeyP') { if (G.paused) resume(); else pause(); return; }
@@ -5672,6 +5774,7 @@ function hubKey(e, code) {
   if (['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(code)) held.add(code);
 }
 window.addEventListener('keyup', (e) => held.delete(codeOf(e)));
+window.addEventListener('pointerdown', () => setInputMode(false));
 window.addEventListener('blur', () => { held.clear(); pause(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
 
@@ -5681,6 +5784,7 @@ $('againBtn').addEventListener('click', () => enterHub(true));
 $('quickBtn').addEventListener('click', () => start(false));
 $('resumeBtn').addEventListener('click', resume);
 $('restartBtn').addEventListener('click', abandonRun);
+$('tutEndBtn').addEventListener('click', () => { resume(); if (G.tut) endTutorial(true); });
 $('applyBtn').addEventListener('click', () => { setOffset(Number($('applyBtn').dataset.value) || 0); G.errs = []; $('applyBtn').hidden = true; $('calib').textContent = 'Uygulandı. Birkaç vuruş sonra tekrar bakabilirsin.'; });
 $('offset').addEventListener('input', (e) => setOffset(Number(e.target.value) || 0));
 $('clickBtn').addEventListener('click', toggleClick);
@@ -5699,6 +5803,7 @@ if (meta.best > 0) {
 }
 
 // The title is shown over the konak.
+refreshKeys();
 newGame();
 placeInHub();
 requestAnimationFrame(frame);
