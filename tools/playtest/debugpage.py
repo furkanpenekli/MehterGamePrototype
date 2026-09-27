@@ -8,7 +8,7 @@ s = (here.parent.parent / f'mehter-seferi-{ver}.html').read_text(encoding='utf-8
 i = s.index('<script>')
 s = s[:i] + '<script>window.requestAnimationFrame = (f) => setTimeout(() => f(performance.now()), 16);</script>\n' + s[i:]
 j = s.rindex('})();')
-s = s[:j] + 'window.__dbg = { get G() { return G; }, meta, enterHub, interact, openPanel, panelAct, start, endRun, SPOTS, HUB, held, hurtLeader, earnSan, abandonRun, startWave, ' + ('playCard, openKonak' if ver == 'v4' else 'fireUlti') + ' };\n' + s[j:]
+s = s[:j] + 'window.__dbg = { get G() { return G; }, meta, enterHub, interact, openPanel, panelAct, start, endRun, SPOTS, HUB, held, hurtLeader, earnSan, abandonRun, startWave, ' + ('playCard, openKonak, tutStep, endTutorial' if ver == 'v4' else 'fireUlti') + ' };\n' + s[j:]
 (here / 'out').mkdir(exist_ok=True)
 (here / 'out' / 'hubdbg.html').write_text(s, encoding='utf-8')
 print('ok')

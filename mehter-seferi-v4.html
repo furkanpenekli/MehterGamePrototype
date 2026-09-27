@@ -4357,11 +4357,12 @@ function drawLeader(c) {
     c.globalAlpha = 1;
   }
   if (G.tut && G.mode === 'play') {
-    const o = ORDERS[TUT_STEPS[G.tut.step].key], w = 0.45 + 0.55 * callPhase() ** 2;
-    const txt = `${o.key} ${o.name}`;
+    // The key to press under the leader; the card step has no instrument, so it names the cards.
+    const st = TUT_STEPS[G.tut.step], o = ORDERS[st.key], w = 0.45 + 0.55 * callPhase() ** 2;
+    const txt = o ? `${o.key} ${o.name}` : '1-4 KART';
     c.globalAlpha = w; c.textAlign = 'center';
     c.font = `22px ${FD}`; c.lineWidth = 5; c.strokeStyle = '#140f0a';
-    c.strokeText(txt, L.x, L.y + 84); c.fillStyle = `rgb(${o.color})`; c.fillText(txt, L.x, L.y + 84);
+    c.strokeText(txt, L.x, L.y + 84); c.fillStyle = `rgb(${tutColor(st)})`; c.fillText(txt, L.x, L.y + 84);
     c.globalAlpha = 1;
   }
   if (G.judge) {
