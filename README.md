@@ -420,8 +420,15 @@ bot has played it. Everything not listed here is as in prototype 3. Its storage 
   the Bayraktar's starting companies, prisoners freed from forts, and one company of the player's
   choice added at each chapter konak (which replaces choosing ulti slots there). The army's limit
   is 20, 24 and 28 by chapter.
-- **The breather banner is a free card.** Walking under one of the four banners puts a free,
-  one-time card of two companies of that kind at the front of the deck: it is the next card.
+- **Terfis come when a wave ends (decision 28).** Loot still fills the bar in a wave, but a terfi
+  it has earned waits for the breather and opens there, one after another while the loot lasts;
+  the breather's count waits with it. During a wave the loot line says "dalga sonunda". A terfi
+  earned in a chapter's last wave opens after the konak. The breather has no banners any more.
+- **The chapter konak rearranges the deck (decision 28).** Besides the core company, the konak
+  after each chapter shows the run's deck, to change for the next chapter in the same way as at
+  the Bayraktar; the deck is shuffled again when the band leaves. The change is for that run only:
+  the Bayraktar's deck is what the next run starts with. Arrows (the d-pad) move between the
+  cards, Enter (A) presses one, and Enter off the cards or Start leaves.
 - **Monsters come in groups of one kind.** Each kind in a wave is its own group (split in two past
   8), and each big monster comes alone, in the second half. A group is announced 4 beats before
   it comes, with a marker at the screen's edge on the side it comes from: how many, what, the beats
@@ -429,7 +436,10 @@ bot has played it. Everything not listed here is as in prototype 3. Its storage 
   beats. Tuning is in `T.warnBeats`, `T.groupGap` and `T.groupSize`.
 - **Tutorial:** a fifth step plays two cards.
 - **End screen:** cards played, the three most played, and Cezbe wasted.
-- **Bot test, 2026-09-27** (`tools/playtest`, 8 runs each). The bots play a card as soon as they
+- **Bot test after decision 28:** good 7 of 8 (4 hearts lost, one fall at 3-4), mid 0 of 8
+  (falls at 3-2 twice and 3-4 six times). Without the banners' free companies the mid bot is back
+  where it was in prototype 3.
+- **Bot test, 2026-09-27, before decision 28** (`tools/playtest`, 8 runs each). The bots play a card as soon as they
   can afford one; the good bot picks the card that is strong against the monsters near and coming,
   the new `rand` bot picks at random at the same pace:
 
@@ -558,6 +568,11 @@ Build on these; do not re-propose what they rule out.
     cards that fight for a while, and monsters in announced groups of one kind. The user did not
     choose between the options offered (Cezbe as pure elixir or with its stat bonus kept; temporary
     or capped soldiers; what the breather offers), so the details are Claude's (listed below).
+28. **2026-09-27: terfis when a wave ends, no free banner card, the deck rearranged at the konaks
+    (prototype 4 only).** The user: "v4te terfiler wave bitince olsun bedava karta da gerek kalmadı
+    bu durumda böyle ufak bir sadeleşmeye gidebiliriz. konaklarda da deste yeniden düzenlenir ama
+    bunlar v4e özgü". Built as in "Prototype 4". Loot still decides when a terfi is earned; only
+    when it opens changed (Claude's reading, listed below).
 
 ## Claude's calls the user has not confirmed
 
@@ -582,9 +597,11 @@ Build on these; do not re-propose what they rule out.
   chapter konak playing the konak's track.
 - Decision 27's details: Cezbe as a pure elixir with no stat bonus, its ten pips and every gain;
   the card costs; a company card allowed twice in a deck; 32 beats for a company from a card; a
-  company added to the core at each chapter konak instead of choosing ulti slots; the breather
-  banner as a free card; Akıncı Baskını as a company of each kind; groups of one kind, the 4-beat
-  warning and the gaps; the army limits 20/24/28.
+  company added to the core at each chapter konak instead of choosing ulti slots; Akıncı Baskını
+  as a company of each kind; groups of one kind, the 4-beat warning and the gaps; the army limits
+  20/24/28.
+- Decision 28's reading: a terfi is still earned by loot and only waits for the wave's end (not
+  one terfi every wave); the chapter konak's deck change lasts for that run only.
 - One banner per breather, bringing two companies, and waves 1.5 times as large (decision 16
   only asked for soldiers on pick and a little longer waves).
 

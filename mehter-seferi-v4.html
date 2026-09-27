@@ -230,12 +230,11 @@
           <ul class="keys">
             <li><kbd>WASD</kbd><span>Yürü, ordu seni izler</span></li>
             <li><kbd>1-4</kbd><span><b>Kart oyna</b>: bölük çağır ya da ulti at, Cezbe harcar</span></li>
-            <li><kbd>WASD</kbd><span>Nefes arasında bir <b>sancağın</b> altına yürü: bedava bir bölük kartı sıradaki kartın olur</span></li>
-            <li><kbd>A W D</kbd><span><b>Terfi</b> kartı seç</span></li>
+            <li><kbd>A W D</kbd><span><b>Terfi</b> kartı seç: ganimet dolduysa dalga bitince gelir</span></li>
           </ul>
         </div>
       </div>
-      <p class="dim"><b>Cezbe</b> on dilimdir. Kendiliğinden yavaşça dolar; tempoya denk gelen her çalgı onu hızlandırır (Zil'de iki kat). Lider yara alınca düşer. Dolu Cezbe boşa gider: harca. Karttan gelen bölük <b>32 vuruş</b> savaşır, sonra döner. Sefere çıktığın bölükler ise kalıcıdır; bölüm sonundaki konakta ocağa bir bölük daha katarsın. <b>Sefer</b> üç bölümdür: Tepegöz Yurdu, Şahmeran Diyarı, Ejderha Dağı. Her bölüm beş dalga: açık savaş, baskın, kuşatma ve sonunda serdarı. Kalpler biterse sefer biter.</p>
+      <p class="dim"><b>Cezbe</b> on dilimdir. Kendiliğinden yavaşça dolar; tempoya denk gelen her çalgı onu hızlandırır (Zil'de iki kat). Lider yara alınca düşer. Dolu Cezbe boşa gider: harca. Karttan gelen bölük <b>32 vuruş</b> savaşır, sonra döner. Sefere çıktığın bölükler ise kalıcıdır; bölüm sonundaki konakta ocağa bir bölük daha katar, desteni yeniden düzenlersin. <b>Sefer</b> üç bölümdür: Tepegöz Yurdu, Şahmeran Diyarı, Ejderha Dağı. Her bölüm beş dalga: açık savaş, baskın, kuşatma ve sonunda serdarı. Kalpler biterse sefer biter.</p>
       <p class="dim"><b>Mehterhane Konağı</b> seferler arasındaki evin. Seferde kazandığın <b class="san">şan</b> düşsen de kalır; konakta onu kalıcı gelişmelere harcar, Bayraktar'da <b>sekiz kartlık desteni</b> ve kalıcı bölüğünü seçer, talim yaparsın.</p>
       <div class="actions">
         <button class="btn" id="startBtn" type="button">Konağa gir</button>
@@ -299,9 +298,9 @@
 
   <div class="overlay light" id="terfiOv" hidden>
     <div class="panel wide">
-      <p class="eyebrow">Ganimet doldu</p>
+      <p class="eyebrow">Dalga bitti · ganimet doldu</p>
       <h2>Terfi: bir kart seç</h2>
-      <p class="dim">Savaş seni bekler. Sol elle seç: <kbd>A</kbd> <kbd>W</kbd> <kbd>D</kbd> (oyun kolunda X Y B)</p>
+      <p class="dim">Sol elle seç: <kbd>A</kbd> <kbd>W</kbd> <kbd>D</kbd> (oyun kolunda X Y B)</p>
       <div class="cards" id="cards"></div>
       <h3 class="sub">Aldığın terfiler</h3>
       <div class="build" id="terfiBuild"></div>
@@ -315,6 +314,9 @@
       <p id="konakNote"></p>
       <p class="dim">Ocağa bir bölük kat: bu askerler sefer boyunca kalıcıdır. Tıkla ya da <kbd>1</kbd>-<kbd>4</kbd>.</p>
       <div class="cards" id="ultiCards"></div>
+      <h3 class="sub" id="konakDeckTitle"></h3>
+      <p class="dim">Sıradaki bölüm için desteni düzenle. Bir bölük kartı iki kez girebilir: tıkladıkça sayısı artar, sonra çıkar. Oklarla gez, <kbd>Enter</kbd> ile seç.</p>
+      <div class="cards" id="konakDeck"></div>
       <div class="actions">
         <button class="btn" id="konakGo" type="button">Yola çık</button>
         <span class="dim" id="konakCount"></span>
@@ -381,7 +383,7 @@ const T = {
   // A blow on the leader takes hitDrop. A wave starts with at least waveStartBar.
   barMax: 10, regenBeats: 8, goodGain: 0.2, perfectGain: 0.3, hitDrop: 2, waveStartBar: 4,
   silenceSec: 3,
-  pickCompanies: 2, waveSize: 2, groupSize: 8, enemyCap: 30,
+  waveSize: 2, groupSize: 8, enemyCap: 30,
   // Monsters come in groups of one kind. A group is announced warnBeats before it comes, and
   // the next one follows after a gap that grows with its size.
   warnBeats: 4, groupGap: [4, 8], firstGroup: 4,
@@ -635,8 +637,6 @@ for (const k of KARTS) if (k.unit) {
 const KART_BY_ID = Object.fromEntries(KARTS.map((k) => [k.id, k]));
 const kartMax = (id) => (KART_BY_ID[id].unit ? 2 : 1);
 const DEFAULT_DECK = ['azap', 'yeniceri', 'kemankes', 'deli', 'top', 'duvar', 'mars', 'hucum'];
-// A free card from a breather banner: two companies of its soldiers, played once and gone.
-const bannerKart = (type) => ({ id: 'sancak', unit: type, cost: 0, color: KART_BY_ID[type].color, name: SOLDIER[type].name, once: true, companies: T.pickCompanies });
 
 const RAR = { 1: { name: 'Sıradan', color: '#cfc3a6' }, 2: { name: 'Nadir', color: '#5aa2e0' }, 3: { name: 'Destansı', color: '#f0b429' } };
 const CARDS = [
@@ -1067,13 +1067,13 @@ function newGame() {
     mode: 'title', phase: 'breather', paused: false, terfi: null, konak: null, tut: null,
     leader: { kind: 'leader', x: 0, y: 0, r: 14, face: -Math.PI / 2, hearts: T.hearts, invuln: 0, pulse: 0, kx: 0, ky: 0 },
     cam: { x: 0, y: 0 },
-    soldiers: [], enemies: [], forts: [], coins: [], shots: [], parts: [], texts: [], banners: [], pending: [], groups: [], zones: [],
+    soldiers: [], enemies: [], forts: [], coins: [], shots: [], parts: [], texts: [], pending: [], groups: [], zones: [],
     seen: new Set(),
     bar: 0, guardShow: 0, kos: null,
     hucum: null, nextHucum: 0, wallUntil: -1, rushUntil: -1,
     cd: { up: 0, down: 0, right: 0, left: 0 }, cdLen: { up: 1, down: 1, right: 1, left: 1 }, lastBeatPress: 0,
     // The deck: `hand` holds four cards, `queue` the rest in the order they come.
-    hand: [], queue: [], ultFlash: [0, 0, 0, 0], regenAt: 0, incoming: [],
+    deck: [], hand: [], queue: [], ultFlash: [0, 0, 0, 0], regenAt: 0, incoming: [],
     picked: false, banner: 'azap', ganimet: 0, level: 0, need: T.terfiBase, cap: T.armyCaps[0], picks: [],
     wave: 0, wi: 0, chapter: 1, goal: 'dagit', target: null, def: null,
     waveBeat: 0, dir: 0, breatherBeat: 0, breatherLen: 16, victoryBeat: 0,
@@ -1105,8 +1105,9 @@ function applyMeta() {
   shuffleDeck(meta.deck);
   muster(true);
 }
-// The deck is shuffled once at the start of a run; the first four cards are the hand.
+// The deck is shuffled at the start of a run and after a konak; the first four cards are the hand.
 function shuffleDeck(ids) {
+  G.deck = ids.slice();
   const list = ids.map((id) => KART_BY_ID[id]);
   for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; }
   G.hand = list.slice(0, HAND); G.queue = list.slice(HAND);
@@ -1395,23 +1396,18 @@ function startBreather() {
     if (room > best) { best = room; G.dir = a; }
   }
   G.breatherLen = G.wave === 1 ? 16 : T.breatherBeats;
-  G.target = null; G.hucum = null; G.picked = false;
-  const L = G.leader;
-  G.banners = SOLDIER_ORDER.map((type, i) => {
-    const a = -Math.PI / 2 + (i - 1.5) * 0.95;
-    return { type, x: L.x + Math.cos(a) * 185, y: L.y + Math.sin(a) * 150 + 30 };
-  });
+  G.target = null; G.hucum = null;
   if (G.wi === 1) bigText(`${G.chapter}. BÖLÜM`, theme().name, '#f0b429', 2);
   // A monster seen for the first time is introduced in the breather before it comes.
   const fresh = Object.keys(G.def).concat(G.goal === 'boss' ? [theme().boss] : []).filter((t) => !G.seen.has(t));
   fresh.forEach((t) => G.seen.add(t));
   G.fresh = fresh;
-  if (G.wave === 1) showHint('Bir sancağın altına yürü: o bölüğün bedava kartı sıradaki kartın olur. Dalga başına bir sancak. Beklerken prova et: tempoda çalmak Cezbe doldurur.', 16);
+  if (G.wave === 1) showHint('Dalga başlamadan prova et: tempoda çalmak dalgada Cezbe doldurur. Kartların sol altta; dalga başlayınca 1-4 ile oyna.', 16);
   else if (fresh.length) showHint('Yeni: ' + fresh.map((t) => ENEMY[t].tip).join(' '), G.breatherLen);
-  else showHint(`Sıradaki: ${goalName(G.goal)}. Gelecek canavarlara göre bir sancak seç: bedava kartı sıradaki kartın olur. Boşluk: hemen başlat.`, 8);
+  else showHint(`Sıradaki: ${goalName(G.goal)}. Boşluk: hemen başlat.`, 8);
 }
 function startWave() {
-  G.phase = 'wave'; G.waveBeat = 0; G.banners = [];
+  G.phase = 'wave'; G.waveBeat = 0;
   G.hpScale = ramp('hp'); G.dmgScale = ramp('dmg');
   // Monsters come in groups of one kind, so the player can answer each with a card. A kind with
   // more than groupSize is split in two or more; a big one comes alone. The small groups are
@@ -1557,7 +1553,7 @@ function endRun(won) {
     ['Düşen düşman', s.kills], ['En büyük ordu', s.maxArmy],
     ['Perfect', s.perfect], ['İyi', s.good], ['Ritim dışı', s.miss],
     ['Çalgılar', Object.keys(ORDERS).map((d) => ORDERS[d].key + s.use[d]).join(' ')], ['En uzun seri', s.bestStreak], ['Oynanan kart', s.ultis], ['Taşan Cezbe', Math.round(s.wasted)], ['Basılan kale', s.raids],
-    ['En çok oynanan', Object.keys(s.played).sort((a, b) => s.played[b] - s.played[a]).slice(0, 3).map((id) => `${id === 'sancak' ? 'Sancak' : KART_BY_ID[id].name} ×${s.played[id]}`).join(' · ') || '-'],
+    ['En çok oynanan', Object.keys(s.played).sort((a, b) => s.played[b] - s.played[a]).slice(0, 3).map((id) => `${KART_BY_ID[id].name} ×${s.played[id]}`).join(' · ') || '-'],
   ];
   renderBuild($('overBuild'));
   const box = $('stats'); box.textContent = '';
@@ -2192,7 +2188,7 @@ function killSoldier(s) {
 
 // ---------------------------------------------------------------- the deck
 // A card is played at once, any time in a wave, and spends its cost in Cezbe pips. It goes to the
-// back of the deck and the next card takes its slot; a free banner card is played once and gone.
+// back of the deck and the next card takes its slot.
 function playCard(i) {
   if (G.mode !== 'play' || G.paused || G.terfi || G.konak) return;
   const tutCard = G.tut && TUT_STEPS[G.tut.step].key === 'card';
@@ -2213,14 +2209,14 @@ function playCard(i) {
   G.ultFlash[i] = 1; G.stats.ultis++;
   G.stats.played[k.id] = (G.stats.played[k.id] || 0) + 1;
   G.hand[i] = G.queue.shift() || null;
-  if (!k.once) G.queue.push(k);
+  G.queue.push(k);
   castCard(k);
   if (G.tut) { G.bar = T.barMax; if (tutCard) tutCount(); }
 }
 function castCard(k) {
   const L = G.leader, col = `rgb(${k.color})`;
   if (k.unit) {
-    summonCompany(k.unit, k.companies || 1);
+    summonCompany(k.unit);
     ring(L.x, L.y, col, 70); burst(L.x, L.y, col, 20, 240);
     // The first time a company is called against its prey, say why it is good.
     const prey = G.enemies.concat(G.incoming.flatMap((g) => g.list.map((type) => ({ type })))).find((e) => STRONG[k.unit].includes(e.type));
@@ -2325,7 +2321,8 @@ function pickCard(i, fromClick) {
 
 // ---------------------------------------------------------------- konak
 // After a chapter's fifth wave the band rests at a konak: soldiers heal, a heart comes back, the
-// army's limit grows, and one company of the player's choice joins the core for good.
+// army's limit grows, one company of the player's choice joins the core for good, and the deck is
+// rearranged for the next chapter (for this run only; the Bayraktar keeps the one runs start with).
 function openKonak() {
   const L = G.leader;
   for (const s of G.soldiers) s.hp = s.maxHp;
@@ -2336,7 +2333,7 @@ function openKonak() {
   G.soldiers = G.soldiers.filter((s) => !s.dead);
   const oldCap = G.cap;
   G.cap = T.armyCaps[Math.min(G.chapter, T.armyCaps.length - 1)];
-  G.konak = { sel: null };
+  G.konak = { sel: null, deck: G.deck.slice() };
   G.phase = 'konak';
   held.clear();
   $('konakEyebrow').textContent = `${G.chapter}. bölüm bitti · sıradaki: ${THEMES[G.chapter].name}`;
@@ -2359,8 +2356,16 @@ function renderKonak() {
     b.addEventListener('click', () => toggleUlti(i));
     box.appendChild(b);
   });
-  $('konakCount').textContent = sel ? `${SOLDIER[sel].name} ocağa katılacak` : 'Bir bölük seç';
-  $('konakGo').disabled = !sel;
+  renderKonakDeck();
+}
+function renderKonakDeck() {
+  const sel = G.konak.sel, deck = G.konak.deck, ok = deck.length === DECK_SIZE;
+  const was = document.activeElement, key = was && was.dataset && was.dataset.act === 'deck' ? was.dataset.arg : null;
+  $('konakDeckTitle').textContent = `Sancak destesi · ${deck.length}/${DECK_SIZE}`;
+  $('konakDeck').innerHTML = deckButtons(deck);
+  if (key) { const b = $('konakDeck').querySelector(`button[data-arg="${key}"]:not([disabled])`); if (b) b.focus(); }
+  $('konakCount').textContent = !sel ? 'Bir bölük seç' : !ok ? `Destede ${deck.length} kart var: sekiz seç` : `${SOLDIER[sel].name} ocağa katılacak`;
+  $('konakGo').disabled = !sel || !ok;
 }
 function toggleUlti(i) {
   if (!G.konak || !SOLDIER_ORDER[i]) return;
@@ -2368,8 +2373,9 @@ function toggleUlti(i) {
   renderKonak();
 }
 function leaveKonak() {
-  if (!G.konak || !G.konak.sel) return;
+  if (!G.konak || !G.konak.sel || !validDeck(G.konak.deck)) return;
   const type = G.konak.sel;
+  shuffleDeck(G.konak.deck);
   G.konak = null;
   $('konakOv').hidden = true;
   held.clear();
@@ -2570,19 +2576,6 @@ function updateWorld(dt, rdt) {
   if (L.kx || L.ky) { L.x += L.kx * dt; L.y += L.ky * dt; const f = Math.exp(-dt * 6); L.kx *= f; L.ky *= f; if (Math.abs(L.kx) + Math.abs(L.ky) < 3) L.kx = L.ky = 0; }
   G.zones = G.zones.filter((z) => z.until > G.h);
 
-  if (G.phase === 'breather') {
-    for (const b of G.banners) {
-      if (G.picked || dist(L, b) >= 40) continue;
-      // The banner's free card comes next: at the front of the deck, or straight into an empty slot.
-      const free = bannerKart(b.type), gap = G.hand.indexOf(null);
-      if (gap >= 0) G.hand[gap] = free; else G.queue.unshift(free);
-      G.picked = true; G.banners = [b];
-      floatText(b.x, b.y - 70, `SIRADAKİ KART: ${upper(SOLDIER[b.type].name)} ×${SUMMON[b.type] * T.pickCompanies}`, '#ffcf4a', 16, true);
-      ring(b.x, b.y, '#f0b429', 50);
-      sfx('banner', 0.1, (t) => { S.kos(t, 0.5, sfxBus); S.cevgen(t, 0.8, sfxBus); });
-      break;
-    }
-  }
   G.soldiers.forEach((s, i) => updateSoldier(s, i, dt));
   for (const e of G.enemies) updateEnemy(e, dt);
   separate();
@@ -2622,7 +2615,9 @@ function updateWorld(dt, rdt) {
   G.forts = G.forts.filter((f) => !f.dead);
   if (G.forts.some((f) => dist(f, L) < 650)) hintOnce('raid', 'Karakol ya da hisar! Bas: içinden asker çıkar, ama düşünce esirler ordumuza katılır ve ganimet düşer. Hisar bir kalp de verir.', 10);
   if (G.phase === 'wave' && goalDone()) victory();
-  if (!G.terfi && G.mode === 'play' && (G.phase === 'wave' || G.phase === 'breather') && G.ganimet >= G.need) openTerfi();
+  // A terfi waits for the end of the wave: it opens in the breather, one after another while the
+  // loot lasts, and the breather's count waits with it.
+  if (!G.terfi && G.mode === 'play' && G.phase === 'breather' && G.ganimet >= G.need) openTerfi();
 
   const k = 1 - Math.exp(-rdt * 6);
   G.cam.x += (L.x - G.cam.x) * k; G.cam.y += (L.y - G.cam.y) * k;
@@ -2893,8 +2888,8 @@ function renderPanel(keepFocus) {
   const again = buttons.find((b) => `${b.dataset.act}|${b.dataset.arg}` === key) || buttons[0];
   if (again) again.focus();
 }
-function moveFocus(step) {
-  const list = [...$('hubPanel').querySelectorAll('button:not([disabled])')];
+function moveFocus(step, box) {
+  const list = [...(box || $('hubPanel')).querySelectorAll('button:not([disabled])')];
   if (!list.length) return;
   const i = list.indexOf(document.activeElement);
   const j = i < 0 ? (step > 0 ? 0 : list.length - 1) : (i + step + list.length) % list.length;
@@ -2907,6 +2902,22 @@ const BESTIARY = [
   ['yilan', 'kanatli', 'akrep', 'kahin', 'evren', 'sahmeran'],
   ['hortlak', 'korkusu', 'yavru', 'odcadi', 'oddevi', 'ejderha'],
 ];
+// The deck as a page of cards, one button per card, for the Bayraktar and the chapter konak.
+function deckButtons(sel) {
+  return KARTS.map((k) => {
+    const open = kartOpen(k.id), have = countIn(sel, k.id), max = kartMax(k.id);
+    const full = sel.length >= DECK_SIZE && have === 0;
+    return `<button class="card ${have ? 'on' : 'off'}" type="button" data-act="deck" data-arg="${k.id}"${open && !full ? '' : ' disabled'} style="--rar:rgb(${k.color})">
+      <span class="rar">${!open ? 'Kilitli · Kethüda açar' : have ? `Destede${max > 1 ? ` <span class="pips">${'●'.repeat(have)}${'○'.repeat(max - have)}</span>` : ''}` : full ? 'Deste dolu' : 'Destede değil'} · ${k.cost} Cezbe</span>
+      <span class="t">${k.name}</span><span class="d">${k.d}</span></button>`;
+  }).join('');
+}
+// A click adds one more copy while there is room; past the most allowed it takes them all out.
+function toggleDeck(sel, id) {
+  if (!kartOpen(id)) return sel;
+  if (countIn(sel, id) < kartMax(id) && sel.length < DECK_SIZE) return sel.concat([id]);
+  return sel.filter((x) => x !== id);
+}
 const actions = (inner) => `<div class="actions">${inner}</div>`;
 const closeBtn = (label, off) => `<button class="btn" type="button" data-act="close"${off ? ' disabled' : ''}>${label}</button>`;
 const PANELS = {
@@ -2936,13 +2947,7 @@ const PANELS = {
         <span class="rar">${on ? 'Seçili' : 'Bölük'} · ${n} bölük · kalıcı</span><span class="t">${d.name} ×${n * SUMMON[t]}</span>
         <span class="d">${d.role}. Güçlü olduğu: ${prey}.</span></button>`;
     }).join('');
-    const deck = KARTS.map((k) => {
-      const open = kartOpen(k.id), have = countIn(sel, k.id), max = kartMax(k.id);
-      const full = sel.length >= DECK_SIZE && have === 0;
-      return `<button class="card ${have ? 'on' : 'off'}" type="button" data-act="deck" data-arg="${k.id}"${open && !full ? '' : ' disabled'} style="--rar:rgb(${k.color})">
-        <span class="rar">${!open ? 'Kilitli · Kethüda açar' : have ? `Destede${max > 1 ? ` <span class="pips">${'●'.repeat(have)}${'○'.repeat(max - have)}</span>` : ''}` : full ? 'Deste dolu' : 'Destede değil'} · ${k.cost} Cezbe</span>
-        <span class="t">${k.name}</span><span class="d">${k.d}</span></button>`;
-    }).join('');
+    const deck = deckButtons(sel);
     const ok = sel.length === DECK_SIZE;
     return `<p class="eyebrow">Bayraktar · Sefer hazırlığı</p><h2>Hangi bölükle çıkıyorsun?</h2>
       <p class="dim">Bu askerler seferin kalıcı ordusudur; konakta seni izleyenler de onlar.</p>
@@ -3002,11 +3007,7 @@ function panelAct(act, arg) {
     floatText(L.x, L.y - 90, `${SOLDIER[arg].name} bölükleri`, SOLDIER[arg].color, 18, true);
     sfx('banner', 0.1, (t) => { S.kos(t, 0.5, sfxBus); S.cevgen(t, 0.8, sfxBus); });
   } else if (act === 'deck') {
-    // A click adds one more copy while there is room; past the most allowed it takes them all out.
-    const sel = G.hub.sel, have = countIn(sel, arg);
-    if (!kartOpen(arg)) return;
-    if (have < kartMax(arg) && sel.length < DECK_SIZE) sel.push(arg);
-    else G.hub.sel = sel.filter((x) => x !== arg);
+    G.hub.sel = toggleDeck(G.hub.sel, arg);
   } else if (act === 'offset') {
     setOffset(Number(arg) || 0); G.errs = [];
   } else if (act === 'click') {
@@ -3486,31 +3487,6 @@ function drawAura(c, now) {
   if (p > 0) {
     c.strokeStyle = `rgba(255,244,214,${p * 0.8})`; c.lineWidth = 2 + p * 4;
     c.beginPath(); c.arc(L.x, L.y, R + (1 - p) * 10, 0, TAU); c.stroke();
-  }
-}
-function drawBanners(c, now) {
-  for (const b of G.banners) {
-    const def = SOLDIER[b.type], sel = G.picked;
-    if (sel) {
-      c.fillStyle = 'rgba(240,180,41,0.16)'; c.beginPath(); c.arc(b.x, b.y, 42, 0, TAU); c.fill();
-      c.strokeStyle = '#f0b429'; c.lineWidth = 2.5; c.beginPath(); c.arc(b.x, b.y, 42, 0, TAU); c.stroke();
-    } else {
-      c.strokeStyle = 'rgba(241,230,204,0.3)'; c.lineWidth = 2; c.setLineDash([6, 6]);
-      c.beginPath(); c.arc(b.x, b.y, 38, 0, TAU); c.stroke(); c.setLineDash([]);
-    }
-    c.strokeStyle = '#8a6a3a'; c.lineWidth = 3;
-    c.beginPath(); c.moveTo(b.x, b.y + 12); c.lineTo(b.x, b.y - 48); c.stroke();
-    const w = Math.sin(now / 180 + b.x) * 4;
-    c.fillStyle = def.color; c.strokeStyle = def.rim; c.lineWidth = 1.5;
-    c.beginPath(); c.moveTo(b.x, b.y - 48); c.quadraticCurveTo(b.x + 18, b.y - 46 + w, b.x + 34, b.y - 40 + w);
-    c.quadraticCurveTo(b.x + 18, b.y - 34 + w, b.x, b.y - 30); c.closePath(); c.fill(); c.stroke();
-    c.fillStyle = '#f0b429'; c.beginPath(); c.arc(b.x, b.y - 50, 3.5, 0, TAU); c.fill();
-    c.textAlign = 'center';
-    c.font = `20px ${FD}`; c.fillStyle = sel ? '#ffcf4a' : '#f1e6cc';
-    c.fillText(`${def.name} ×${SUMMON[b.type] * T.pickCompanies}`, b.x, b.y + 38);
-    c.font = `500 11px ${FB}`; c.fillStyle = '#b8a988';
-    c.fillText(def.role, b.x, b.y + 54);
-    c.font = `700 11px ${FB}`; c.fillStyle = '#f0b429'; c.fillText(sel ? 'SIRADAKİ KARTIN' : 'BEDAVA KART', b.x, b.y + 70);
   }
 }
 function drawTelegraphs(c) {
@@ -4427,7 +4403,6 @@ function drawWorld(c, now) {
   G.q = beatPhase();
   drawGround(c);
   drawAura(c, now);
-  if (G.phase === 'breather' && G.mode === 'play') drawBanners(c, now);
   for (const e of G.enemies) {
     if (e.type === 'kapi') drawGate(c, e);
     else if (e.type === 'karakol') drawKarakol(c, e);
@@ -4595,7 +4570,7 @@ function drawHUD(c, now) {
   c.fillStyle = '#3a3223'; rr(c, gx, gy, gw, 9, 4.5); c.fill();
   c.fillStyle = '#f0b429'; rr(c, gx, gy, gw * clamp(G.ganimet / G.need, 0, 1), 9, 4.5); c.fill();
   c.textAlign = 'right'; c.font = `500 12px ${FB}`; c.fillStyle = '#b8a988';
-  c.fillText(`GANİMET ${G.ganimet}/${G.need} · Terfi ${G.level + 1}`, W - 16, gy + 26);
+  c.fillText(`GANİMET ${G.ganimet}/${G.need} · Terfi ${G.level + 1}${G.ganimet >= G.need && G.phase === 'wave' ? ' dalga sonunda' : ''}`, W - 16, gy + 26);
   c.fillText('Esc · duraklat ve ayarlar', W - 16, gy + 44);
   // under it, the build so far, so the player keeps it in mind
   const build = buildList();
@@ -4623,7 +4598,7 @@ function drawHUD(c, now) {
   } else if (G.phase === 'breather') {
     const left = Math.max(0, G.breatherLen - G.breatherBeat);
     const h = pill(c, W / 2, y,
-      [`SIRADAKİ · DALGA ${G.wi}/${T.wavesPerChapter} · ${upper(goalName(G.goal))}`, enemySummary(G.goal, G.def), `Sancak seç: bedava kart · ${left} vuruş · Boşluk: hemen başlat`],
+      [`SIRADAKİ · DALGA ${G.wi}/${T.wavesPerChapter} · ${upper(goalName(G.goal))}`, enemySummary(G.goal, G.def), `${left} vuruş · Boşluk: hemen başlat`],
       [`700 11px ${FB}`, `20px ${FD}`, `500 12px ${FB}`], ['#f0b429', '#f1e6cc', '#b8a988'], 22, 18);
     y += h + 8;
   } else if (G.phase === 'wave') {
@@ -4693,10 +4668,9 @@ function drawHand(c, now, compact, maxW) {
     c.fillStyle = ok ? '#c8322b' : '#4a2a22'; c.beginPath(); c.arc(x + cw - 11, cy + 11, 8.5, 0, TAU); c.fill();
     c.textAlign = 'center'; c.font = `700 11px ${FB}`; c.fillStyle = '#fff4df'; c.fillText(String(k.cost), x + cw - 11, cy + 15);
     c.font = `700 ${compact ? 9 : 11}px ${FB}`; c.fillStyle = ok ? '#f1e6cc' : '#8a7d62';
-    const label = k.unit ? `${k.name} ×${SUMMON[k.unit] * (k.companies || 1)}` : k.name;
+    const label = k.unit ? `${k.name} ×${SUMMON[k.unit]}` : k.name;
     const words = wrapLines(c, label, cw - 6);
     words.slice(0, 2).forEach((w, j) => c.fillText(w, x + cw / 2, cy + ch - (words.length > 1 ? 18 : 7) + j * 11));
-    if (k.once) { c.font = `700 9px ${FB}`; c.fillStyle = '#ffcf4a'; c.fillText('BEDAVA', x + cw / 2, cy + 26); }
   });
   // The next card, small, after the hand.
   const nk = G.queue[0], nx = barX + HAND * (cw + gap), nh = ch * 0.7, ny = cy + ch - nh;
@@ -5411,7 +5385,7 @@ function toggleClick() {
 
 // Gamepad: the face buttons play the instruments where the arrow keys sit: Y VUR, A DİREN,
 // B ATIL, X TOPLAN. LB RB LT RT play hand cards 1-4, the left stick walks, Start pauses and Back skips the
-// breather. Terfi cards take X, Y, B; at the konak A or Start leaves with the current slots. In
+// breather. Terfi cards take X, Y, B; at the konak the d-pad moves, A presses and Start leaves. In
 // Mehterhane Konağı A talks to whoever the leader stands by (elsewhere it is still the Kös), and
 // in a panel the d-pad moves, A presses and B or Start closes.
 const PAD_DRUM = { 3: 'up', 0: 'down', 1: 'right', 2: 'left' };
@@ -5431,7 +5405,13 @@ function pollPad() {
   if (G.mode === 'over') { if (!$('overOv').hidden && (edge(0) || edge(9))) enterHub(true); return; }
   if (G.mode === 'hub') { hubPad(edge, pad, stamp); return; }
   if (G.mode !== 'play') return;
-  if (G.konak) { if (edge(0) || edge(9)) leaveKonak(); return; }
+  if (G.konak) {
+    if (edge(9)) leaveKonak();
+    else if (edge(12) || edge(14)) moveFocus(-1, $('konakOv'));
+    else if (edge(13) || edge(15)) moveFocus(1, $('konakOv'));
+    else if (edge(0) && $('konakOv').contains(document.activeElement)) document.activeElement.click();
+    return;
+  }
   if (edge(9)) { if (G.paused) resume(); else pause(); return; }
   if (G.paused) return;
   if (G.terfi) { for (const i in PAD_CARD) if (edge(+i)) { pickCard(PAD_CARD[i], false); break; } return; }
@@ -5489,8 +5469,12 @@ window.addEventListener('keydown', (e) => {
   if (G.mode === 'hub') { hubKey(e, code); return; }
   if (G.mode !== 'play') return;
   if (G.konak) {
-    if (DIGIT[code] != null) toggleUlti(DIGIT[code]);
-    else if (code === 'Enter') { e.preventDefault(); leaveKonak(); }
+    // Arrows move between the buttons; Enter presses a focused card itself, and elsewhere leaves.
+    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[code];
+    const onCard = $('konakOv').contains(document.activeElement) && document.activeElement !== $('konakGo');
+    if (step) moveFocus(step, $('konakOv'));
+    else if (DIGIT[code] != null && DIGIT[code] < 4) toggleUlti(DIGIT[code]);
+    else if (code === 'Enter' && !onCard) { e.preventDefault(); leaveKonak(); }
     return;
   }
   if (code === 'Escape' || code === 'KeyP') { if (G.paused) resume(); else pause(); return; }
@@ -5536,6 +5520,12 @@ $('offset').addEventListener('input', (e) => setOffset(Number(e.target.value) ||
 $('clickBtn').addEventListener('click', toggleClick);
 for (const k of VOL_KEYS) $(VOL_ID[k]).addEventListener('input', (e) => setVolume(k, (Number(e.target.value) || 0) / 100));
 $('konakGo').addEventListener('click', leaveKonak);
+$('konakDeck').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-act="deck"]');
+  if (!b || b.disabled || !G.konak) return;
+  G.konak.deck = toggleDeck(G.konak.deck, b.dataset.arg);
+  renderKonakDeck();
+});
 
 if (meta.best > 0) {
   $('bestLine').hidden = false;

@@ -104,8 +104,8 @@ function tick() {
   }
   // Movement.
   if (G.phase === 'breather') {
-    if (!G.picked && G.banners.length) { const b = bannerFor(G); walk(b.x, b.y, 10); }
-    else { walk(null); if (G.breatherBeat >= 2) D.startWave(); }
+    if (G.banners && !G.picked && G.banners.length) { const b = bannerFor(G); walk(b.x, b.y, 10); }
+    else { walk(null); if (G.breatherBeat >= 2 && !G.terfi) D.startWave(); }
   } else if (G.phase === 'wave') {
     const tg = G.target && !G.target.dead ? G.target : null;
     let goal = null;
