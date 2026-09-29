@@ -401,8 +401,11 @@ const T = {
   // freed prisoners and the company added at each konak) stays. The army's size limit per
   // chapter grows at a konak; a soldier who would join a full army comes as loot instead.
   lifeBeats: 32, armyCaps: [20, 24, 28], overflowLoot: 2,
-  // Loot needed for the next terfi: base, then this much more for each terfi taken.
-  terfiBase: 15, terfiStep: 10,
+  // Loot needed for the next terfi: base, then this much more for each terfi taken. The waves pay
+  // about 14, 30, 60, 82 and 125 loot by the end of each of a chapter's first five, and about 435 by
+  // the last chapter's fourth wave, so 26 + 3 a terfi brings ten: four in the first chapter and
+  // three in each of the others, one about every wave and a third (decision 32).
+  terfiBase: 26, terfiStep: 3, terfiMin: 12,
   // The band cannot walk away from a wave: a goal fort farther than nearGoal sends its monsters
   // at the band instead of out of its gate, and a monster farther than catchUpDist from the
   // leader runs catchUpMul times faster until it is back in the fight.
@@ -499,20 +502,38 @@ const SOLDIER = {
   yeniceri: { name: 'Yeniçeri', hp: 30, dmg: 25, speed: 110, reach: 300, ranged: true,  r: 9,  color: '#f2ead8', rim: '#c8322b', role: 'Tüfek · zırhlı devlere karşı' },
   kemankes: { name: 'Kemankeş', hp: 20, dmg: 30, speed: 110, reach: 230, ranged: true,  r: 8,  color: '#6fb35a', rim: '#2f5a25', role: 'Okçu · uçanlara karşı' },
   deli:     { name: 'Deli',     hp: 30, dmg: 20, speed: 190, reach: 10,  ranged: false, r: 11, color: '#e0762f', rim: '#6f2a0d', role: 'Hızlı atlı · arka hattaki büyücülere' },
+  // The three that open later (see UPGRADES). Each has one small trait of its own:
+  //   guard  a share of every blow it takes            bomb   a shot that also hurts what stands near its mark (px)
+  //   blast  bursts where it falls or is sent home (px), and hurts everything near for blastDmg
+  kalkanli: { name: 'Kalkanlı', hp: 70, dmg: 12, speed: 85,  reach: 14,  ranged: false, r: 11, color: '#8d9aab', rim: '#3c4552', guard: 0.6,
+              role: 'Kalkan tankı · pençeye, ısırığa, patlamaya dayanır' },
+  humbaraci: { name: 'Humbaracı', hp: 28, dmg: 26, speed: 100, reach: 225, ranged: true, r: 9, color: '#c9703a', rim: '#5a2a12', bomb: 46,
+              role: 'El bombacısı · sürüleri kümesinden vurur' },
+  lagimci:  { name: 'Lağımcı',  hp: 30, dmg: 16, speed: 150, reach: 12,  ranged: false, r: 8,  color: '#b4506a', rim: '#4a1a28', blast: 76, blastDmg: 100,
+              role: 'Barutçu · düşünce ya da süresi dolunca patlar, devlere karşı' },
 };
-const SOLDIER_ORDER = ['azap', 'yeniceri', 'kemankes', 'deli'];
-const SUMMON = { azap: 3, yeniceri: 2, kemankes: 2, deli: 3 };
+// The order the companies are listed in; the first four are there from the start, the rest open
+// at the Kethüda (kartOpen).
+const SOLDIER_ORDER = ['azap', 'yeniceri', 'kemankes', 'deli', 'kalkanli', 'humbaraci', 'lagimci'];
+// Akıncı Baskını calls the original four, whatever else has opened.
+const CORE_KINDS = ['azap', 'yeniceri', 'kemankes', 'deli'];
+const SUMMON = { azap: 3, yeniceri: 2, kemankes: 2, deli: 3, kalkanli: 2, humbaraci: 2, lagimci: 3 };
 // Rock-paper-scissors: a soldier deals MATCH.strong times its damage to what it is strong against
 // and takes MATCH.weak times from what it is weak against. Every chapter has one monster each
 // soldier is strong against.
 const MATCH = { strong: 2, weak: 2 };
+// Each chapter has one monster no soldier of the first four is strong against (the middle Karakoncolos,
+// the swarm of Yılan, the swarm of Hortlak); the three later soldiers cover those and double up
+// where a second answer helps: the swarms, the middle brutes and the giants.
 const STRONG = {
   azap: ['koc', 'evren', 'yavru'], yeniceri: ['kaya', 'akrep', 'oddevi'],
   kemankes: ['yarasa', 'kanatli', 'korkusu'], deli: ['sapanci', 'kahin', 'odcadi'],
+  kalkanli: ['karakoncolos', 'akrep', 'yavru'], humbaraci: ['koc', 'yilan', 'hortlak'], lagimci: ['kaya', 'evren', 'oddevi'],
 };
 const WEAK = {
   azap: ['sapanci', 'kanatli', 'oddevi'], yeniceri: ['karakoncolos', 'evren', 'hortlak'],
   kemankes: ['koc', 'akrep', 'yavru'], deli: ['yarasa', 'yilan', 'korkusu'],
+  kalkanli: ['kaya', 'kahin', 'korkusu'], humbaraci: ['yarasa', 'akrep', 'odcadi'], lagimci: ['sapanci', 'kanatli', 'yavru'],
 };
 
 // Monsters instead of armies (decision 20). Each chapter has its own five, one per slot (a swarm,
@@ -631,7 +652,10 @@ const KARTS = [
   { id: 'yeniceri', unit: 'yeniceri', cost: 4, color: '242,234,216' },
   { id: 'kemankes', unit: 'kemankes', cost: 3, color: '111,179,90' },
   { id: 'deli',     unit: 'deli',     cost: 3, color: '224,118,47' },
-  { id: 'top',    name: 'Top Atışı',      cost: 3, color: '255,150,90',  d: 'Auranın iki katı çaptaki bütün düşmanlara 40 hasar.' },
+  { id: 'kalkanli', unit: 'kalkanli', cost: 3, color: '141,154,171' },
+  { id: 'humbaraci', unit: 'humbaraci', cost: 3, color: '201,112,58' },
+  { id: 'lagimci',  unit: 'lagimci',  cost: 3, color: '180,80,106' },
+  { id: 'top',    name: 'Top Atışı',     cost: 3, color: '255,150,90',  d: 'Auranın iki katı çaptaki bütün düşmanlara 40 hasar.' },
   { id: 'duvar',  name: 'Kös Duvarı',     cost: 3, color: '127,182,255', d: '4 vuruş boyunca gelen her darbe bloklanır.' },
   { id: 'mars',   name: 'Mehter Marşı',   cost: 4, color: '143,212,106', d: 'Bütün askerlerin canı dolar.' },
   { id: 'hucum',  name: 'Hücum Borusu',   cost: 4, color: '255,120,100', d: '4 vuruş boyunca askerlerin hasarı iki katı.' },
@@ -656,6 +680,17 @@ const CARDS = [
   { id: 'kRange', t: 'Kemankeş Menzili', d: 'Kemankeş menzili +%30.', r: 1, type: 'kemankes', apply() { G.up.kRange *= 1.3; } },
   { id: 'aHp', t: 'Azap Yürekliliği', d: 'Azap canı +%50.', r: 1, type: 'azap', apply() { growHp('azap', 1.5); } },
   { id: 'aDmg', t: 'Azap Mızrağı', d: 'Azap hasarı +%35.', r: 1, type: 'azap', apply() { G.up.dmg.azap *= 1.35; } },
+  // The later soldiers' own.
+  { id: 'klDmg', t: 'Kalkan Darbesi', d: 'Kalkanlı hasarı +%50.', r: 1, type: 'kalkanli', apply() { G.up.dmg.kalkanli *= 1.5; } },
+  { id: 'klGuard', t: 'Demir Kalkan', d: 'Kalkanlı darbenin %60 yerine %45\'ini alır.', r: 2, once: true, type: 'kalkanli', apply() { G.up.guard = 0.75; } },
+  { id: 'hbDmg', t: 'Barut Ustası', d: 'Humbaracı hasarı +%35.', r: 1, type: 'humbaraci', apply() { G.up.dmg.humbaraci *= 1.35; } },
+  { id: 'hbBomb', t: 'Geniş Bomba', d: 'Humbaracı bombasının alanı +%50.', r: 2, once: true, type: 'humbaraci', apply() { G.up.bomb = 1.5; } },
+  { id: 'lgHp', t: 'Lağım Zırhı', d: 'Lağımcı canı +%50.', r: 1, type: 'lagimci', apply() { growHp('lagimci', 1.5); } },
+  { id: 'lgBlast', t: 'Kalın Barut', d: 'Lağımcı patlaması +%40 sert vurur, alanı +%25.', r: 2, once: true, type: 'lagimci', apply() { G.up.blast = 1.25; G.up.blastDmg = 1.4; } },
+  // The deck's own: how long a company stays, how fast Cezbe fills, how many come.
+  { id: 'life', t: 'Sağlam Bölükler', d: 'Kartla gelen bölükler 8 vuruş daha savaşır.', r: 1, cond: () => G.up.lifeAdd < 24, apply() { G.up.lifeAdd += 8; } },
+  { id: 'regen', t: 'Cezbe Kaynağı', d: 'Cezbe kendiliğinden %25 daha hızlı dolar.', r: 2, once: true, apply() { G.up.regen = 0.8; } },
+  { id: 'crowd', t: 'Kalabalık Bölükler', d: 'Kartla gelen her bölüğe bir asker daha katılır.', r: 3, once: true, apply() { G.up.extra = 1; } },
   { id: 'aura', t: 'Gür Mehter', d: 'Aura menzili +%20: emrin daha uzağa ulaşır.', r: 2, apply() { G.up.aura *= 1.2; } },
   { id: 'kosHeal', t: 'Kös Şifası', d: 'Bloklanan her saldırı auradaki askerlere 6 can verir.', r: 2, once: true, apply() { G.up.kosHeal = true; } },
   { id: 'steady', t: 'Sabırlı Mehter', d: 'Kaçırınca Cezbe yarı kadar düşer.', r: 3, once: true, apply() { G.up.steady = true; } },
@@ -665,6 +700,11 @@ const CARDS = [
   { id: 'heart', t: 'Şifa', d: 'Bir kalp geri gelir.', r: 2, build: false, cond: () => G.leader.hearts < T.hearts, apply() { G.leader.hearts++; } },
 ];
 const CARD_BY_ID = Object.fromEntries(CARDS.map((c) => [c.id, c]));
+// What the next terfi costs in loot, after `level` have been taken.
+const terfiNeed = (level) => Math.max(T.terfiMin, T.terfiBase + level * T.terfiStep - G.terfiOff);
+// How often each rarity is offered by chapter: the early terfis are plain, the last chapter's
+// are more often rare and epic.
+const TERFI_ODDS = [{ 1: 6, 2: 2.5, 3: 0.5 }, { 1: 5, 2: 3, 3: 1.2 }, { 1: 4, 2: 3.5, 3: 2.2 }];
 // The build so far: each lasting terfi once, with how many times it was taken, in the order taken.
 function buildList() {
   const m = new Map();
@@ -691,21 +731,28 @@ function renderBuild(box) {
 // of the monsters met.
 const META_KEY = 'mehter4.meta';
 // Şan a run pays: each wave cleared (by chapter), each fort taken, each serdar beaten, the campaign.
-const SAN = { wave: [3, 4, 5], karakol: 4, hisar: 8, serdar: 15, won: 25 };
+const SAN = { wave: [4, 4, 5], karakol: 4, hisar: 8, serdar: 15, won: 25 };
 // The Kethüda's book. Each upgrade has ranks, each rank its price; eff(n) says what n ranks give.
 // Two ultis start locked and are bought here.
 const UPGRADES = [
-  { id: 'talim',   name: 'Sıkı Talim',     cost: [15, 30, 50], eff: (n) => `askerlerin canı +%${6 * n}` },
+  { id: 'talim',   name: 'Sıkı Talim',     cost: [10, 25, 45], eff: (n) => `askerlerin canı +%${6 * n}` },
   { id: 'ganimet', name: 'Ganimet Payı',   cost: [15, 30, 50], eff: (n) => `toplanan ganimet +%${10 * n}` },
   { id: 'kadro',   name: 'Ocak Kadrosu',   cost: [20, 45],     eff: (n) => `sefere ${2 + n} bölükle çıkarsın` },
-  { id: 'kidem',   name: 'Kıdem',          cost: [20, 40],     eff: (n) => `her terfi ${3 * n} ganimet ucuz` },
+  { id: 'kidem',   name: 'Kıdem',          cost: [20, 40],     eff: (n) => `her terfi ${2 * n} ganimet ucuz` },
   { id: 'coskun',  name: 'Coşkulu Açılış', cost: [20, 40],     eff: (n) => `her dalga en az ${T.waveStartBar + n} Cezbe ile başlar` },
   { id: 'nevbet',  name: 'Gür Nevbet',     cost: [25, 50],     eff: (n) => `aura +%${6 * n}` },
   { id: 'hizir',   name: 'Hızır Duası',    cost: [40, 90],     eff: (n) => `kalpler bitince ${n === 1 ? 'bir' : 'iki'} kez bir kalple kalkarsın` },
-  { id: 'akinci',  name: 'Akıncı Baskını', cost: [30], ulti: 'akinci', eff: () => 'kart: dört türden birer bölük birden gelir' },
-  { id: 'zil',     name: 'Zil Çınlaması',  cost: [45], ulti: 'zil',    eff: () => 'kart: bütün düşmanlar 3 vuruş sersemler' },
+  // The cards that open later. Each also waits for a chapter to be finished (gate, meta.cleared), so
+  // every chapter cleared for the first time brings something new, and the last soldier comes
+  // with the first win.
+  { id: 'zil',      name: 'Zil Çınlaması',  cost: [40], ulti: 'zil',       gate: 1, eff: () => 'kart: bütün düşmanlar 3 vuruş sersemler' },
+  { id: 'kalkanli', name: 'Kalkanlı',       cost: [30], ulti: 'kalkanli', gate: 1, eff: () => 'kart: kalkanlı bölük, darbenin yalnız %60\'ını alır' },
+  { id: 'akinci',   name: 'Akıncı Baskını', cost: [65], ulti: 'akinci',   gate: 2, eff: () => 'kart: dört türden birer bölük birden gelir' },
+  { id: 'humbaraci', name: 'Humbaracı',     cost: [55], ulti: 'humbaraci', gate: 2, eff: () => 'kart: bombası çevresine de vuran bombacılar' },
+  { id: 'lagimci',  name: 'Lağımcı',        cost: [80], ulti: 'lagimci',  gate: 3, eff: () => 'kart: düşünce ya da süresi dolunca patlayan barutçular' },
 ];
 const UPG_BY_ID = Object.fromEntries(UPGRADES.map((u) => [u.id, u]));
+const GATE_TEXT = { 1: '1. bölümü bitir', 2: '2. bölümü bitir', 3: 'Seferi bitir' };
 function loadMeta() {
   const m = store.get(META_KEY, null) || {};
   const num = (v, d) => (Number.isFinite(Number(v)) ? Number(v) : d);
@@ -713,6 +760,8 @@ function loadMeta() {
     san: num(m.san, 0), earned: num(m.earned, 0), ranks: Object.assign({}, m.ranks),
     company: SOLDIER[m.company] ? m.company : 'azap', deck: Array.isArray(m.deck) ? m.deck : [],
     runs: num(m.runs, 0), wins: num(m.wins, 0), best: num(m.best, 0),
+    // Chapters finished so far: an older book knows it from its furthest wave.
+    cleared: clamp(Math.max(num(m.cleared, 0), Math.floor((num(m.best, 0) - 1) / 5), num(m.wins, 0) > 0 ? 3 : 0), 0, 3),
     history: Array.isArray(m.history) ? m.history.slice(0, 10) : [], seen: Array.isArray(m.seen) ? m.seen.filter((t) => ENEMY[t]) : [],
     last: m.last || null, visits: num(m.visits, 0),
   };
@@ -721,9 +770,13 @@ const meta = loadMeta();
 const saveMeta = () => store.set(META_KEY, meta);
 const rank = (id) => Math.min(meta.ranks[id] || 0, UPG_BY_ID[id].cost.length);
 const kartOpen = (id) => { const u = UPGRADES.find((x) => x.ulti === id); return !u || rank(u.id) > 0; };
+// An upgrade can be bought once its chapter is finished.
+const upgOpen = (u) => !u.gate || meta.cleared >= u.gate;
+const openSoldiers = () => SOLDIER_ORDER.filter(kartOpen);
 const countIn = (list, id) => list.filter((x) => x === id).length;
 const validDeck = (l) => l.length === DECK_SIZE && l.every((id) => KART_BY_ID[id] && kartOpen(id) && countIn(l, id) <= kartMax(id));
 if (!validDeck(meta.deck)) meta.deck = DEFAULT_DECK.slice();
+if (!kartOpen(meta.company)) meta.company = 'azap';
 
 // ---------------------------------------------------------------- audio
 let actx = null, master, beatBus, sfxBus, musicBus, noiseBuf;
@@ -1068,7 +1121,7 @@ const nextCall = () => (beatMode() ? upcomingBeats().find((b) => b.t > G.h) : nu
 let G = null;
 const newStats = (army) => ({
   perfect: 0, good: 0, miss: 0, kills: 0, maxArmy: army, bestStreak: 0, ultis: 0, raids: 0,
-  use: { up: 0, down: 0, right: 0, left: 0 }, played: {}, wasted: 0,
+  use: { up: 0, down: 0, right: 0, left: 0 }, played: {}, wasted: 0, loot: 0,
 });
 function newGame() {
   G = {
@@ -1089,8 +1142,11 @@ function newGame() {
     stick: null, killTimes: [],
     stats: newStats(6),
     up: {
-      dmg: { azap: 1, yeniceri: 1, kemankes: 1, deli: 1 }, hp: { azap: 1, yeniceri: 1, kemankes: 1, deli: 1 },
+      dmg: Object.fromEntries(SOLDIER_ORDER.map((t) => [t, 1])), hp: Object.fromEntries(SOLDIER_ORDER.map((t) => [t, 1])),
       kDouble: false, kRange: 1, aura: 1, kosHeal: false, steady: false, perfect: 1.25, atil: ORD.atilDmg, zilHeal: 1,
+      // Kalkanlı's share of a blow, Humbaracı's bomb, Lağımcı's burst; the deck's company life, Cezbe
+      // pace and extra soldier per company.
+      guard: 1, bomb: 1, blast: 1, blastDmg: 1, lifeAdd: 0, regen: 1, extra: 0,
     },
     taken: new Set(), hintsShown: new Set(),
     san: 0, hizir: 0, lootBonus: 0, lootFrac: 0, terfiOff: 0, minBar: 0, lastHitBy: null, recorded: false,
@@ -1107,7 +1163,7 @@ function applyMeta() {
   for (const t of SOLDIER_ORDER) G.up.hp[t] = hp;
   G.up.aura = 1 + 0.06 * rank('nevbet');
   G.lootBonus = 0.1 * rank('ganimet');
-  G.terfiOff = 3 * rank('kidem'); G.need = T.terfiBase - G.terfiOff;
+  G.terfiOff = 2 * rank('kidem'); G.need = terfiNeed(0);
   G.minBar = T.waveStartBar + rank('coskun');
   G.hizir = rank('hizir');
   shuffleDeck(meta.deck);
@@ -1204,7 +1260,7 @@ function spawnSoldier(type, quiet, core) {
   const def = SOLDIER[type], L = G.leader, a = rand(0, TAU), hp = def.hp * G.up.hp[type];
   const s = {
     kind: 'soldier', type, x: L.x + Math.cos(a) * 32, y: L.y + Math.sin(a) * 32, r: def.r,
-    core: !!core, until: core ? Infinity : G.curK + T.lifeBeats,
+    core: !!core, until: core ? Infinity : G.curK + T.lifeBeats + G.up.lifeAdd,
     hp, maxHp: hp, face: a, cool: rand(0.3, 1.2), lunge: 0, spawnT: quiet ? 1 : 0,
     returning: false, retarget: 0, target: null, hitFlash: 0, dead: false, outUntil: -1, dash: null, rally: 0,
     // The heard clock starts a little below zero, so "never" has to be further back than 0.
@@ -1222,7 +1278,8 @@ function spawnSoldier(type, quiet, core) {
 // loot instead, so a big army still gets paid. Returns how many joined and how much loot came.
 function summonCompany(type, companies = 1, core = false) {
   let n = 0, loot = 0;
-  for (let i = 0; i < SUMMON[type] * companies; i++) if (spawnSoldier(type, false, core)) n++; else loot += T.overflowLoot;
+  const size = SUMMON[type] + (core ? 0 : G.up.extra);
+  for (let i = 0; i < size * companies; i++) if (spawnSoldier(type, false, core)) n++; else loot += T.overflowLoot;
   const L = G.leader;
   if (n) {
     floatText(L.x, L.y - 70, `+${n} ${SOLDIER[type].name}`, SOLDIER[type].color, 20, true);
@@ -1314,7 +1371,7 @@ function raidFell(f) {
   G.stats.raids++;
   earnSan(SAN[f.type]);
   addShake(10); G.flash = 0.7; G.flashColor = '255,200,80';
-  const type = pick(SOLDIER_ORDER);
+  const type = pick(openSoldiers());
   const { n: got, loot } = summonCompany(type, r.companies, true);
   let sub = 'Esirler kurtuldu' + (got ? ` · +${got} ${SOLDIER[type].name}` : '') + (loot ? ` · ordu dolu, +${loot} ganimet` : '');
   if (r.heart && G.leader.hearts < T.hearts) { G.leader.hearts++; sub += ' · +1 kalp'; }
@@ -1403,7 +1460,7 @@ function tutStep(n) {
   if (st.hand) toHand(st.hand);
   if (st.deck) shuffleDeck(meta.deck);
   if (st.minBar && G.bar < st.minBar) G.bar = st.minBar;
-  G.regenAt = G.curK + T.regenBeats;
+  G.regenAt = G.curK + T.regenBeats * G.up.regen;
   if (st.spawn) tutSpawn(st);
   G.waveBeat = 0; G.groups = []; G.incoming = [];
   if (st.group) G.groups.push({ at: st.groupAt, list: st.group, done: false, warned: false });
@@ -1655,7 +1712,7 @@ function startWave() {
   }
   G.hucum = null; G.nextHucum = G.h + hucumGap() * 0.7; G.lastBeatPress = G.h;
   if (G.bar < G.minBar) addBar(G.minBar - G.bar);
-  G.regenAt = G.curK + T.regenBeats;
+  G.regenAt = G.curK + T.regenBeats * G.up.regen;
   bigText(upper(goalName(G.goal)), enemySummary(G.goal, G.def), '#f1e6cc', 1.6);
   const hint = G.fresh.length ? 'Yeni: ' + G.fresh.map((t) => ENEMY[t].tip).join(' ') : {
     1: G.chapter === 1 ? 'Ekranın kenarında gelen sürü yazar. Ona güçlü olan bölüğün kartını 1-4 ile oyna. Kırmızı işareti Kös ile blokla.' : null,
@@ -1678,6 +1735,7 @@ function victory(title, sub) {
 }
 function afterVictory() {
   if (G.wi < T.wavesPerChapter) { startBreather(); return; }
+  if (!G.tut) { meta.cleared = Math.max(meta.cleared, G.chapter); saveMeta(); }
   if (G.chapter >= T.chapters) { G.phase = 'won'; G.victoryBeat = 0; earnSan(SAN.won); bigText('SEFER TAMAM!', 'Üç bölüm geçildi', '#ffcf4a', 3); return; }
   openKonak();
 }
@@ -1807,7 +1865,7 @@ function dropBar(v) {
 // Called on every wave beat: one pip every regenBeats, whatever the player does.
 function regenBeat() {
   if (G.curK < G.regenAt) return;
-  G.regenAt = G.curK + T.regenBeats;
+  G.regenAt = G.curK + T.regenBeats * G.up.regen;
   addBar(1);
 }
 
@@ -1998,7 +2056,32 @@ function attack(s, e, command, grade) {
   }
 }
 function fireShot(s, e, dmg, kb, perfect, delay, src) {
-  G.shots.push({ x: s.x, y: s.y, e, dmg, src: src || s, kb, perfect, delay, gun: !!SOLDIER[s.type].gun, a: Math.atan2(e.y - s.y, e.x - s.x) });
+  const bomb = SOLDIER[s.type].bomb ? SOLDIER[s.type].bomb * G.up.bomb : 0;
+  G.shots.push({ x: s.x, y: s.y, e, dmg, src: src || s, kb, perfect, delay, bomb, gun: !!SOLDIER[s.type].gun, a: Math.atan2(e.y - s.y, e.x - s.x) });
+}
+// An area blow at (x, y): every monster on the ground within r takes dmg, but the one it was aimed at.
+function splash(src, x, y, r, dmg, kb, skip) {
+  for (const e of G.enemies.slice()) {
+    if (e === skip || e.dead || e.hidden || e.state === 'emerge' || flying(e) || Math.hypot(e.x - x, e.y - y) > r + e.r) continue;
+    hitEnemy(e, dmg, { type: src.type, x, y }, kb);
+  }
+}
+// A Humbaracı's bomb goes off where it lands: 60% of the blow on what stands round the mark.
+function bombBurst(s) {
+  const e = s.e;
+  splash(s.src, e.x, e.y, s.bomb, s.dmg * 0.6, 60, e);
+  ring(e.x, e.y, '#ff9a4a', s.bomb / 2); burst(e.x, e.y, '#ffb070', 10, 200);
+  sfx('bomb', 0.06, (t) => S.thud(t, 0.5, sfxBus));
+}
+// A Lağımcı bursts where it falls or is sent home: everything near takes the full blast.
+function blastSoldier(s) {
+  const def = SOLDIER[s.type];
+  if (!def.blast) return;
+  const r = def.blast * G.up.blast;
+  splash({ type: s.type }, s.x, s.y, r, def.blastDmg * G.up.blastDmg, 200, null);
+  ring(s.x, s.y, '#ffb070', r / 2); ring(s.x, s.y, '#fff1bf', r / 3.5); burst(s.x, s.y, '#ff8a3a', 16, 260);
+  addShake(4);
+  sfx('blast', 0.05, (t) => { S.thud(t, 0.9, sfxBus); S.impact(t, 0.8, sfxBus); });
 }
 // Who a soldier can strike: nothing under the ground, and a flyer only with a ranged weapon, or
 // while it is low after a dive or stunned.
@@ -2406,9 +2489,11 @@ function hizirComes() {
   burst(L.x, L.y, '#5fc8c0', 44, 380); ring(L.x, L.y, '#bff0ea', 160);
   sfx('hizir', 0.5, (t) => { S.zil(t, 1, sfxBus, true); S.arp(t, 1, sfxBus, [523.25, 659.25, 783.99, 1046.5], 0.08); });
 }
+// A Kalkanlı takes only a share of every blow (Demir Kalkan makes it smaller).
+const guardOf = (type) => (SOLDIER[type].guard ? SOLDIER[type].guard * G.up.guard : 1);
 function hurtSoldier(s, dmg, fromType) {
   const weak = WEAK[s.type].includes(fromType);
-  dmg = dmg * (weak ? MATCH.weak : 1) / cz();
+  dmg = dmg * (weak ? MATCH.weak : 1) * guardOf(s.type) / cz();
   s.hp -= dmg; s.hitFlash = 1;
   floatText(s.x, s.y - 18, '-' + Math.max(1, Math.round(dmg)) + (weak ? '!' : ''), weak ? '#ff5a45' : '#ff8a75', weak ? 15 : 12, weak);
   if (s.hp <= 0) killSoldier(s);
@@ -2421,6 +2506,7 @@ function killSoldier(s) {
   if (s.grabbed) releaseGrab(s.grabbed);
   burst(s.x, s.y, SOLDIER[s.type].color, 12, 180);
   sfx('fall', 0.06, (t) => S.tek(t, 0.5, sfxBus));
+  blastSoldier(s);
 }
 
 // ---------------------------------------------------------------- the deck
@@ -2476,7 +2562,7 @@ function castCard(k) {
   } else if (k.id === 'hucum') {
     G.rushUntil = G.curK + 8;
   } else if (k.id === 'akinci') {
-    for (const type of SOLDIER_ORDER) summonCompany(type);
+    for (const type of CORE_KINDS) summonCompany(type);
   } else if (k.id === 'zil') {
     for (const e of G.enemies) {
       if (e.dead || ENEMY[e.type].fixed || e.hidden) continue;
@@ -2499,6 +2585,7 @@ function sendHome(s) {
   if (s.grabbed) releaseGrab(s.grabbed);
   ring(s.x, s.y, '#f1e6cc', 18);
   part({ type: 'dot', x: s.x, y: s.y - 10, vx: 0, vy: -60, life: 0.6, max: 0.6, color: SOLDIER[s.type].color, size: 4 });
+  blastSoldier(s);
 }
 // A group is coming: its name at the edge of the screen, and a warning horn.
 function announceGroup(g) {
@@ -2507,13 +2594,24 @@ function announceGroup(g) {
   sfx('horn', 0.2, (tt) => S.warn(tt, 0.35, sfxBus));
 }
 // The soldier kinds strong against a monster, for the incoming marker.
-const answerTo = (type) => SOLDIER_ORDER.filter((u) => STRONG[u].includes(type)).map((u) => SOLDIER[u].name);
+const answerTo = (type) => openSoldiers().filter((u) => STRONG[u].includes(type)).map((u) => SOLDIER[u].name);
 
 // ---------------------------------------------------------------- terfi
+// The soldier kinds the run can field: the cards in the deck and the core army.
+function kindsInPlay() {
+  const kinds = new Set(G.deck.map((id) => KART_BY_ID[id].unit).filter(Boolean));
+  for (const s of G.soldiers) if (s.core) kinds.add(s.type);
+  return kinds;
+}
 function openTerfi() {
-  const pool = CARDS.filter((c) => !(c.once && G.taken.has(c.id)) && (!c.cond || c.cond()));
-  const owned = new Set(G.soldiers.map((s) => s.type).concat([G.banner]));
-  const weight = (c) => ({ 1: 5, 2: 3, 3: 1.4 }[c.r]) * (c.type && owned.has(c.type) ? 1.8 : 1);
+  // A terfi about a soldier the run does not field is a dead pick, so it is offered only when
+  // fewer than three other terfis are left.
+  const all = CARDS.filter((c) => !(c.once && G.taken.has(c.id)) && (!c.cond || c.cond()));
+  const fielded = kindsInPlay();
+  const live = all.filter((c) => !c.type || fielded.has(c.type));
+  const pool = live.length >= 3 ? live : all;
+  const odds = TERFI_ODDS[clamp(G.chapter, 1, TERFI_ODDS.length) - 1];
+  const weight = (c) => odds[c.r] * (c.type ? 1.6 : 1);
   const cards = [];
   while (cards.length < 3 && pool.length) {
     const total = pool.reduce((s, c) => s + weight(c), 0);
@@ -2546,7 +2644,7 @@ function pickCard(i, fromClick) {
   if (!cd) return;
   cd.apply();
   if (cd.once) G.taken.add(cd.id);
-  G.ganimet -= G.need; G.level++; G.need = T.terfiBase + G.level * T.terfiStep - G.terfiOff;
+  G.ganimet -= G.need; G.level++; G.need = terfiNeed(G.level);
   G.picks.push(cd.id);
   G.terfi = null;
   $('terfiOv').hidden = true;
@@ -2584,13 +2682,14 @@ function renderKonak() {
   const box = $('ultiCards'), was = [...box.children].indexOf(document.activeElement);
   box.textContent = '';
   const sel = G.konak.sel, next = THEMES[G.chapter];
-  SOLDIER_ORDER.forEach((t, i) => {
+  // The first four take the keys 1-4 (and the pad's four buttons); the rest are chosen with the arrows.
+  openSoldiers().forEach((t, i) => {
     const d = SOLDIER[t], on = sel === t;
     const prey = STRONG[t].filter((m) => next.pool.includes(m) || next.lead === m || WAVES[G.chapter + 1].some((w) => w && w[m])).map((m) => ENEMY[m].name);
     const b = document.createElement('button');
     b.className = 'card ' + (on ? 'on' : 'off'); b.type = 'button';
     b.style.setProperty('--rar', d.color);
-    b.innerHTML = `<kbd class="k" data-k="h${i}">${keyLabel('h' + i)}</kbd><span class="rar">${on ? 'Seçili' : 'Ocağa kat'} · ${SUMMON[t]} asker</span><span class="t">${d.name}</span><span class="d">${d.role}.${prey.length ? ` Sıradaki diyarda güçlü olduğu: ${prey.join(', ')}.` : ''}</span>`;
+    b.innerHTML = `${i < 4 ? `<kbd class="k" data-k="h${i}">${keyLabel('h' + i)}</kbd>` : ''}<span class="rar">${on ? 'Seçili' : 'Ocağa kat'} · ${SUMMON[t]} asker</span><span class="t">${d.name}</span><span class="d">${d.role}.${prey.length ? ` Sıradaki diyarda güçlü olduğu: ${prey.join(', ')}.` : ''}</span>`;
     b.addEventListener('click', () => toggleUlti(i));
     box.appendChild(b);
   });
@@ -2608,8 +2707,9 @@ function renderKonakDeck() {
   $('konakGo').disabled = !sel || !ok;
 }
 function toggleUlti(i) {
-  if (!G.konak || !SOLDIER_ORDER[i]) return;
-  G.konak.sel = SOLDIER_ORDER[i];
+  const kinds = openSoldiers();
+  if (!G.konak || !kinds[i]) return;
+  G.konak.sel = kinds[i];
   renderKonak();
 }
 function leaveKonak() {
@@ -2825,8 +2925,9 @@ function updateWorld(dt, rdt) {
     const e = s.e;
     if (e.dead) { s.gone = true; continue; }
     const a = Math.atan2(e.y - s.y, e.x - s.x);
-    s.a = a; s.x += Math.cos(a) * (s.gun ? 1300 : 780) * dt; s.y += Math.sin(a) * (s.gun ? 1300 : 780) * dt;
-    if (dist(s, e) < e.r + 6) { s.gone = true; hitEnemy(e, s.dmg, s.src, s.kb); }
+    const v = s.gun ? 1300 : s.bomb ? 520 : 780;
+    s.a = a; s.x += Math.cos(a) * v * dt; s.y += Math.sin(a) * v * dt;
+    if (dist(s, e) < e.r + 6) { s.gone = true; hitEnemy(e, s.dmg, s.src, s.kb); if (s.bomb) bombBurst(s); }
   }
   G.shots = G.shots.filter((s) => !s.gone);
 
@@ -2837,10 +2938,10 @@ function updateWorld(dt, rdt) {
       const a = Math.atan2(L.y - c.y, L.x - c.x), sp = Math.min(1100, 220 + (c.t - 0.35) * 1600);
       c.x += Math.cos(a) * sp * dt; c.y += Math.sin(a) * sp * dt;
       if (dist(c, L) < 16) {
-        c.got = true; G.ganimet++;
+        c.got = true; G.ganimet++; G.stats.loot++;
         // Ganimet Payı: every tenth coin per rank counts twice.
         G.lootFrac += G.lootBonus;
-        if (G.lootFrac >= 1) { G.lootFrac -= 1; G.ganimet++; }
+        if (G.lootFrac >= 1) { G.lootFrac -= 1; G.ganimet++; G.stats.loot++; }
         const now = performance.now();
         G.coinChain = now - G.lastCoin < 260 ? Math.min(G.coinChain + 1, 14) : 0;
         G.lastCoin = now;
@@ -2955,11 +3056,18 @@ function placeInHub() {
 function npcLines() {
   const last = meta.last, first = !last;
   const alt = (...l) => l[meta.visits % l.length];
+  // What each soldier that opened later is good against, one line for each land.
+  const later = {
+    kalkanli: ["Karakoncolos'a Kalkanlı", "Dev Akrep'e Kalkanlı", "Ejder Yavrusu'na Kalkanlı"],
+    humbaraci: ['Kara Koç sürüsüne Humbaracı', 'Yılan sürüsüne Humbaracı', 'Kül Hortlağı sürüsüne Humbaracı'],
+    lagimci: ["Kaya İyesi'ne Lağımcı", "Evren'e Lağımcı", "Od Devi'ne Lağımcı"],
+  };
+  const extra = (i) => Object.keys(later).filter(kartOpen).map((t) => later[t][i]);
   const tips = [
-    "Tepegöz Yurdu'nda Kara Koç'a Azap, Yarasa'ya Kemankeş, Sapancı'ya Deli iyi gelir.",
-    "Şahmeran Diyarı'nda Dev Akrep'e Yeniçeri, Kanatlı Yılan'a Kemankeş, Yılan Kâhini'ne Deli.",
-    "Ejderha Dağı'nda Ejder Yavrusu'na Azap, Kor Kuşu'na Kemankeş, Od Cadısı'na Deli.",
-  ];
+    ["Tepegöz Yurdu'nda Kara Koç'a Azap, Yarasa'ya Kemankeş, Sapancı'ya Deli iyi gelir"].concat(extra(0)),
+    ["Şahmeran Diyarı'nda Dev Akrep'e Yeniçeri, Kanatlı Yılan'a Kemankeş, Yılan Kâhini'ne Deli"].concat(extra(1)),
+    ["Ejderha Dağı'nda Ejder Yavrusu'na Azap, Kor Kuşu'na Kemankeş, Od Cadısı'na Deli"].concat(extra(2)),
+  ].map((l) => l.join(', ') + '.');
   return {
     kethuda: first ? 'Hoş geldin Mehterbaşı. Seferde kazandığın şan bu deftere yazılır; karşılığını ben veririm.'
       : last.won ? `Üç diyar geçildi! Deftere ${last.san} şan yazdım. Konak seninle övünüyor.`
@@ -2991,7 +3099,7 @@ function enterHub(arrival) {
   meta.visits++; saveMeta();
   G.hub.lines = npcLines(); G.hub.fade = 1;
   placeInHub();
-  const affordable = UPGRADES.some((u) => rank(u.id) < u.cost.length && meta.san >= u.cost[rank(u.id)]);
+  const affordable = UPGRADES.some((u) => rank(u.id) < u.cost.length && upgOpen(u) && meta.san >= u.cost[rank(u.id)]);
   if (meta.visits === 1) showHint('Konağı gez: WASD ile yürü, birinin yanına gidip E ile konuş. Çalgıları burada da çalabilirsin. Hazır olunca kuzeydeki kapıdan sefere çık.', 24);
   else if (affordable) showHint(`Defterde ${meta.san} şan var: Kethüda'dan bir gelişme alabilirsin.`, 10);
   if (arrival && meta.last) bigText('KONAĞA DÖNDÜN', `+${meta.last.san} şan · defterde ${meta.san}`, '#5fc8c0', 2.4);
@@ -3184,14 +3292,15 @@ const PANELS = {
   // The Kethüda sells what lasts: a rank of an upgrade for şan.
   defter() {
     const cards = UPGRADES.map((u) => {
-      const n = rank(u.id), max = u.cost.length, done = n >= max, cost = done ? 0 : u.cost[n], can = !done && meta.san >= cost;
+      const n = rank(u.id), max = u.cost.length, done = n >= max, cost = done ? 0 : u.cost[n], open = upgOpen(u), can = !done && open && meta.san >= cost;
       const col = u.ulti ? `rgb(${KART_BY_ID[u.ulti].color})` : '#5fc8c0';
       const now = n && !u.ulti ? `Şimdi: ${u.eff(n)}.` : '';
       const next = done ? (u.ulti ? `${u.eff(n)}.` : '') : `${n ? ' Sonra: ' : ''}${u.eff(n + 1)}.`;
+      const price = done ? (u.ulti ? "Açıldı: Bayraktar'da seç" : 'Tamamlandı') : !open ? `Kilitli · ${GATE_TEXT[u.gate]}` : `${cost} şan${can ? '' : ' · şan yetmiyor'}`;
       return `<button class="card${done ? ' on' : ''}" type="button" data-act="buy" data-arg="${u.id}"${can ? '' : ' disabled'} style="--rar:${col}">
-        <span class="rar">${u.ulti ? (done ? 'Kart · açık' : 'Kart · kilitli') : 'Kalıcı'}${max > 1 ? ` · <span class="pips">${'●'.repeat(n)}${'○'.repeat(max - n)}</span>` : ''}</span>
+        <span class="rar">${u.ulti ? (done ? 'Kart · açık' : open ? 'Kart · açılabilir' : 'Kart · kilitli') : 'Kalıcı'}${max > 1 ? ` · <span class="pips">${'●'.repeat(n)}${'○'.repeat(max - n)}</span>` : ''}</span>
         <span class="t">${u.name}</span><span class="d">${now}${next}</span>
-        <span class="cost">${done ? (u.ulti ? "Açıldı: Bayraktar'da seç" : 'Tamamlandı') : `${cost} şan${can ? '' : ' · şan yetmiyor'}`}</span></button>`;
+        <span class="cost">${price}${!done && !open ? ` · ${cost} şan` : ''}</span></button>`;
     }).join('');
     return `<p class="eyebrow">Kethüda · Konak defteri</p><h2>Şan: <span class="san">${meta.san}</span></h2>
       <p class="dim">Seferde kazandığın şan burada harcanır; lider düşse de şan kalır. Aldığın her gelişme bütün seferlerde geçerlidir.</p>
@@ -3200,7 +3309,7 @@ const PANELS = {
   // The Bayraktar keeps the loadout: the company the run starts with, and the deck of eight.
   hazirlik() {
     const n = 2 + rank('kadro'), sel = G.hub.sel;
-    const comp = SOLDIER_ORDER.map((t) => {
+    const comp = openSoldiers().map((t) => {
       const d = SOLDIER[t], on = t === meta.company;
       const prey = STRONG[t].map((m) => (meta.seen.includes(m) ? ENEMY[m].name : '???')).join(', ');
       return `<button class="card ${on ? 'on' : 'off'}" type="button" data-act="company" data-arg="${t}" style="--rar:${d.color}">
@@ -3253,7 +3362,7 @@ function panelAct(act, arg) {
   if (act === 'tutorial') { leaveHub(true); return; }
   if (act === 'buy') {
     const u = UPG_BY_ID[arg], n = rank(arg);
-    if (!u || n >= u.cost.length || meta.san < u.cost[n]) return;
+    if (!u || n >= u.cost.length || !upgOpen(u) || meta.san < u.cost[n]) return;
     meta.san -= u.cost[n]; meta.ranks[arg] = n + 1; saveMeta();
     floatText(L.x, L.y - 90, upper(u.name) + (u.cost.length > 1 ? ` ${n + 1}` : ''), '#5fc8c0', 18, true);
     burst(L.x, L.y, '#5fc8c0', 26, 260); ring(L.x, L.y, '#bff0ea', 60);
@@ -3827,7 +3936,7 @@ function drawTelegraphs(c) {
 const SKIN = '#e8b98a', SKIN_E = '#efcaa6', INK = '#2a1a10', STEEL = '#b8c1cd';
 // How tall each figure stands above its feet, in art units; the HP bar sits on top of it.
 const FIG_TOP = {
-  azap: 46, yeniceri: 54, kemankes: 53, deli: 74,
+  azap: 46, yeniceri: 54, kemankes: 53, deli: 74, kalkanli: 52, humbaraci: 54, lagimci: 48,
   koc: 30, yarasa: 24, karakoncolos: 42, sapanci: 46, kaya: 62, tepegoz: 52,
   yilan: 14, kanatli: 28, akrep: 34, kahin: 52, evren: 46, sahmeran: 50,
   hortlak: 44, korkusu: 28, yavru: 30, odcadi: 52, oddevi: 54, ejderha: 56,
@@ -4047,10 +4156,88 @@ function drawDeli(c, st) {
   blade(c, pole(c, h, -0.3, 12, 20, '#8a6a3a', 1.8), -0.3, 6, '#dfe4ea');
   c.restore();
 }
+function drawKalkanli(c, st) {
+  const def = SOLDIER.kalkanli, iron = '#a9b3c0', dark = '#3c4552';
+  legs(c, st, '#4a4f58', '#2a2622', false);
+  // A short sword held up behind the shield.
+  const bh = arm(c, -1, -29, 1.25, 10.5, shade(def.color, -0.2), SKIN);
+  blade(c, pole(c, bh, -0.7, 4, 8, '#6b4a2a', 1.8), -0.7, 11, '#dfe4ea');
+  legs(c, st, '#4a4f58', '#2a2622', true);
+  coat(c, def.color, -11, '#c8b070');
+  sash(c, '#8a2a22');
+  face(c, SKIN, true);
+  // An iron cap with a nasal and a spike.
+  c.fillStyle = iron; c.beginPath(); c.arc(1, -38.2, 6.5, Math.PI, 0); c.closePath(); c.fill();
+  rr(c, -5.5, -39.6, 13, 2.4, 1); c.fillStyle = shade(iron, -0.25); c.fill();
+  seg(c, 6.9, -39, 6.9, -34.4, iron, 1.7);
+  seg(c, 1, -44.6, 1, -49.5, iron, 1.7);
+  // The big shield on the near arm: a kite of iron with a bronze boss and rim.
+  const fh = arm(c, 1.5, -29, 0.45, 9, def.color, SKIN);
+  c.save(); c.translate(fh[0] + 3.5, fh[1] - 7);
+  c.fillStyle = dark; c.beginPath(); c.moveTo(-8, -17); c.lineTo(8, -17); c.lineTo(8, 5); c.lineTo(0, 15); c.lineTo(-8, 5); c.closePath(); c.fill();
+  c.fillStyle = '#7b8798'; c.beginPath(); c.moveTo(-6.4, -15.4); c.lineTo(6.4, -15.4); c.lineTo(6.4, 4.2); c.lineTo(0, 12.4); c.lineTo(-6.4, 4.2); c.closePath(); c.fill();
+  seg(c, 0, -15, 0, 11, '#5d6878', 1.2); seg(c, -6, -5, 6, -5, '#5d6878', 1.2);
+  dot(c, 0, -5, 3.2, '#c8b070'); dot(c, 0, -5, 1.3, dark);
+  c.restore();
+}
+function drawHumbaraci(c, st) {
+  const def = SOLDIER.humbaraci, t = now9() / 90;
+  legs(c, st, '#3f352b', '#2a1a10', false);
+  // A satchel of bombs on the far hip.
+  rr(c, -9.5, -26, 8, 9, 2); c.fillStyle = '#6b4a2a'; c.fill();
+  dot(c, -7.5, -27.5, 2.6, '#22201e'); dot(c, -3.6, -27.8, 2.6, '#22201e');
+  arm(c, -1, -29, 0.8, 10.5, shade(def.color, -0.2), SKIN);
+  legs(c, st, '#3f352b', '#2a1a10', true);
+  coat(c, def.color, -11, '#e8d9b0');
+  sash(c, '#2a1a10');
+  face(c, SKIN, true);
+  // A tall red felt cap with a tassel.
+  c.fillStyle = '#b8322b';
+  c.beginPath(); c.moveTo(-4.4, -40); c.lineTo(-2.6, -50); c.quadraticCurveTo(1, -52.5, 4.4, -49.6); c.lineTo(6.2, -40); c.closePath(); c.fill();
+  rr(c, -5.4, -42, 12.2, 2.8, 1.4); c.fillStyle = '#e8d9b0'; c.fill();
+  seg(c, -2.4, -50, -6.5, -46, '#e0b040', 1.2);
+  // The lit bomb is held up in the near hand: a black ball with a sputtering fuse.
+  const h = arm(c, 1.5, -29, 2.35, 10.5, def.color, SKIN);
+  dot(c, h[0] + 1, h[1] - 4.5, 4.4, '#22201e');
+  dot(c, h[0] - 0.2, h[1] - 6, 1.2, '#5a5652');
+  seg(c, h[0] + 1.6, h[1] - 8.6, h[0] + 3.4, h[1] - 12, '#b89868', 1);
+  dot(c, h[0] + 3.4, h[1] - 12.4, 1.8 + Math.sin(t) * 0.6, '#ffcf4a');
+  dot(c, h[0] + 3.4, h[1] - 12.4, 0.9, '#fff1bf');
+}
+function drawLagimci(c, st) {
+  const def = SOLDIER.lagimci;
+  legs(c, st, '#3f3130', '#2a1a10', false);
+  // A pickaxe on the far shoulder.
+  const bh = arm(c, -1, -29, 2.7, 10.5, shade(def.color, -0.25), SKIN);
+  seg(c, bh[0] - 4, bh[1] + 1, bh[0] + 7, bh[1] - 15, '#6b4a2a', 2);
+  c.strokeStyle = '#b8c1cd'; c.lineWidth = 2.4; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(bh[0] + 1, bh[1] - 15); c.quadraticCurveTo(bh[0] + 8, bh[1] - 21, bh[0] + 14, bh[1] - 14); c.stroke();
+  legs(c, st, '#3f3130', '#2a1a10', true);
+  // A powder keg strapped to the back, its fuse curling out.
+  c.save(); c.translate(-9, -27); c.rotate(-0.12);
+  rr(c, -5, -8, 10, 16, 3); c.fillStyle = '#6b4a2a'; c.fill();
+  c.fillStyle = '#3a2a1a'; c.fillRect(-5, -4, 10, 1.5); c.fillRect(-5, 3, 10, 1.5);
+  seg(c, 0, -8, 3, -12, '#d9c08a', 1);
+  dot(c, 3.2, -12.6, 1.5, '#ffcf4a');
+  c.restore();
+  coat(c, def.color, -11, '#3a2a1a');
+  sash(c, '#d9c08a');
+  face(c, SKIN, true);
+  // A round leather cap with a little lamp on it.
+  c.fillStyle = '#4a3222'; c.beginPath(); c.arc(1, -38.4, 6.4, Math.PI, 0); c.closePath(); c.fill();
+  rr(c, -5.4, -39.4, 13, 2.2, 1); c.fillStyle = '#2a1a10'; c.fill();
+  rr(c, 4.2, -46, 4, 4, 1); c.fillStyle = '#b8c1cd'; c.fill();
+  dot(c, 6.2, -44, 1.3, '#ffe27a');
+  const h = arm(c, 1.5, -29, 1.35, 10.5, def.color, SKIN);
+  dot(c, h[0] + 0.5, h[1], 2.3, '#4a3222');
+}
 function drawSoldierShape(c, type, st) {
   if (type === 'azap') drawAzap(c, st);
   else if (type === 'yeniceri') drawYeniceri(c, st);
   else if (type === 'kemankes') drawKemankes(c, st);
+  else if (type === 'kalkanli') drawKalkanli(c, st);
+  else if (type === 'humbaraci') drawHumbaraci(c, st);
+  else if (type === 'lagimci') drawLagimci(c, st);
   else drawDeli(c, st);
 }
 
@@ -4659,6 +4846,10 @@ function drawShots(c) {
     if (s.gun) {
       c.strokeStyle = '#fff1bf'; c.lineWidth = 3;
       c.beginPath(); c.moveTo(s.x - dx * 18, s.y - dy * 18); c.lineTo(s.x, s.y); c.stroke();
+    } else if (s.bomb) {
+      // A bomb: a black ball with a spark trailing behind it.
+      dot(c, s.x, s.y, 4.5, '#22201e');
+      dot(c, s.x - dx * 6, s.y - dy * 6 - 2, 1.8 + Math.random(), '#ffcf4a');
     } else {
       c.strokeStyle = s.perfect ? '#ffcf4a' : '#e9dcb8'; c.lineWidth = 2;
       c.beginPath(); c.moveTo(s.x - dx * 12, s.y - dy * 12); c.lineTo(s.x, s.y); c.stroke();
@@ -5339,7 +5530,7 @@ function drawBooks(c, x, y) {
 }
 // The four company banners on the Bayraktar's rack; the chosen one stands tall and flies.
 function drawBannerRack(c, t) {
-  SOLDIER_ORDER.forEach((type, i) => {
+  openSoldiers().forEach((type, i) => {
     const x = -478 + i * 30, y = -270, on = type === meta.company, h = on ? 90 : 64, d = SOLDIER[type];
     gBlob(c, x + 3, y + 2, 6, 2.5, 'rgba(0,0,0,0.35)');
     seg(c, x, y, x, y - h, '#8a6a3a', 2.6);
