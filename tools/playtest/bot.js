@@ -1,15 +1,74 @@
-// Test bot for mehter-seferi-v3 and v4. Profile from location.hash: #vur | #mid | #good
+// Test bot for mehter-seferi-v3 and v4. Profile from location.hash: #vur | #mid | #good | #rand
+// v4 takes a meta mode after a colon:
+//   #good:full     every upgrade bought and every chapter cleared, the best deck for the chapter
+//   #good:buy300   300 san in the book, spent on the cheapest open upgrades first, chapters cleared
+//   #good:full:units=azap.deli.kalkanli   as full, but the deck holds only these soldiers (best four of them)
+//   #good:camp     a whole campaign: run after run, buying the cheapest open upgrade after each, until
+//                  the book is full (or 40 runs); one CAMP line per run
 // In v4 (D.playCard) it plays hand cards; in v3 it fires ultis.
 (() => {
-const P = { vur: { smart: false, jitter: 0.02, skip: 0, cardSense: 0 }, mid: { smart: true, jitter: 0.045, skip: 0.12, ulti: false, raid: false, react: 0.6, dodge: 0.5, cardSense: 0.5 },
+const [PROF, MODE = '', OPT = ''] = (location.hash.slice(1) || 'mid').split(':');
+// #mid:full:units=azap.deli.kalkanli  limits the soldiers the bot's deck may hold, to compare cards.
+const ONLY = OPT.startsWith('units=') ? OPT.slice(6).split('.') : null;
+const P = {
+  // A beginner: often late, blocks a third of the blows, does not raid, and picks its deck well only half the time.
+  new: { smart: true, jitter: 0.075, skip: 0.3, ulti: false, raid: false, react: 0.3, dodge: 0.2, cardSense: 0.3, deckSmart: 0.5 },
+  vur: { smart: false, jitter: 0.02, skip: 0, cardSense: 0 }, mid: { smart: true, jitter: 0.045, skip: 0.12, ulti: false, raid: false, react: 0.6, dodge: 0.5, cardSense: 0.5 },
   good: { smart: true, jitter: 0.02, skip: 0.03, ulti: true, raid: true, react: 0.92, dodge: 0.9, cardSense: 1 },
   // As good, but its cards are picked at random: how much the choice of card is worth.
-  rand: { smart: true, jitter: 0.02, skip: 0.03, ulti: true, raid: true, react: 0.92, dodge: 0.9, cardSense: 1, cardRand: true } }[location.hash.slice(1) || 'mid'];
+  rand: { smart: true, jitter: 0.02, skip: 0.03, ulti: true, raid: true, react: 0.92, dodge: 0.9, cardSense: 1, cardRand: true } }[PROF];
 const D = window.__dbg;
 const log = [];
 const out = () => { let pre = document.getElementById('botlog'); if (!pre) { pre = document.createElement('pre'); pre.id = 'botlog'; document.body.appendChild(pre); } pre.textContent = log.join('\n'); };
 let prevPending = [], lastHearts = 3, started = false, lastK = -1, pressAt = null, waveInfo = null, lastPhase = '';
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+// ---- v4 meta: the book, and the company and deck the bot takes to a chapter.
+const SMART = !!MODE, CAMP = MODE === 'camp';
+let runNo = 0, runStart = 0;
+const upSpent = () => D.UPGRADES.reduce((t, u) => t + u.cost.slice(0, D.rank(u.id)).reduce((a, b) => a + b, 0), 0);
+const bookFull = () => D.UPGRADES.every((u) => D.rank(u.id) >= u.cost.length);
+// How well a soldier answers a chapter's monsters: strong +1, weak -0.5, giants count three times.
+function chapterScore(unit, ch) {
+  let sc = 0;
+  for (let wi = 1; wi <= 5; wi++) {
+    const w = D.WAVES[ch][wi];
+    if (!w) continue;
+    for (const t in w) sc += w[t] * ((D.STRONG[unit].includes(t) ? 1 : 0) - (D.WEAK[unit].includes(t) ? 0.5 : 0)) * (D.ENEMY[t].big ? 3 : 1);
+  }
+  return sc;
+}
+const bestUnits = (ch) => D.openSoldiers().filter((t) => !ONLY || ONLY.includes(t)).sort((a, b) => chapterScore(b, ch) - chapterScore(a, ch));
+// The four soldiers that fit the chapter best and the four plain spells.
+function deckFor(ch) {
+  // One soldier only: two of its cards and every spell, to see what that soldier is worth.
+  if (ONLY && ONLY.length === 1) { const d = [ONLY[0], ONLY[0], 'top', 'duvar', 'mars', 'hucum', 'zil', 'akinci']; return D.validDeck(d) ? d : D.DEFAULT_DECK.slice(); }
+  const d = bestUnits(ch).slice(0, 4).concat(['top', 'duvar', 'mars', 'hucum']);
+  return D.validDeck(d) ? d : D.DEFAULT_DECK.slice();
+}
+function buyOne(u) { const m = D.meta, n = D.rank(u.id); m.san -= u.cost[n]; m.ranks[u.id] = n + 1; D.saveMeta(); return u.id + (u.cost.length > 1 ? n + 1 : ''); }
+// Spends the book's san on the cheapest upgrade that is open and affordable, until none is.
+function autoBuy() {
+  const m = D.meta, bought = [];
+  for (;;) {
+    const c = D.UPGRADES.filter((u) => D.rank(u.id) < u.cost.length && D.upgOpen(u) && m.san >= u.cost[D.rank(u.id)])
+      .sort((a, b) => a.cost[D.rank(a.id)] - b.cost[D.rank(b.id)])[0];
+    if (!c) return bought;
+    bought.push(buyOne(c));
+  }
+}
+function prepMeta() {
+  const m = D.meta;
+  if (MODE === 'full') { for (const u of D.UPGRADES) m.ranks[u.id] = u.cost.length; m.cleared = 3; }
+  else if (/^buy\d+$/.test(MODE)) { m.san = +MODE.slice(3); m.cleared = 3; autoBuy(); }
+}
+const wise = () => Math.random() < (P.deckSmart == null ? 1 : P.deckSmart);
+function prepRun() {
+  if (!SMART) return;
+  const m = D.meta;
+  if (wise()) { m.company = bestUnits(1)[0]; m.deck = deckFor(1); }
+  else { const o = D.openSoldiers(); m.company = o[Math.floor(Math.random() * o.length)]; m.deck = D.DEFAULT_DECK.slice(); }
+  D.saveMeta();
+}
 function walk(tx, ty, stopAt) {
   const G = D.G, L = G.leader, h = D.held;
   for (const k of ['KeyW', 'KeyA', 'KeyS', 'KeyD']) h.delete(k);
@@ -78,13 +137,38 @@ function cards(G, now) {
 }
 function tick() {
   const G = D.G;
-  if (!started) { started = true; D.start(false); log.push('start ' + (location.hash || '#mid')); }
+  if (!started) {
+    started = true; runStart = performance.now() / 1000;
+    if (D.meta) { if (runNo === 0) prepMeta(); prepRun(); }
+    D.start(false);
+    if (runNo === 0) log.push('start ' + (location.hash || '#mid'));
+    setTimeout(tick, 4);
+    return;
+  }
   if (G.mode === 'over') {
-    log.push(`RESULT ${G.phase === 'won' ? 'WON' : 'LOST'} at c${G.chapter}w${G.wi} kills=${G.stats.kills} perfect=${G.stats.perfect} good=${G.stats.good} miss=${G.stats.miss} use=${JSON.stringify(G.stats.use)}` + (G.stats.played ? ` cards=${JSON.stringify(G.stats.played)} wasted=${Math.round(G.stats.wasted)}` : ''));
-    out(); document.title = 'DONE'; return;
+    log.push(`RESULT ${G.phase === 'won' ? 'WON' : 'LOST'} at c${G.chapter}w${G.wi} sec=${Math.round(performance.now() / 1000)} terfi=${G.level} loot=${G.stats.loot} san=${G.san} kills=${G.stats.kills} perfect=${G.stats.perfect} good=${G.stats.good} miss=${G.stats.miss} use=${JSON.stringify(G.stats.use)}` + (G.stats.played ? ` cards=${JSON.stringify(G.stats.played)} wasted=${Math.round(G.stats.wasted)}` : ''));
+    if (!CAMP) { out(); document.title = 'DONE'; return; }
+    // A campaign goes on: the run's san is in the book, spend it and set out again.
+    const m = D.meta, won = G.phase === 'won';
+    runNo++;
+    const gained = G.san, bought = autoBuy();
+    log.push(`CAMP run ${String(runNo).padStart(2)} ${won ? 'WON ' : 'LOST'} c${G.chapter}w${G.wi} sec=${Math.round(performance.now() / 1000 - runStart)} san+${String(gained).padStart(3)} book ${String(m.san).padStart(3)} spent ${String(upSpent()).padStart(3)} terfi ${G.level} cleared ${m.cleared} open ${D.openSoldiers().length}${bought.length ? ' bought ' + bought.join(',') : ''}`);
+    out();
+    if (runNo >= 40 || bookFull()) { log.push(bookFull() ? `CAMPAIGN DONE after ${runNo} runs` : `CAMPAIGN STOPPED at run ${runNo}, spent ${upSpent()}`); out(); document.title = 'DONE'; return; }
+    started = false; prevPending = []; lastHearts = 3; lastK = -1; pressAt = null; waveInfo = null; lastPhase = ''; nextCardT = 0;
+    setTimeout(tick, 4);
+    return;
   }
   if (G.terfi) { D.pickCard(Math.floor(Math.random() * G.terfi.cards.length), true); }
-  if (G.konak) { if (D.toggleUlti && D.playCard) D.toggleUlti(Math.floor(Math.random() * 4)); D.leaveKonak(); }
+  if (G.konak) {
+    if (SMART) {
+      const next = G.chapter + 1, o = D.openSoldiers();
+      if (wise()) { D.toggleUlti(o.indexOf(bestUnits(next)[0])); G.konak.deck = deckFor(next); }
+      else D.toggleUlti(Math.floor(Math.random() * o.length));
+    }
+    else if (D.toggleUlti && D.playCard) D.toggleUlti(Math.floor(Math.random() * 4));
+    D.leaveKonak();
+  }
   const now = performance.now() / 1000;
   if (G.leader.hearts < lastHearts) {
     const near = G.enemies.filter((e) => !e.dead && dist(e, G.leader) < 140).map((e) => e.type);
@@ -97,7 +181,7 @@ function tick() {
     if (G.phase === 'wave') waveInfo = { t: now, hearts: G.leader.hearts, army: G.soldiers.filter((s) => !s.dead).length, kills: G.stats.kills, hits: 0, lost: 0 };
     if (lastPhase === 'wave' && waveInfo) {
       const army = G.soldiers.filter((s) => !s.dead).length;
-      log.push(`c${G.chapter}w${G.wi} ${G.goal.padEnd(7)} ${(now - waveInfo.t).toFixed(0).padStart(4)}s hearts ${waveInfo.hearts}->${G.leader.hearts} army ${waveInfo.army}->${army} kills ${G.stats.kills - waveInfo.kills} cezbe ${G.bar.toFixed(0)}`);
+      log.push(`c${G.chapter}w${G.wi} ${G.goal.padEnd(7)} ${(now - waveInfo.t).toFixed(0).padStart(4)}s hearts ${waveInfo.hearts}->${G.leader.hearts} army ${waveInfo.army}->${army} kills ${G.stats.kills - waveInfo.kills} cezbe ${G.bar.toFixed(0)} loot ${G.stats.loot} terfi ${G.level}`);
       out();
     }
     lastPhase = G.phase;

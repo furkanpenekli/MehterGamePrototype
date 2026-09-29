@@ -34,7 +34,7 @@ i = src.index('<script>')
 src = src[:i] + prelude + src[i:]
 j = src.rindex('})();')
 extra = 'fireUlti, level' if ver == 'v3' else 'playCard, toggleUlti'
-src = src[:j] + 'window.__dbg = { get G() { return G; }, held, beats, start, startWave, drum, pickCard, leaveKonak, ' + extra + ', covers, kosCovers, isOut, inAura, ENEMY, STRONG, WEAK };\n' + src[j:]
+src = src[:j] + 'window.__dbg = { get G() { return G; }, held, beats, start, startWave, drum, pickCard, leaveKonak, ' + extra + ', covers, kosCovers, isOut, inAura, ENEMY, STRONG, WEAK, SOLDIER, SOLDIER_ORDER, KARTS, UPGRADES, THEMES, WAVES, SUMMON, DEFAULT_DECK, get meta() { return meta; }, saveMeta, rank, kartOpen, upgOpen, openSoldiers, validDeck };\n' + src[j:]
 R = '  } else if (!G.paused) updateFx(rdt);\n  render(now);\n}'
 assert src.count(R) == 1
 src = src.replace(R, '  } else if (!G.paused) updateFx(rdt);\n}')
