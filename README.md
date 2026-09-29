@@ -450,7 +450,7 @@ bot has played it. Everything not listed here is as in prototype 3. Its storage 
   | Part | Steps |
   |---|---|
   | Hareket, Ritim | walk 300 px; four presses on the beat |
-  | Çalgılar | three VUR on the beat that hit Kara Koçlar; two blocks of practice blows on the leader; three blocks of real Koç blows; two ATIL on the beat against Sapancılar; two TOPLAN on the beat |
+  | Çalgılar | three VUR on the beat that hit Kara Koçlar; three blocks of practice blows on the leader; three blocks of real Koç blows; two ATIL on the beat against Sapancılar; two TOPLAN on the beat |
   | Cezbe ve deste | fill Cezbe from empty to 4 (it fills by itself and on the beat, as in a wave); play a company card; an announced group of four Yarasa, with the Kemankeş card put in hand; play a spell, with Top Atışı in hand and six Koçlar close by |
   | Savaş | meet two mass charges with a Kös on their beat; a practice wave of four groups (5 Koç, 3 Yarasa, 2 Sapancı, 4 Koç) with the player's own deck |
 
@@ -459,6 +459,20 @@ bot has played it. Everything not listed here is as in prototype 3. Its storage 
   with "TAMAM!" and the next starts a second later. The panel at the top shows the part, the step,
   what to do and how far along it is; Enter skips a step and Space ends the drill. Nothing from it
   (monsters, loot, cards, soldiers from cards) carries into the run. Tuning is in `TUT_STEPS`.
+
+  The Kös steps (the two block steps and the mass charges) count each blow in (decision 31). A
+  white ring closes on a blue one round the leader and meets it as the blow lands. The three beats
+  before it are counted 3, 2, 1 over his head with a rising tick, then "↓ ŞİMDİ!" shows and the ↓
+  key on the pad lights up. A ↓ pressed too early is told "ERKEN" at once. A blow that gets through
+  says whether the ↓ came early or never came, and a ↓ just after it is told it was late. The Kös
+  forgives more here than in a run: `slack` seconds (0.15, then 0.1) either side of a blow, plus
+  0.1 s more on the early side for every blow that got through, up to 0.3 s. The late side grows
+  to 0.15 s at most, so a missed blow still lands when its ring closes.
+- **HUD size (decision 31).** The cards, the Cezbe bar and the instrument pad are about a quarter
+  larger than before, and the whole battle HUD is scaled by `UI` = the screen over 1200×740,
+  between 0.8 and 1.6. A 1080p screen gets about 1.3. The grade over the leader and the order's
+  name under him are larger too. Markers at the screen's edge stay above the hand and the pad.
+  Menus and overlays grow 1.2 times on screens from 1500×860 and 1.45 times from 2200×1200.
 - **End screen:** cards played, the three most played, and Cezbe wasted.
 - **Bot test after decision 28:** good 7 of 8 (4 hearts lost, one fall at 3-4), mid 0 of 8
   (falls at 3-2 twice and 3-4 six times). Without the banners' free companies the mid bot is back
@@ -607,6 +621,11 @@ Build on these; do not re-propose what they rule out.
     registered before (the edge test read the state it had just overwritten); prototypes 1-3 still
     have that bug. The button map is Claude's (listed below).
 
+31. **2026-09-30: a bigger HUD and an easier Kös lesson.** The user: "UI biraz daha büyüt görmesi
+    zor oluyor hem kartları hem çalgı vuruşlarını. ayrıca eğitimde direnirken mesela daha kolay
+    ögretmenin yolunu bul". Built as in "Prototype 4" (prototype 4 only); how it was done is
+    Claude's (listed below).
+
 ## Claude's calls the user has not confirmed
 
 - Decision 18's four instruments and their gains and prices: bringing back ATIL and TOPLAN, the
@@ -639,6 +658,9 @@ Build on these; do not re-propose what they rule out.
   or soldier lost in it, a practice wave at the end, Enter to skip a step, and counting a mass
   charge as met when a Kös covers its beat (blocks alone did not work: soldiers fighting outside
   the aura are not covered).
+- Decision 31's details: the HUD's scale and sizes, the menus' zoom, and the Kös lesson: the
+  closing ring, the 3-2-1 count and its ticks, "ŞİMDİ" 0.35 s before the blow, the lit ↓ key, the
+  early and late messages, three practice blows instead of two, and the extra slack.
 - Decision 28's reading: a terfi is still earned by loot and only waits for the wave's end (not
   one terfi every wave); the chapter konak's deck change lasts for that run only.
 - One banner per breather, bringing two companies, and waves 1.5 times as large (decision 16
