@@ -385,7 +385,7 @@ const beatStep = () => 1;
 const isCallBeat = () => true;
 
 const T = {
-  perfectWin: 0.06, goodWin: 0.15,
+  perfectWin: 0.08, goodWin: 0.18,
   // Cezbe is the elixir (Clash Royale): barMax pips. It fills by itself, one pip every
   // regenBeats, and every beat played on time adds goodGain or perfectGain more (once per beat).
   // A blow on the leader takes hitDrop. A wave starts with at least waveStartBar.
@@ -435,7 +435,7 @@ const ORD = {
   cdBeats: { up: 1, down: 1, right: 2, left: 2 }, offBeat: 0.75,
   // The Kös guards blows landing up to kosWin s after the press (kosLate before it); one that
   // lands within kosStun s of the press stuns its attacker.
-  kosWin: 0.4, kosWinOnBeat: 0.55, kosLate: 0.08, kosStun: 0.2,
+  kosWin: 0.5, kosWinOnBeat: 0.65, kosLate: 0.1, kosStun: 0.2,
 };
 // Difficulty climbs with every wave, from the first (0) to the last (1), so a run starts easy
 // and ends hard. Each knob goes from its easy value to its hard one.

@@ -473,6 +473,15 @@ bot has played it. Everything not listed here is as in prototype 3. Its storage 
   between 0.8 and 1.6. A 1080p screen gets about 1.3. The grade over the leader and the order's
   name under him are larger too. Markers at the screen's edge stay above the hand and the pad.
   Menus and overlays grow 1.2 times on screens from 1500×860 and 1.45 times from 2200×1200.
+- **Wider timing windows (decision 33).** Prototype 3's windows were tight for a hand on a keyboard
+  or a pad. Perfect is now ±80 ms (was ±60) and Good ±180 ms (was ±150); a beat is 750 ms, so a
+  press within Good of a beat covers 48% of the time instead of 40%. The instrument's recharge
+  still ends at the start of the next beat's Good window, so it moves with `goodWin`. The Kös
+  guards a blow landing up to 0.5 s after the press (was 0.4), 0.65 s on the beat (was 0.55), and
+  up to 0.1 s before it (was 0.08); a blow landing within 0.2 s of the press still stuns its
+  attacker. A blow at the leader waits `kosLate` past its ring before it lands, so it now lands
+  0.02 s later than before. The Kös lesson's slack of decision 31 is added on top. Tuning is in
+  `T.perfectWin`, `T.goodWin` and `ORD.kosWin`, `ORD.kosWinOnBeat`, `ORD.kosLate`.
 - **Three later soldiers (decision 32).** Three more companies, locked at the start. The first
   four soldiers have no answer to one monster in each chapter (Karakoncolos, Yılan, Kül Hortlağı);
   the new ones cover those three and double up where a second answer helps. Each has one small
@@ -707,6 +716,11 @@ Build on these; do not re-propose what they rule out.
     güzelce ayarla oyun uzunluğuna göre". Built as in "Prototype 4"; which soldiers, what they
     do, what opens when and every number is Claude's (listed below).
 
+33. **2026-09-30: easier timing on the instruments (prototype 4 only).** The user: "çalgı tuşuna
+    basma mekaniğini biraz daha iyi hale getireceğiz. zamanlama daha kolay olması için azıcık daha
+    süreler uzatılabilir". Built as in "Prototype 4": the Perfect and Good windows and the Kös's
+    guard are a little longer. How much longer is Claude's (listed below).
+
 ## Claude's calls the user has not confirmed
 
 - Decision 18's four instruments and their gains and prices: bringing back ATIL and TOPLAN, the
@@ -748,6 +762,10 @@ Build on these; do not re-propose what they rule out.
   cheaper Sıkı Talim, Kıdem at 2, chapter 1 paying 4 şan a wave; a terfi at 26 loot and 3 more
   each; offering only terfis for soldiers the run fields; the rarity odds by chapter; the three
   terfis for the deck; and ten terfis a run as the aim.
+- Decision 33's numbers: Perfect ±80 ms, Good ±180 ms, the Kös guarding 0.5 s (0.65 s on the beat)
+  after the press and 0.1 s before it. The user only said "a little longer"; the bots have not
+  been run with them, and a wider Perfect makes the ×1.25 and the Cezbe bonus a little easier to
+  earn than `DIFF` was tuned for.
 - Decision 28's reading: a terfi is still earned by loot and only waits for the wave's end (not
   one terfi every wave); the chapter konak's deck change lasts for that run only.
 - One banner per breather, bringing two companies, and waves 1.5 times as large (decision 16
