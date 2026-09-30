@@ -473,6 +473,81 @@ bot has played it. Everything not listed here is as in prototype 3. Its storage 
   between 0.8 and 1.6. A 1080p screen gets about 1.3. The grade over the leader and the order's
   name under him are larger too. Markers at the screen's edge stay above the hand and the pad.
   Menus and overlays grow 1.2 times on screens from 1500×860 and 1.45 times from 2200×1200.
+- **Three later soldiers (decision 32).** Three more companies, locked at the start. The first
+  four soldiers have no answer to one monster in each chapter (Karakoncolos, Yılan, Kül Hortlağı);
+  the new ones cover those three and double up where a second answer helps. Each has one small
+  trait of its own, and all are in `SOLDIER`, `STRONG`, `WEAK`, `KARTS`, `SUMMON`:
+
+  | Soldier | Health · damage | Per card · cost | Trait | Strong against | Weak against |
+  |---|---|---|---|---|---|
+  | Kalkanlı | 75 · 14, melee, slow | 2 · 3 | takes 60% of every blow (`guard`) | Karakoncolos, Dev Akrep, Ejder Yavrusu | Kaya İyesi, Yılan Kâhini, Kor Kuşu |
+  | Humbaracı | 28 · 26, ranged 225 | 2 · 3 | its bomb hurts what stands within 46 px of its mark for 60% (`bomb`) | Kara Koç, Yılan, Kül Hortlağı: the swarms | Yarasa, Dev Akrep, Od Cadısı |
+  | Lağımcı | 30 · 16, fast | 3 · 3 | bursts where it falls or is sent home, 100 to everything within 76 px (`blast`) | Kaya İyesi, Evren, Od Devi: the giants | Sapancı, Kanatlı Yılan, Ejder Yavrusu |
+
+  Each has a figure of its own (a kite shield, a lit bomb, a pickaxe and a powder keg), and two
+  terfis (`klDmg` `klGuard`, `hbDmg` `hbBomb`, `lgHp` `lgBlast`). Akıncı Baskını still calls the
+  original four. A soldier freed from a fort is one of the kinds that have opened.
+- **What opens when (decision 32).** A card now also waits for a chapter to be finished
+  (`gate` in `UPGRADES`, counted by `meta.cleared`; an older book works it out from its furthest
+  wave), so each chapter cleared for the first time brings something new. The Kethüda's book says
+  what a locked card waits for. The first four soldiers and the four spells of the default deck
+  are there from the start.
+
+  | Opens after | Cards (şan) |
+  |---|---|
+  | the start | Azap, Yeniçeri, Kemankeş, Deli, Top Atışı, Kös Duvarı, Mehter Marşı, Hücum Borusu |
+  | chapter 1 | Kalkanlı 30, Zil Çınlaması 40 |
+  | chapter 2 | Humbaracı 55, Akıncı Baskını 65 |
+  | the first win | Lağımcı 80 |
+
+  The lasting upgrades (`UPGRADES`), by rank: Sıkı Talim 10 · 25 · 45 (was 15 · 30 · 50), Ganimet
+  Payı 15 · 30 · 50, Ocak Kadrosu 20 · 45, Kıdem 20 · 40 (now 2 loot off a terfi a rank, not 3),
+  Coşkulu Açılış 20 · 40, Gür Nevbet 25 · 50, Hızır Duası 40 · 90. With the five cards the whole
+  book costs 835 şan. A run pays 4 şan a wave in chapter 1 (was 3), 4 in chapter 2 and 5 in
+  chapter 3, plus forts, serdars and the win as before: about 12-16 for a fall in chapter 1, 40-50
+  in chapter 2, 70-90 in chapter 3 and 130-190 for a win. The first rank of Sıkı Talim is cheap so
+  that even a short first run can buy something.
+- **Terfi pacing (decision 32).** A full run is 15 waves of 6-35 s and lasts 5-7.5 minutes. The
+  loot a wave pays hardly depends on how well it is played, because every monster of a wave has to
+  fall: by the end of each wave the bots had about 14, 30, 60, 82, 125 | 160, 172, 222, 250, 290 |
+  330, 350, 390, 435 loot (the last boss wave adds 70-200 more, but nothing follows it to spend it
+  on). A terfi now costs 26 loot and 3 more for each one taken (`T.terfiBase`, `terfiStep`,
+  `terfiNeed`, at least 12), which brings about ten to a run: after waves 2, 3, 5, 5 | 6, 8, 9 |
+  11, 12, 14, so three or four in each chapter and one every wave and a third. Before, it was 15
+  and 10 more, eight or nine to a run: four in the first chapter, three in the second, two in the
+  third. The bots took 10-11 terfis in a full fresh run and 12-15 (about 13) with every upgrade
+  bought (Kıdem 2, Ganimet Payı 3).
+  - **Only terfis that can be used.** A terfi about one soldier is offered only when the run
+    fields that soldier, in the deck or in the core army (`kindsInPlay`); before, about half the
+    offers could be dead ones.
+  - **Rarity by chapter** (`TERFI_ODDS`, the weights of Sıradan, Nadir and Destansı): chapter 1
+    6 · 2.5 · 0.5, chapter 2 5 · 3 · 1.2, chapter 3 4 · 3.5 · 2.2.
+  - **Three terfis for the deck**, since the pool had none: Sağlam Bölükler (companies from
+    cards fight 8 beats longer, up to three times), Cezbe Kaynağı (Cezbe fills 25% faster, once)
+    and Kalabalık Bölükler (one more soldier in every company from a card, once).
+- **How the soldiers compare, and how long the book takes (bot test, 2026-09-30).** New bots in
+  `tools/playtest/bot.js`: `new` (a beginner: ±75 ms, skips 30% of the beats, blocks 30% of the
+  blows, no raids, picks its deck well half the time), and meta modes after a colon.
+  - **One soldier alone.** `mid:full:units=X`: the mid bot, every upgrade bought, a deck of two
+    cards of X and all six spells. Hearts lost a run, 12-16 runs each (the noise is about ±0.4):
+    Deli 0.75, Yeniçeri 1.2, Humbaracı 1.4, Azap 1.4, Kemankeş 1.4 (7 of 12 won), Lağımcı 1.7,
+    Kalkanlı 1.7. Before the buffs Humbaracı won 4 of 12 with 31 hearts lost, and Lağımcı lost
+    31 as well, so both were strengthened (Humbaracı 22 health · 20 damage · cost 4, Lağımcı 24 ·
+    12 · blast 60 over 68 px; Kalkanlı 70 · 12 · then one more small buff to 75 · 14). With all seven soldiers in the bot's deck it won
+    16 of 16 runs with 20 hearts lost, against 15 of 16 with 17 lost for the first four alone.
+  - **The book.** A bot that plays run after run, buys the cheapest open upgrade after each and
+    stops when the book is full (`#good:camp`). To fill it: the good bot 7 runs (three of three),
+    the mid bot 7-9, the beginner 14-27, median 17 (11 campaigns: 14, 14, 15, 16, 16, 17, 18, 20, 23, 27, 27, and one
+    with no win in 40 runs). A beginner finishes chapter 1 in runs 1-3 and reaches chapter 3 in runs 2-9, buys
+    Kalkanlı in runs 4-8 and Humbaracı in runs 10-17, has all but Lağımcı by run 12-15, and wins
+    for the first time anywhere between run 12 and run 28. A beginner's runs are short (1.5-6
+    minutes), so that is about an hour of play for the good bot and an hour and a half for a
+    beginner.
+  - **A beginner's first runs** fall in chapter 1 (9-16 şan) or chapter 2 (40-50), so the first
+    purchase comes after the first or second run.
+  - **Fresh-book win rates after the changes:** good 6 of 16, mid 2 of 16 (before: good about
+    1-2 of 4-6 and mid 0 of 6 in the same kind of batch; the README's older 7 of 8 and 0 of 8 are in
+    the same range). The terfi count and the filter on dead terfis made the game a little easier.
 - **End screen:** cards played, the three most played, and Cezbe wasted.
 - **Bot test after decision 28:** good 7 of 8 (4 hearts lost, one fall at 3-4), mid 0 of 8
   (falls at 3-2 twice and 3-4 six times). Without the banners' free companies the mid bot is back
@@ -626,6 +701,12 @@ Build on these; do not re-propose what they rule out.
     ögretmenin yolunu bul". Built as in "Prototype 4" (prototype 4 only); how it was done is
     Claude's (listed below).
 
+32. **2026-09-30: three more soldiers that open later, and the pace of terfis, lasting upgrades
+    and card unlocks fitted to the length of a run (prototype 4 only).** The user: "farklı üç
+    asker kartı ekle ileride açılsın. terfileri ve kalıcı geliştirmeleri kart açılmalarını
+    güzelce ayarla oyun uzunluğuna göre". Built as in "Prototype 4"; which soldiers, what they
+    do, what opens when and every number is Claude's (listed below).
+
 ## Claude's calls the user has not confirmed
 
 - Decision 18's four instruments and their gains and prices: bringing back ATIL and TOPLAN, the
@@ -661,6 +742,12 @@ Build on these; do not re-propose what they rule out.
 - Decision 31's details: the HUD's scale and sizes, the menus' zoom, and the Kös lesson: the
   closing ring, the 3-2-1 count and its ticks, "ŞİMDİ" 0.35 s before the blow, the lit ↓ key, the
   early and late messages, three practice blows instead of two, and the extra slack.
+- Decision 32's details: which three soldiers (Kalkanlı, Humbaracı, Lağımcı) and their traits,
+  stats, costs and counters; that an unlock waits for a chapter (1, 2, 3) on top of the price, and
+  which card waits for which; Lağımcı waiting for the first win; every price in the book and the
+  cheaper Sıkı Talim, Kıdem at 2, chapter 1 paying 4 şan a wave; a terfi at 26 loot and 3 more
+  each; offering only terfis for soldiers the run fields; the rarity odds by chapter; the three
+  terfis for the deck; and ten terfis a run as the aim.
 - Decision 28's reading: a terfi is still earned by loot and only waits for the wave's end (not
   one terfi every wave); the chapter konak's deck change lasts for that run only.
 - One banner per breather, bringing two companies, and waves 1.5 times as large (decision 16
@@ -676,6 +763,10 @@ Build on these; do not re-propose what they rule out.
   - the four scripted patterns.
 - How strong the konak's upgrades may be. Decision 25 answered "meta progression or a full
   reset" with Claude's upgrades; whether the game should get harder again as they add up is open.
+- Whether Lağımcı waiting for a first win is too far for a player who does not win for a long
+  time (the beginner bot took 12 to 28 runs), and whether the last boss wave's loot (70-200, spent
+  on nothing) should buy something. A full book makes a run easier (13 terfis, two Hızır lives,
+  four starting companies); a Hades-style heat system is still not built.
 - Army size: the prototype allows 30, against the Unity build's 4 slots.
 - Balance past wave 4 has only been bot-tested.
 
@@ -692,6 +783,8 @@ Every tuning value is at the top of the script in `mehter-seferi.html` (prototyp
 | `SOLDIER` · `COUNTER` · `ENEMY` | Units |
 | `waveDef` · `waveBpm` | The run |
 | `CARDS` | Promotions |
+
+Prototype 4's progression lives in `SOLDIER` (the later soldiers' traits), `UPGRADES` (prices and `gate`), `T.terfiBase` and `terfiStep`, `TERFI_ODDS`, `SAN` and `CARDS`.
 
 Prototype 3's konak keeps its own: `SAN` (what a run pays), `UPGRADES` (the Kethüda's book),
 `HUB` and `SPOTS` (the courtyard's layout and its people).
@@ -737,7 +830,13 @@ and plays a whole run in about two minutes.
     python tools/playtest/sum.py r1 mid         # hearts lost and deaths per wave
 
 The bots are `vur`, `mid` and `good` (see `bot.js`), and for prototype 4 `rand`: the good bot
-with its cards chosen at random, to measure what the choice of card is worth.
+with its cards chosen at random, to measure what the choice of card is worth, and `new`, a
+beginner. After a colon a prototype 4 bot takes a meta mode: `good:full` (every upgrade bought,
+the best deck for each chapter), `mid:buy300` (300 şan spent on the cheapest open upgrades),
+`good:camp` (run after run, spending each run's şan, until the book is full or 40 runs; one
+`CAMP` line a run, and `BUDGET=300000000` for `run.sh`), and `:units=azap.deli` (the deck may
+hold only these soldiers; one soldier makes a deck of two of its cards and every spell). Run at
+most eight Chromes at once: more slowed the machine and skewed the wins.
 `debugpage.py` also takes `v3` or `v4` (default v4). A run takes a few seconds, because the
 test copy skips drawing. The debug handle only lives in `out/`, which git ignores.
 
